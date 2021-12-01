@@ -17,7 +17,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-html-js:$kotlinxHtmlVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxHtmlVersion")
 
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.0")
+    val kotlinVersion = "1.6.0"
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }
 
 kotlin {

@@ -1,11 +1,11 @@
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 data class NeuralLinkPluginSettings(
-    var mySetting: String
+    var taskRemoveRegex: String
 ) {
     companion object {
         fun default() : NeuralLinkPluginSettings{
-            return NeuralLinkPluginSettings("default")
+            return NeuralLinkPluginSettings("""#kanban/[\w-]+(\s|$)""")
         }
 
         fun toJson(settings: NeuralLinkPluginSettings) : String {

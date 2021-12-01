@@ -10,20 +10,20 @@ class NeuralLinkPluginSettingsTab(override var app: App, var plugin: NeuralLinkP
             containerEl.lastChild?.let { containerEl.removeChild(it) }
         }
 
-        containerEl.append.h2 { +"Settings for my awesome plugin." }
-        createSampleSetting(containerEl)
+        containerEl.append.h2 { +"Neural Link Settings." }
+        createTaskTextRemovalRegexSetting(containerEl)
     }
 
-    private fun createSampleSetting(containerEl: HTMLElement) : Setting {
+    private fun createTaskTextRemovalRegexSetting(containerEl: HTMLElement) : Setting {
         return Setting(containerEl)
-            .setName("Setting #1")
-            .setDesc("It's a secret")
+            .setName("Task Text Removal Regex")
+            .setDesc("Contents to remove from task on completion")
             .addText { text ->
-                text.setPlaceholder("Enter your secret")
-                    .setValue(plugin.settings.mySetting)
+                text.setPlaceholder("Regex")
+                    .setValue(plugin.settings.taskRemoveRegex)
                     .onChange { value ->
-                        console.log("Secret: $value")
-                        plugin.settings.mySetting = value
+                        console.log("Regex: $value")
+                        plugin.settings.taskRemoveRegex = value
                         saveSettings()
                     }
             }
