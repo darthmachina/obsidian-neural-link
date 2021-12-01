@@ -1,44 +1,31 @@
-import events.RemoveRegexFromTask
-import events.TaskProcessor
-import kotlinx.coroutines.await
+import events.FileModifiedEvent
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("default")
 class NeuralLinkPlugin(override var app: App, override var manifest: PluginManifest) : Plugin(app, manifest) {
-    var settings : NeuralLinkPluginSettings = NeuralLinkPluginSettings.default()
+    var settings = NeuralLinkPluginSettings.default()
+        // Can't call loadSettings() until the plugin is loaded (not constructed) so can't use val
+        // here. Make the setter private so the value can only be changed within this class.
+        private set
 
-    val taskProcessors : List<TaskProcessor>
-
-    init {
-        taskProcessors = mutableListOf(RemoveRegexFromTask(this))
-    }
+    private val fileModifiedEvent = FileModifiedEvent(this)
 
     override fun onload() {
         loadSettings()
 
         this.registerEvent(this.app.metadataCache.on("changed") {
-            file: TFile -> handleFileModified(file)
+            file -> fileModifiedEvent.processEvent(file)
         })
 
         // Add Settings tab
         addSettingTab(NeuralLinkPluginSettingsTab(app, this))
-        console.log("KotlinPlugin onload()")
+        console.log("NeuralLinkPlugin onload()")
     }
 
     override fun onunload() {
-        console.log("KotlinPlugin onunload()")
+        console.log("NeuralLinkPlugin onunload()")
     }
-
-    private fun handleFileModified(file: TFile) {
-        var modified = false;
-        val fileContents = app.vault.read(file).then { it.split('\n') }
-        val fileListItems = app.metadataCache.getFileCache(file)?.listItems ?: arrayOf()
-        fileListItems.forEach { listItem ->
-            if (listItem.task?.toUpperCase() == "X") {
-                val lineContents = fileContents
-            }
-        }
 
 //			let modified = false;
 //			const fileContents = await (await this.app.vault.read(file)).split('\n');
@@ -48,16 +35,6 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 //				const lineContents = fileContents[item.position.start.line];
 //				console.log(`listItem data: [position: ${item.position.start.line}/${item.position.end.line}, task: ${item.task}, parent: ${item.parent}]`);
 //				console.log(`  text for listItem: ${lineContents}`)
-//
-//				const newLine = lineContents.replace(new RegExp(this.settings.textToRemove, 'g'), '');
-//				console.log(`  new task line: ${newLine}`);
-//				if (item.task === 'x' || item.task === 'X') {
-//					if (newLine !== lineContents) {
-//						console.log('Replacing task line with new one without text');
-//						fileContents[index] = newLine;
-//						modified = true;
-//					}
-//				}
 //
 //				// Check for recurrence
 //				if (lineContents.contains('[repeat::')) {
@@ -79,21 +56,20 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 //				}
 //			});
 //
-//			if (modified) {
-//				this.app.vault.modify(file, fileContents.join('\n'));
-//			}
-    }
 
     private fun loadSettings() {
         // TODO: implement exmaple of versioned settings
         loadData().then {result ->
-            val loadedSettings = NeuralLinkPluginSettings.fromJson(result as String)
-            console.log("loadedSettings: ", loadedSettings)
-            // TODO Replace with a version check
-            // Right now if fromJson fails the default settings will be used
-            if (loadedSettings.taskRemoveRegex != "") {
-                console.log("Saving loaded settings")
-                settings = loadedSettings
+            if (result != null) {
+                // TODO ClassCastException here if there are no settings available? Maybe "result as String"?
+                val loadedSettings = NeuralLinkPluginSettings.fromJson(result as String)
+                console.log("loadedSettings: ", loadedSettings)
+                // TODO Replace with a version check
+                // Right now if fromJson fails the default settings will be used
+                if (loadedSettings.taskRemoveRegex != "") {
+                    console.log("Saving loaded settings")
+                    settings = loadedSettings
+                }
             }
         }
     }
