@@ -1,10 +1,16 @@
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
 import org.w3c.dom.HTMLElement
+import service.SettingsService
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class NeuralLinkPluginSettingsTab(override var app: App, var plugin: NeuralLinkPlugin) : PluginSettingTab(app, plugin) {
+class NeuralLinkPluginSettingsTab(
+    override var app: App,
+    var plugin: NeuralLinkPlugin,
+    private val settingsService: SettingsService,
+    private val state: NeuralLinkState) : PluginSettingTab(app, plugin)
+{
     override fun display() {
         while(containerEl.firstChild != null) {
             containerEl.lastChild?.let { containerEl.removeChild(it) }
@@ -20,17 +26,12 @@ class NeuralLinkPluginSettingsTab(override var app: App, var plugin: NeuralLinkP
             .setDesc("Contents to remove from task on completion")
             .addText { text ->
                 text.setPlaceholder("Regex")
-                    .setValue(plugin.settings.taskRemoveRegex)
+                    .setValue(state.settings.taskRemoveRegex)
                     .onChange { value ->
                         console.log("Regex: $value")
-                        plugin.settings.taskRemoveRegex = value
-                        saveSettings()
+                        state.settings.taskRemoveRegex = value
+                        plugin.saveData(settingsService.toJson())
                     }
             }
-    }
-
-    private fun saveSettings() {
-        console.log("saveSettings: ", NeuralLinkPluginSettings.toJson(plugin.settings))
-        plugin.saveData(NeuralLinkPluginSettings.toJson(plugin.settings))
     }
 }

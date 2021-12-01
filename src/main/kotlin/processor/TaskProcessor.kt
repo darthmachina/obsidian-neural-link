@@ -1,9 +1,10 @@
-package events
+package processor
 
 /**
  * Interface for doing something to a task.
  *
- * Right now the plan is that only main tasks will get passed into the processor.
+ * TODO Right now only main tasks are passed into the `processTask` method. That will be expanded to include all
+ *  indented items in the future.
  */
 interface TaskProcessor {
     /**
