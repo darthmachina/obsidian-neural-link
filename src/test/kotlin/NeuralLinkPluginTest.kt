@@ -23,7 +23,7 @@ class TestClient {
                 get() = ""
                 set(value) {}
         }
-        val plugin = KotlinPlugin(App(), manifest)
+        val plugin = NeuralLinkPlugin(App(), manifest)
         plugin.onload()
 
     }

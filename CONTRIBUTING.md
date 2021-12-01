@@ -1,10 +1,8 @@
 # Contributing
-I am definitely willing to accept help in implementing missing features of the API. Also, if anyone has suggestions for improvements I would love to hear them (better patterns, structure, etc).
+I am definitely willing to accept help in developing this project (issues, pull requests, etc).
 
 ## Development
-Developing this is just like developing an Obsidian Plugin. The Gradle task `browserWebpack` is the main task to create a build suitable for use in Obsidian, and is the that is used most often.
-
-I do have the default KotlinJS task `browserTest` disabled as that starts a web browser for testing, which is not useful for Obsidian Plugins. This does seem to fully disable running any tests, which is something that I plan on looking into in the short term.
+The Gradle task `browserWebpack` is the main task to create a build suitable for use in Obsidian.
 
 ### My Workflow
 1. `./gradlew browserWebpack` will create the distribution files for use in Obsidian

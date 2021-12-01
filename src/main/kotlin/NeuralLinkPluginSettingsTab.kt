@@ -1,11 +1,10 @@
-import kotlinx.dom.clear
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
 import org.w3c.dom.HTMLElement
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class KotlinPluginSettingsTab(override var app: App, var plugin: KotlinPlugin) : PluginSettingTab(app, plugin) {
+class NeuralLinkPluginSettingsTab(override var app: App, var plugin: NeuralLinkPlugin) : PluginSettingTab(app, plugin) {
     override fun display() {
         while(containerEl.firstChild != null) {
             containerEl.lastChild?.let { containerEl.removeChild(it) }
@@ -31,7 +30,7 @@ class KotlinPluginSettingsTab(override var app: App, var plugin: KotlinPlugin) :
     }
 
     private fun saveSettings() {
-        console.log("saveSettings: ", KotlinPluginSettings.toJson(plugin.settings))
-        plugin.saveData(KotlinPluginSettings.toJson(plugin.settings))
+        console.log("saveSettings: ", NeuralLinkPluginSettings.toJson(plugin.settings))
+        plugin.saveData(NeuralLinkPluginSettings.toJson(plugin.settings))
     }
 }

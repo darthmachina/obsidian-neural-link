@@ -1,3 +1,3 @@
 
-rootProject.name = "obsidian-kotlin-plugin"
+rootProject.name = "obsidian-neural-link"
 
