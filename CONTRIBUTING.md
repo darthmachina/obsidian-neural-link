@@ -4,7 +4,7 @@ I am definitely willing to accept help in developing this project (issues, pull 
 ## Development
 The Gradle task `browserWebpack` is the main task to create a build suitable for use in Obsidian.
 
-### My Workflow
+### My Dev Workflow
 1. `./gradlew browserWebpack` will create the distribution files for use in Obsidian
 2. symlink the `build/distributions` to the Obsidian plugins folder.
     - e.g. `ln -s ~/projects/obsidian-kotlin-plugin/build/distrubitions /vault_location/.obsidian/plugins/kotlin-plugin`
