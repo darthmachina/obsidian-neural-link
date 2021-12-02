@@ -11,13 +11,19 @@ repositories {
 }
 
 dependencies {
+    val kotlinVersion = "1.6.0"
+    val kotlinxHtmlVersion = "0.7.3"
+
     implementation(npm("obsidian", "0.12.17"))
 
-    val kotlinxHtmlVersion = "0.7.3"
     implementation("org.jetbrains.kotlinx:kotlinx-html-js:$kotlinxHtmlVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxHtmlVersion")
 
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.6.0-RC")
+
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }
 
 kotlin {
@@ -27,6 +33,8 @@ kotlin {
             useCommonJs()
             commonWebpackConfig {
                 cssSupport.enabled = true
+                // Set DEVELOPMENT mode for webpack to get better messaging when testing
+                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
             }
             webpackTask {
                 output.libraryTarget = "commonjs"

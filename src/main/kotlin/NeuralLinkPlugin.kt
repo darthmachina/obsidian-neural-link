@@ -1,31 +1,36 @@
+import event.FileModifiedEvent
+import service.SettingsService
+
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("default")
-class NeuralLinkPlugin(app: App, manifest: PluginManifest) : Plugin(app, manifest) {
-    var settings : NeuralLinkPluginSettings = NeuralLinkPluginSettings.default()
+class NeuralLinkPlugin(override var app: App, override var manifest: PluginManifest) : Plugin(app, manifest) {
+    private val state = NeuralLinkState(NeuralLinkPluginSettings.default())
+
+    // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
+    // SERVICES
+    private val settingsService = SettingsService(state)
+
+    // EVENTS
+    private val fileModifiedEvent = FileModifiedEvent(this, state)
 
     override fun onload() {
         loadSettings()
 
+        this.registerEvent(this.app.metadataCache.on("changed") { file ->
+            fileModifiedEvent.processEvent(file)
+        })
+
         // Add Settings tab
-        addSettingTab(NeuralLinkPluginSettingsTab(app, this))
-        console.log("KotlinPlugin onload()")
+        addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, state))
+        console.log("NeuralLinkPlugin onload()")
     }
 
     override fun onunload() {
-        console.log("KotlinPlugin onunload()")
+        console.log("NeuralLinkPlugin onunload()")
     }
 
     private fun loadSettings() {
-        // TODO: implement exmaple of versioned settings
-        loadData().then {result ->
-            val loadedSettings = NeuralLinkPluginSettings.fromJson(result as String)
-            console.log("loadedSettings: ", loadedSettings)
-            // TODO Replace with a version check
-            if (loadedSettings.mySetting != "") {
-                console.log("Saving loaded settings")
-                settings = loadedSettings
-            }
-        }
+        loadData().then { result -> settingsService.loadFromJson(result) }
     }
 }
