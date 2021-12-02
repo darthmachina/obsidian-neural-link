@@ -5,19 +5,11 @@ data class NeuralLinkPluginSettings(
     var taskRemoveRegex: String
 ) {
     companion object {
-        fun default() : NeuralLinkPluginSettings{
+        fun default(): NeuralLinkPluginSettings {
             return NeuralLinkPluginSettings(
                 1,
                 """#kanban/[\w-]+(\s|$)"""
             )
-        }
-
-        fun toJson(settings: NeuralLinkPluginSettings) : String {
-            return JSON.stringify(settings)
-        }
-
-        fun fromJson(json: String) : NeuralLinkPluginSettings {
-            return JSON.parse(json)
         }
     }
 }

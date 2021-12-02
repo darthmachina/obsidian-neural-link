@@ -7,13 +7,14 @@ import processor.RemoveRegexFromTask
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class FileModifiedEvent(plugin: NeuralLinkPlugin, private val state: NeuralLinkState) : Event(plugin) {
+class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState) : Event(plugin) {
+    @Suppress("NON_EXPORTABLE_TYPE")
     val taskProcessors = listOf(RemoveRegexFromTask(state))
 
     override fun processEvent(context: Any) {
         console.log("processEvent: ", context)
         if (context is TFile) {
-            var modified = false;
+            var modified = false
             val fileContents = mutableListOf<String>()
             plugin.app.vault.read(context).then { contents ->
                 fileContents.addAll(contents.split('\n'))
@@ -27,6 +28,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, private val state: NeuralLinkS
                         }
 
                         if (lineContents != fileContents[listItem.position.start.line.toInt()]) {
+                            fileContents[listItem.position.start.line.toInt()] = lineContents
                             // Only mark as modified if the line was changed in some way
                             modified = true
                         }
@@ -34,7 +36,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, private val state: NeuralLinkS
                 }
 
                 if (modified) {
-                    plugin.app.vault.modify(context, fileContents.joinToString("\n"));
+                    plugin.app.vault.modify(context, fileContents.joinToString("\n"))
                 }
             }
         }

@@ -5,7 +5,7 @@ import NeuralLinkState
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class SettingsService(val state: NeuralLinkState) {
+class SettingsService(private val state: NeuralLinkState) {
     /**
      * Processes the results of a `loadData()` call.
      *
@@ -17,26 +17,20 @@ class SettingsService(val state: NeuralLinkState) {
      *
      * @return A fully populated `NeuralLinkPluginSettings` object at the current version.
      */
-    fun loadFromJson(json: Any?) : NeuralLinkPluginSettings {
-        // TODO: implement exmaple of versioned settings
+    fun loadFromJson(json: Any?): NeuralLinkPluginSettings {
+        // TODO implement example of versioned settings
         if (json == null) {
             state.settings = NeuralLinkPluginSettings.default()
         } else {
-            // TODO ClassCastException here if there are no settings available? Maybe "result as String"?
-            val loadedSettings = NeuralLinkPluginSettings.fromJson(json as String)
+            val loadedSettings = JSON.parse<NeuralLinkPluginSettings>(json as String)
             console.log("loadedSettings: ", loadedSettings)
-            // TODO Replace with a version check
-            // Right now if fromJson fails the default settings will be used
-            if (loadedSettings.taskRemoveRegex != "") {
-                console.log("Returning loaded settings")
-                state.settings = loadedSettings
-            }
+            state.settings = loadedSettings
         }
 
         return state.settings
     }
 
-    fun toJson() : String {
+    fun toJson(): String {
         val json = JSON.stringify(state.settings)
         console.log("saveSettings: ", json)
         return json

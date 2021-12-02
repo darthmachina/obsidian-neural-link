@@ -7,12 +7,12 @@ import service.SettingsService
 @JsExport
 class NeuralLinkPluginSettingsTab(
     override var app: App,
-    var plugin: NeuralLinkPlugin,
+    private var plugin: NeuralLinkPlugin,
     private val settingsService: SettingsService,
-    private val state: NeuralLinkState) : PluginSettingTab(app, plugin)
-{
+    private val state: NeuralLinkState
+) : PluginSettingTab(app, plugin) {
     override fun display() {
-        while(containerEl.firstChild != null) {
+        while (containerEl.firstChild != null) {
             containerEl.lastChild?.let { containerEl.removeChild(it) }
         }
 
@@ -20,7 +20,7 @@ class NeuralLinkPluginSettingsTab(
         createTaskTextRemovalRegexSetting(containerEl)
     }
 
-    private fun createTaskTextRemovalRegexSetting(containerEl: HTMLElement) : Setting {
+    private fun createTaskTextRemovalRegexSetting(containerEl: HTMLElement): Setting {
         return Setting(containerEl)
             .setName("Task Text Removal Regex")
             .setDesc("Contents to remove from task on completion")

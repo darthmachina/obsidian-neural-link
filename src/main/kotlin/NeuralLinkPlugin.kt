@@ -17,8 +17,8 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     override fun onload() {
         loadSettings()
 
-        this.registerEvent(this.app.metadataCache.on("changed") {
-            file -> fileModifiedEvent.processEvent(file)
+        this.registerEvent(this.app.metadataCache.on("changed") { file ->
+            fileModifiedEvent.processEvent(file)
         })
 
         // Add Settings tab
@@ -31,38 +31,6 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun loadSettings() {
-        loadData().then {result ->
-            settingsService.loadFromJson(result)
-        }
+        loadData().then { result -> settingsService.loadFromJson(result) }
     }
-
-//			let modified = false;
-//			const fileContents = await (await this.app.vault.read(file)).split('\n');
-//			const fileListItems  = await this.app.metadataCache.getFileCache(file).listItems;
-//			console.log('------------------------')
-//			fileListItems.forEach((item, index) => {
-//				const lineContents = fileContents[item.position.start.line];
-//				console.log(`listItem data: [position: ${item.position.start.line}/${item.position.end.line}, task: ${item.task}, parent: ${item.parent}]`);
-//				console.log(`  text for listItem: ${lineContents}`)
-//
-//				// Check for recurrence
-//				if (lineContents.contains('[repeat::')) {
-//					const repeatRegex = /\[repeat::[\s]*([\w\s]+)(!)?\]/;
-//					const dueRegex = /\[due::[\s]*([\w\s:-]+)\]/;
-//					const dueFormat = 'YYYY-MM-DD HH:mm:SS';
-//
-//					const repeatString = new RegExp(repeatRegex, 'g').exec(lineContents);
-//					const dueString = new RegExp(dueRegex, 'g').exec(lineContents);
-//					const fromCompletionDate = repeatString[2] === '!';
-//					console.log(`  repeatString: ${repeatString[1]}, dueString: ${dueString[1]}, from: ${repeatString[2]}`);
-//
-//					const nldatesPlugin = this.app.plugins.getPlugin("nldates-obsidian");
-//					const parsedResult = nldatesPlugin.parseDate(repeatString[1]);
-//					console.log(`  parsedResult: ${parsedResult.date}`);
-//					if (fromCompletionDate) {
-//						console.log(`  dateFromCompletion: ${parsedResult.moment.from('2021-11-20')}`);
-//					}
-//				}
-//			});
-//
 }
