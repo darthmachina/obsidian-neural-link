@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "io.github.darthmachina"
-version = "0.1.0"
+version = "0.2.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -34,7 +34,7 @@ kotlin {
             commonWebpackConfig {
                 cssSupport.enabled = true
                 // Set DEVELOPMENT mode for webpack to get better messaging when testing
-                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
+//                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
             }
             webpackTask {
                 output.libraryTarget = "commonjs"
