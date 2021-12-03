@@ -34,7 +34,7 @@ kotlin {
             commonWebpackConfig {
                 cssSupport.enabled = true
                 // Set DEVELOPMENT mode for webpack to get better messaging when testing
-//                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
+                mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
             }
             webpackTask {
                 output.libraryTarget = "commonjs"
