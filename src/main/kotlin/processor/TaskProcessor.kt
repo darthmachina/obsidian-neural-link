@@ -10,5 +10,5 @@ interface TaskProcessor {
     /**
      * Performs some work on a task and returns the updated task.
      */
-    fun processTask(task: String): String
+    fun processTask(task: String, fileContents : List<String>, line: Int): String
 }

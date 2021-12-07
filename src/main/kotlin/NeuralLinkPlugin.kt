@@ -11,7 +11,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
     // SERVICES
     private val settingsService = SettingsService(state)
-    private val taskService = TaskService()
+    private val taskService = TaskService(this)
 
     // EVENTS
     private val fileModifiedEvent = FileModifiedEvent(this, state, taskService)
@@ -31,9 +31,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun testStuff() {
-        console.log(taskService.parseRecurring("monthly!: 3"))
-        console.log(taskService.parseRecurring("daily: 1"))
-        console.log(taskService.parseRecurring("jan: 24"))
+        console.log(taskService.getNextRecurringTask("Test recurring item @due(2021-01-01T01:00:00) [recur:: monthly: 2]"))
     }
 
     override fun onunload() {

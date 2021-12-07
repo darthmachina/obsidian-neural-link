@@ -34,7 +34,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, taskSe
                         var lineContents = fileContents[listItem.position.start.line.toInt()]
                         // Pass the task line through all the configured TaskProcessors
                         taskProcessors.forEach { processor ->
-                            lineContents = processor.processTask(lineContents)
+                            lineContents = processor.processTask(lineContents, fileContents, listItem.position.start.line.toInt())
                         }
 
                         if (lineContents != fileContents[listItem.position.start.line.toInt()]) {
