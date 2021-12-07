@@ -1,4 +1,5 @@
 import event.FileModifiedEvent
+import grammar.RecurringGrammar
 import service.SettingsService
 import service.TaskService
 
@@ -26,6 +27,13 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         // Add Settings tab
         addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, state))
         console.log("NeuralLinkPlugin onload()")
+    }
+
+    private fun testStuff() {
+        val grammar = RecurringGrammar()
+        console.log(grammar.parse("monthly!: 3"))
+        console.log(grammar.parse("daily: 1"))
+        console.log(grammar.parse("jan: 24"))
     }
 
     override fun onunload() {
