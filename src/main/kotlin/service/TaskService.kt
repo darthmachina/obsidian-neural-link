@@ -19,6 +19,7 @@ class TaskService(plugin: NeuralLinkPlugin) {
     private val specificValues = listOf("month", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
     private val spanRegex = spanValues.plus(specificValues).joinToString("|")
     private val recurItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
+    private val completedTaskRegex = Regex("""- \[[xX]\] """)
 
     fun isTaskRecurring(task: String) : Boolean {
         return recurringRequires.all { task.contains(it) }
@@ -26,7 +27,9 @@ class TaskService(plugin: NeuralLinkPlugin) {
 
     fun getNextRecurringTask(task: String) : String {
         val nextDate = getNextRecurDate(task)
-        return task.replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
+        return task
+            .replace(completedTaskRegex, "- [ ] ")
+            .replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
     }
 
     fun removeRecurText(task: String) : String {

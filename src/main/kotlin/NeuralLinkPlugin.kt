@@ -26,12 +26,6 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         // Add Settings tab
         addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, state))
         console.log("NeuralLinkPlugin onload()")
-
-        testStuff()
-    }
-
-    private fun testStuff() {
-        console.log(taskService.getNextRecurringTask("Test recurring item @due(2021-01-01T01:00:00) [recur:: monthly: 2]"))
     }
 
     override fun onunload() {
