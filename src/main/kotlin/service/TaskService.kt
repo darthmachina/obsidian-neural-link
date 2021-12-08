@@ -1,6 +1,5 @@
 package service
 
-import NeuralLinkPlugin
 import kotlin.js.Date
 import moment.moment
 
@@ -21,6 +20,7 @@ class TaskService() {
     private val specificValues = listOf("month", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
     private val spanRegex = spanValues.plus(specificValues).joinToString("|")
     private val repeatItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
+    @Suppress("RegExpRedundantEscape")
     private val completedTaskRegex = Regex("""- \[[xX]\] """)
 
     /**
