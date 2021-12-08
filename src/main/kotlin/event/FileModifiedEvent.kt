@@ -5,6 +5,7 @@ import NeuralLinkState
 import TFile
 import processor.RecurringProcessor
 import processor.RemoveRegexFromTask
+import service.ModifiedTask
 import service.TaskService
 
 /**
@@ -31,14 +32,19 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, taskSe
                 val fileListItems = plugin.app.metadataCache.getFileCache(context)?.listItems ?: arrayOf()
                 fileListItems.forEach { listItem ->
                     if (listItem.task?.uppercase() == "X") {
-                        var lineContents = fileContents[listItem.position.start.line.toInt()]
+                        var lineContents = ModifiedTask(fileContents[listItem.position.start.line.toInt()])
                         // Pass the task line through all the configured TaskProcessors
                         taskProcessors.forEach { processor ->
+                            console.log("taskProcessors lineContents: ", lineContents.original)
                             lineContents = processor.processTask(lineContents)
                         }
 
-                        if (lineContents != fileContents[listItem.position.start.line.toInt()]) {
-                            fileContents[listItem.position.start.line.toInt()] = lineContents
+                        if (lineContents.original != fileContents[listItem.position.start.line.toInt()]
+                            || lineContents.before.isNotEmpty()
+                            || lineContents.after.isNotEmpty()
+                        ) {
+                            val totalLines = lineContents.before.plus(lineContents.original).plus(lineContents.after)
+                            fileContents[listItem.position.start.line.toInt()] = totalLines.joinToString("\n")
                             modified = true
                         }
                     }

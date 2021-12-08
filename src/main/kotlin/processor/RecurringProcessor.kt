@@ -1,18 +1,18 @@
 package processor
 
 import NeuralLinkState
+import service.ModifiedTask
 import service.TaskService
 
 class RecurringProcessor(state: NeuralLinkState, private val taskService: TaskService) : TaskProcessor {
-    override fun processTask(task: String): String {
-        return if (taskService.isTaskRepeating(task)) {
-            val newTask = taskService.getNextRepeatingTask(task)
+    override fun processTask(task: ModifiedTask): ModifiedTask {
+        if (taskService.isTaskRepeating(task.original)) {
+            val newTask = taskService.getNextRepeatingTask(task.original)
             console.log("New task: $newTask")
-            // Return the newTask above the current task (string split by a newline)
-            "$newTask\n${taskService.removeRepeatText(task)}"
-        } else {
-            task
+            task.before.add(newTask)
+            task.original = taskService.removeRepeatText(task.original)
         }
+        return task
     }
 
     override fun getPriority(): Int {

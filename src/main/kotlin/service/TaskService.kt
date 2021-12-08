@@ -6,10 +6,12 @@ import moment.moment
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class TaskService(plugin: NeuralLinkPlugin) {
-    private val dueDateFormat = "yyyy-MM-DDTHH:mm:ss"
+class TaskService() {
+    private val dueDateFormat = "yyyy-MM-DD"
 
-    private val dueDateRegex = Regex("""@due\(([0-9\-T:]*)\)""")
+    private val taskPaperTagDateFormat = """\(([0-9\-T:]*)\)"""
+    private val dueDateRegex = Regex("""@due$taskPaperTagDateFormat""")
+    private val completedDateRegex = Regex("""@completed$taskPaperTagDateFormat""")
 //    private val isRecurringTaskRegex = Regex("""((@due.*\[repeat::)|(\[repeat::.*@due))""")
     private val repeatingRequires = listOf("@due(", "[repeat::")
     @Suppress("RegExpRedundantEscape")
@@ -29,12 +31,24 @@ class TaskService(plugin: NeuralLinkPlugin) {
     }
 
     /**
-     * Gets the repeated task to the given task. Will remove the
+     * Gets the repeated task to the given task. Will do the following:
+     * 1. Remove the @completed tag that CardBoard adds when a task is completed
+     * 2. Unchecks the checkbox
+     * 3. Replaces the due date with the next date in the cycle
      */
     fun getNextRepeatingTask(task: String) : String {
         val nextDate = getNextRepeatDate(task)
+        console.log("getNextRepeatingTask for: ", task)
+        var nextTaskVersion = task.replace(completedTaskRegex, "- [ ] ")
+        console.log("\tafter completedTaskRegex: ", nextTaskVersion)
+        nextTaskVersion = task.replace(completedDateRegex, "")
+        console.log("\tafter completedDateRegex: ", nextTaskVersion)
+        nextTaskVersion = task.replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
+        console.log("\tafter dueDateRegex: ", nextTaskVersion)
+
         return task
             .replace(completedTaskRegex, "- [ ] ")
+            .replace(completedDateRegex, "")
             .replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
     }
 
@@ -117,3 +131,7 @@ class TaskService(plugin: NeuralLinkPlugin) {
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 data class RepeatItem(val type: String, val span: String, val fromComplete: Boolean, val amount: Int)
+
+data class ModifiedTask(var original: String, val before: MutableList<String>, val after: MutableList<String>) {
+    constructor(original: String) : this(original, mutableListOf(), mutableListOf())
+}
