@@ -10,84 +10,89 @@ class TaskService(plugin: NeuralLinkPlugin) {
     private val dueDateFormat = "yyyy-MM-DDTHH:mm:ss"
 
     private val dueDateRegex = Regex("""@due\(([0-9\-T:]*)\)""")
-//    private val isRecurringTaskRegex = Regex("""((@due.*\[recur::)|(\[recur::.*@due))""")
-    private val recurringRequires = listOf("@due(", "[recur::")
+//    private val isRecurringTaskRegex = Regex("""((@due.*\[repeat::)|(\[repeat::.*@due))""")
+    private val repeatingRequires = listOf("@due(", "[repeat::")
     @Suppress("RegExpRedundantEscape")
-    private val recurTextRegex = Regex("""\[recur:: ([\d\w: ]*)\]""")
+    private val repeatTextRegex = Regex("""\[repeat:: ([\d\w!: ]*)\]""")
 
     private val spanValues = listOf("daily", "weekly", "monthly", "yearly")
     private val specificValues = listOf("month", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
     private val spanRegex = spanValues.plus(specificValues).joinToString("|")
-    private val recurItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
+    private val repeatItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
     private val completedTaskRegex = Regex("""- \[[xX]\] """)
 
-    fun isTaskRecurring(task: String) : Boolean {
-        return recurringRequires.all { task.contains(it) }
+    /**
+     * Detects whether the given task is a repeating task
+     */
+    fun isTaskRepeating(task: String) : Boolean {
+        return repeatingRequires.all { task.contains(it) }
     }
 
-    fun getNextRecurringTask(task: String) : String {
-        val nextDate = getNextRecurDate(task)
+    /**
+     * Gets the repeated task to the given task. Will remove the
+     */
+    fun getNextRepeatingTask(task: String) : String {
+        val nextDate = getNextRepeatDate(task)
         return task
             .replace(completedTaskRegex, "- [ ] ")
             .replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
     }
 
-    fun removeRecurText(task: String) : String {
-        return task.replace(recurTextRegex, "")
+    fun removeRepeatText(task: String) : String {
+        return task.replace(repeatTextRegex, "")
     }
 
-    private fun getNextRecurDate(task: String) : Date {
-        // If there isn't a due date and recurring note then there is no next date
-        if (!isTaskRecurring(task))
-            throw IllegalArgumentException("Task requires a due date and recurring note to calculate next date\n\t$task")
+    private fun getNextRepeatDate(task: String) : Date {
+        // If there isn't a due date and repeating note then there is no next date
+        if (!isTaskRepeating(task))
+            throw IllegalArgumentException("Task requires a due date and repeating note to calculate next date\n\t$task")
 
+        val repeatMatches = repeatTextRegex.find(task) ?: throw IllegalStateException("No match found for repeating note")
+        console.log("repeatMatches: ", repeatMatches)
+        val repeatItem = parseRepeating(repeatMatches.groupValues[1])
 
-        val recurMatches = recurTextRegex.find(task) ?: throw IllegalStateException("No match found for recurring note")
-        console.log("recurMatches: ", recurMatches)
-        val recurItem = parseRecurring(recurMatches.groupValues[1])
-
-        val fromDate = if (recurItem.fromComplete) Date() else getDueDateFromTask(task)
+        val fromDate = if (repeatItem.fromComplete) Date() else getDueDateFromTask(task)
         val currentYear = fromDate.getFullYear()
         val currentMonth = fromDate.getMonth()
         val currentDay = fromDate.getDate()
 
-        return when (recurItem.type) {
+        return when (repeatItem.type) {
             "SPAN" ->
-                when (recurItem.span) {
-                    "daily" -> Date(currentYear, currentMonth, currentDay + recurItem.amount, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    "weekly" -> Date(currentYear, currentMonth, currentDay + (recurItem.amount * 7), fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    "monthly" -> Date(currentYear, currentMonth + recurItem.amount, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    "yearly" -> Date(currentYear + recurItem.amount, currentMonth, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    else -> throw IllegalStateException("Recur span ${recurItem.span} is not valid")
+                when (repeatItem.span) {
+                    "daily" -> Date(currentYear, currentMonth, currentDay + repeatItem.amount, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    "weekly" -> Date(currentYear, currentMonth, currentDay + (repeatItem.amount * 7), fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    "monthly" -> Date(currentYear, currentMonth + repeatItem.amount, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    "yearly" -> Date(currentYear + repeatItem.amount, currentMonth, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    else -> throw IllegalStateException("Recur span ${repeatItem.span} is not valid")
                 }
 
             "SPECIFIC" ->
-                when (recurItem.span) {
-                    "month" -> Date(currentYear, currentMonth + 1, recurItem.amount, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                when (repeatItem.span) {
+                    "month" -> Date(currentYear, currentMonth + 1, repeatItem.amount, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
                     else -> Date(currentYear + 1, currentMonth, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
                 }
-            else -> throw IllegalStateException("Recurring type ${recurItem.type} is not valid")
+            else -> throw IllegalStateException("Recurring type ${repeatItem.type} is not valid")
         }
     }
 
     /**
-     * Parse out the recurring text into a RecurItem object
+     * Parse out the repeating text into a RepeatItem object
      */
-    private fun parseRecurring(recurText: String) : RecurItem {
-        console.log("recurItemRegex: for recurText", recurItemRegex, recurText)
-        val matches = recurItemRegex.find(recurText)
+    private fun parseRepeating(repeatText: String) : RepeatItem {
+        console.log("repeatItemRegex: for repeatText", repeatItemRegex, repeatText)
+        val matches = repeatItemRegex.find(repeatText)
         console.log("matches: ", matches)
         if (matches?.groupValues == null) {
-            return RecurItem("ERROR", "", false, 0)
+            return RepeatItem("ERROR", "", false, 0)
         }
 
         var index = 1
         val type = matches.groupValues[index++]
         val fromComplete = matches.groupValues[index++] == "!"
         val amount = matches.groupValues[index].toInt()
-        val recurType = if (type in spanValues) "SPAN" else "SPECIFIC"
+        val repeatType = if (type in spanValues) "SPAN" else "SPECIFIC"
 
-        return RecurItem(recurType, type, fromComplete, amount)
+        return RepeatItem(repeatType, type, fromComplete, amount)
     }
 
     /**
@@ -111,4 +116,4 @@ class TaskService(plugin: NeuralLinkPlugin) {
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-data class RecurItem(val type: String, val span: String, val fromComplete: Boolean, val amount: Int)
+data class RepeatItem(val type: String, val span: String, val fromComplete: Boolean, val amount: Int)
