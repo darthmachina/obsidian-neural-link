@@ -18,7 +18,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, taskSe
     val taskProcessors = listOf(
         RemoveRegexFromTask(state),
         RecurringProcessor(state, taskService)
-    )
+    ).sortedBy { it.getPriority() }
 
     override fun processEvent(context: Any) {
         console.log("processEvent: ", context)
@@ -34,7 +34,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, taskSe
                         var lineContents = fileContents[listItem.position.start.line.toInt()]
                         // Pass the task line through all the configured TaskProcessors
                         taskProcessors.forEach { processor ->
-                            lineContents = processor.processTask(lineContents, fileContents, listItem.position.start.line.toInt())
+                            lineContents = processor.processTask(lineContents)
                         }
 
                         if (lineContents != fileContents[listItem.position.start.line.toInt()]) {

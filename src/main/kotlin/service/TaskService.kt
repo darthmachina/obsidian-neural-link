@@ -20,18 +20,22 @@ class TaskService(plugin: NeuralLinkPlugin) {
     private val spanRegex = spanValues.plus(specificValues).joinToString("|")
     private val recurItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
 
-    fun writeTask(task: String, fileContents: MutableList<String>, line: Int) {
-        fileContents.add(line, "- [ ] $task")
+    fun isTaskRecurring(task: String) : Boolean {
+        return recurringRequires.all { task.contains(it) }
     }
 
-    fun getNextRecurringTask(task : String) : String {
+    fun getNextRecurringTask(task: String) : String {
         val nextDate = getNextRecurDate(task)
         return task.replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
     }
 
+    fun removeRecurText(task: String) : String {
+        return task.replace(recurTextRegex, "")
+    }
+
     private fun getNextRecurDate(task: String) : Date {
         // If there isn't a due date and recurring note then there is no next date
-        if (!recurringRequires.all { task.contains(it) })
+        if (!isTaskRecurring(task))
             throw IllegalArgumentException("Task requires a due date and recurring note to calculate next date\n\t$task")
 
 
