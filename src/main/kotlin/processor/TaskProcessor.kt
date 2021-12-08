@@ -1,5 +1,7 @@
 package processor
 
+import service.ModifiedTask
+
 /**
  * Interface for doing something to a task.
  *
@@ -10,5 +12,7 @@ interface TaskProcessor {
     /**
      * Performs some work on a task and returns the updated task.
      */
-    fun processTask(task: String): String
+    fun processTask(task: ModifiedTask): ModifiedTask
+
+    fun getPriority() : Int
 }
