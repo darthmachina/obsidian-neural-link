@@ -30,25 +30,30 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, taskSe
             plugin.app.vault.read(context).then { contents ->
                 fileContents.addAll(contents.split('\n'))
                 val fileListItems = plugin.app.metadataCache.getFileCache(context)?.listItems ?: arrayOf()
-                fileListItems.forEach { listItem ->
-                    if (listItem.task?.uppercase() == "X") {
-                        var lineContents = ModifiedTask(fileContents[listItem.position.start.line.toInt()])
-                        // Pass the task line through all the configured TaskProcessors
-                        taskProcessors.forEach { processor ->
-                            console.log("taskProcessors lineContents: ", lineContents.original)
-                            lineContents = processor.processTask(lineContents)
-                        }
+                fileListItems
+                    .filter { item ->
+                        item.parent.toInt() < 0
+                    }
+                    .forEach { listItem ->
+                        if (listItem.task?.uppercase() == "X") {
+                            var lineContents = ModifiedTask(fileContents[listItem.position.start.line.toInt()])
+                            // Pass the task line through all the configured TaskProcessors
+                            taskProcessors.forEach { processor ->
+                                console.log("taskProcessors lineContents: ", lineContents.original)
+                                lineContents = processor.processTask(lineContents)
+                            }
 
-                        if (lineContents.original != fileContents[listItem.position.start.line.toInt()]
-                            || lineContents.before.isNotEmpty()
-                            || lineContents.after.isNotEmpty()
-                        ) {
-                            val totalLines = lineContents.before.plus(lineContents.original).plus(lineContents.after)
-                            fileContents[listItem.position.start.line.toInt()] = totalLines.joinToString("\n")
-                            modified = true
+                            if (lineContents.original != fileContents[listItem.position.start.line.toInt()]
+                                || lineContents.before.isNotEmpty()
+                                || lineContents.after.isNotEmpty()
+                            ) {
+                                val totalLines =
+                                    lineContents.before.plus(lineContents.original).plus(lineContents.after)
+                                fileContents[listItem.position.start.line.toInt()] = totalLines.joinToString("\n")
+                                modified = true
+                            }
                         }
                     }
-                }
 
                 if (modified) {
                     plugin.app.vault.modify(context, fileContents.joinToString("\n"))
