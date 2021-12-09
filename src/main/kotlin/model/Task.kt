@@ -11,11 +11,14 @@ package model
  * - subtasks : List of indented tasks under this task
  * - notes : Indented list items that aren't tasks
  */
+@Suppress("NON_EXPORTABLE_TYPE") // List is flagged for this but is valid
+@OptIn(ExperimentalJsExport::class)
+@JsExport
 data class Task(
     val original: String,
     val description: String,
-    val tags: List<String>,
-    val metadata: List<String>,
+    val tags: List<String>, // TODO Need a Tag class?
+    val metadata: List<String>, // TODO Create DataviewField class
     val subtasks: List<Task>,
     val notes: List<String>
 )
