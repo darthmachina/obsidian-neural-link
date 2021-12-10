@@ -20,7 +20,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxHtmlVersion")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.6.0-RC")
 
     implementation("io.sunland:kotlin-moment:2.29.1-pre.14-kotlin-1.5.31")

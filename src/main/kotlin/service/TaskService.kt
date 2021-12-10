@@ -1,17 +1,21 @@
 package service
 
+import ListItemCache
+import NeuralLinkPlugin
+import TFile
+import Task
+import kotlinx.coroutines.await
 import kotlin.js.Date
 import moment.moment
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class TaskService() {
+class TaskService(val plugin: NeuralLinkPlugin) {
     private val dueDateFormat = "yyyy-MM-DD"
 
     private val taskPaperTagDateFormat = """\(([0-9\-T:]*)\)"""
     private val dueDateRegex = Regex("""@due$taskPaperTagDateFormat""")
     private val completedDateRegex = Regex("""@completed$taskPaperTagDateFormat""")
-//    private val isRecurringTaskRegex = Regex("""((@due.*\[repeat::)|(\[repeat::.*@due))""")
     private val repeatingRequires = listOf("@due(", "[repeat::")
     @Suppress("RegExpRedundantEscape")
     private val repeatTextRegex = Regex("""\[repeat:: ([\d\w!: ]*)\]""")
@@ -22,6 +26,57 @@ class TaskService() {
     private val repeatItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
     @Suppress("RegExpRedundantEscape")
     private val completedTaskRegex = Regex("""- \[[xX]\] """)
+
+    /**
+     * Builds up a model of Tasks based on the file contents.
+     *
+     * Parameters are used instead of the TFile directly to simplify Promise usage, since vault.read()
+     * return a Promise and this method returns an already built model. This method can now be called
+     * within a Promise.then block with no issues.
+     *
+     * @param fileContents The contents of the file with each item being a line (file is split on newline)
+     * @param listItems List of ListItemCache objects representing the list items in the file
+     *
+     * TODO Support 'root' tasks that are children of regular list items
+     * TODO Support more than one child level (subtask of a subtask)
+     */
+    @Suppress("NON_EXPORTABLE_TYPE")
+    fun buildTaskModel(fileContents: List<String>, listItems: List<ListItemCache>) : Map<Int,Task> {
+        val taskList = mutableMapOf<Int,Task>() // Map of position -> Task
+
+        listItems.forEach { listItem ->
+            val lineContents = fileContents[listItem.position.start.line.toInt()]
+            if (listItem.parent.toInt() < 0) {
+                // Root level list item
+                if (listItem.task != null) {
+                    // Only care about root items that are tasks
+                    val task = createTask(listItem, lineContents)
+                    taskList[listItem.position.start.line.toInt()] = task
+                }
+            } else {
+                val parentTask = taskList[listItem.parent.toInt()]!! // TODO Handle error better
+                // Child list item
+                if (listItem.task == null) {
+                    // Is a note, find the parent task and add this line to the notes list
+                    parentTask.notes.add("")
+                } else {
+                    // Is a task, construct task and find the parent task to add to subtasks list
+                    parentTask.subtasks.add(createTask(listItem, lineContents))
+                }
+            }
+        }
+
+        return taskList
+    }
+
+    private fun createTask(listItem: ListItemCache, text: String) : Task {
+        // Pull out due date
+        val due = if (text.contains("@due(")) getDueDateFromTask(text) else null
+
+        // Pull out all tags
+        // Pull out all Dataview fields
+        return Task(text, "", due, emptyList(), emptyList())
+    }
 
     /**
      * Detects whether the given task is a repeating task

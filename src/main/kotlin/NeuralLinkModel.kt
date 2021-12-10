@@ -1,4 +1,4 @@
-package model
+import kotlin.js.Date
 
 /**
  * Model for a Task.
@@ -17,8 +17,16 @@ package model
 data class Task(
     val original: String,
     val description: String,
+    val due: Date?, // Moment format yyyy-MM-DD
     val tags: List<String>, // TODO Need a Tag class?
-    val metadata: List<String>, // TODO Create DataviewField class
-    val subtasks: List<Task>,
-    val notes: List<String>
+    val dataviewFields: List<DataviewField>,
+    val subtasks: MutableList<Task> = mutableListOf(),
+    val notes: MutableList<String> = mutableListOf()
+)
+
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+data class DataviewField(
+    val key: String,
+    val value: String
 )
