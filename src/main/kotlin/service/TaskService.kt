@@ -1,22 +1,22 @@
 package service
 
 import ListItemCache
-import NeuralLinkPlugin
-import TFile
 import Task
-import kotlinx.coroutines.await
 import kotlin.js.Date
 import moment.moment
 
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class TaskService(val plugin: NeuralLinkPlugin) {
+class TaskService() {
     private val dueDateFormat = "yyyy-MM-DD"
 
     private val taskPaperTagDateFormat = """\(([0-9\-T:]*)\)"""
     private val dueDateRegex = Regex("""@due$taskPaperTagDateFormat""")
     private val completedDateRegex = Regex("""@completed$taskPaperTagDateFormat""")
     private val repeatingRequires = listOf("@due(", "[repeat::")
+    @Suppress("RegExpRedundantEscape")
+    private val dataviewRegex = Regex("""\[([a-zA-Z]*):: ([\d\w!: -]*)\]""")
     @Suppress("RegExpRedundantEscape")
     private val repeatTextRegex = Regex("""\[repeat:: ([\d\w!: ]*)\]""")
 
@@ -26,6 +26,7 @@ class TaskService(val plugin: NeuralLinkPlugin) {
     private val repeatItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
     @Suppress("RegExpRedundantEscape")
     private val completedTaskRegex = Regex("""- \[[xX]\] """)
+    private val allTagsRegex = Regex("""#([a-zA-Z][0-9a-zA-Z-_/]*)""")
 
     /**
      * Builds up a model of Tasks based on the file contents.
@@ -41,7 +42,7 @@ class TaskService(val plugin: NeuralLinkPlugin) {
      * TODO Support more than one child level (subtask of a subtask)
      */
     @Suppress("NON_EXPORTABLE_TYPE")
-    fun buildTaskModel(fileContents: List<String>, listItems: List<ListItemCache>) : Map<Int,Task> {
+    fun buildTaskModel(fileContents: List<String>, listItems: Array<ListItemCache>) : Map<Int,Task> {
         val taskList = mutableMapOf<Int,Task>() // Map of position -> Task
 
         listItems.forEach { listItem ->
@@ -51,6 +52,7 @@ class TaskService(val plugin: NeuralLinkPlugin) {
                 if (listItem.task != null) {
                     // Only care about root items that are tasks
                     val task = createTask(listItem, lineContents)
+                    console.log("root task:", task)
                     taskList[listItem.position.start.line.toInt()] = task
                 }
             } else {
@@ -58,10 +60,13 @@ class TaskService(val plugin: NeuralLinkPlugin) {
                 // Child list item
                 if (listItem.task == null) {
                     // Is a note, find the parent task and add this line to the notes list
-                    parentTask.notes.add("")
+                    // removing the first two characters (the list marker, '- ')
+                    parentTask.notes.add(lineContents.trim().drop(2))
                 } else {
                     // Is a task, construct task and find the parent task to add to subtasks list
-                    parentTask.subtasks.add(createTask(listItem, lineContents))
+                    val subtask = createTask(listItem, lineContents)
+                    console.log("Subtask for task at ${listItem.parent}: ", subtask)
+                    parentTask.subtasks.add(subtask)
                 }
             }
         }
@@ -74,8 +79,24 @@ class TaskService(val plugin: NeuralLinkPlugin) {
         val due = if (text.contains("@due(")) getDueDateFromTask(text) else null
 
         // Pull out all tags
+        val tagMatches = allTagsRegex.findAll(text).map { it.groupValues[1] }.toList()
+
         // Pull out all Dataview fields
-        return Task(text, "", due, emptyList(), emptyList())
+        val dataviewMatches = dataviewRegex.findAll(text).associate {
+            it.groupValues[1] to it.groupValues[2]
+        }
+
+        val completed = (listItem.task?.uppercase() == "X")
+
+        // Strip out due, tags, dataview and task notation from the text, then clean up whitespace
+        val stripped = text
+            .replace(dueDateRegex, "")
+            .replace(allTagsRegex, "")
+            .replace(dataviewRegex, "")
+            .trim()
+            .replace("""\s+""".toRegex(), " ")
+            .replace("""- \[[Xx ]\] """.toRegex(), "")
+        return Task(text, stripped, due, tagMatches, dataviewMatches, completed)
     }
 
     /**
@@ -183,6 +204,7 @@ class TaskService(val plugin: NeuralLinkPlugin) {
     }
 }
 
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 data class RepeatItem(val type: String, val span: String, val fromComplete: Boolean, val amount: Int)

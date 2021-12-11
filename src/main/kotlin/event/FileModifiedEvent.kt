@@ -14,7 +14,7 @@ import service.TaskService
  */
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, taskService: TaskService) : Event(plugin) {
+class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val taskService: TaskService) : Event(plugin) {
     @Suppress("NON_EXPORTABLE_TYPE")
     val taskProcessors = listOf(
         RemoveRegexFromTask(state),
@@ -30,6 +30,8 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, taskSe
             plugin.app.vault.read(context).then { contents ->
                 fileContents.addAll(contents.split('\n'))
                 val fileListItems = plugin.app.metadataCache.getFileCache(context)?.listItems ?: arrayOf()
+                val taskModel = taskService.buildTaskModel(fileContents, fileListItems)
+                console.log("taskModel size ${taskModel.size}", taskModel)
                 fileListItems
                     .filter { item ->
                         item.parent.toInt() < 0

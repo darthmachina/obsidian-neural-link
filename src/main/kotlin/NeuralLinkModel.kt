@@ -19,14 +19,8 @@ data class Task(
     val description: String,
     val due: Date?, // Moment format yyyy-MM-DD
     val tags: List<String>, // TODO Need a Tag class?
-    val dataviewFields: List<DataviewField>,
+    val dataviewFields: Map<String,String>,
+    val completed: Boolean,
     val subtasks: MutableList<Task> = mutableListOf(),
     val notes: MutableList<String> = mutableListOf()
-)
-
-@OptIn(ExperimentalJsExport::class)
-@JsExport
-data class DataviewField(
-    val key: String,
-    val value: String
 )
