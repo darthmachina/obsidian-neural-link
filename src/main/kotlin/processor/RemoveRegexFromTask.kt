@@ -1,12 +1,19 @@
 package processor
 
+import ModifiedTask
 import NeuralLinkState
-import service.ModifiedTask
+import service.TaskService
 
-class RemoveRegexFromTask(val state: NeuralLinkState) : TaskProcessor {
+class RemoveRegexFromTask(val state: NeuralLinkState, val taskService: TaskService) : TaskProcessor {
+    /**
+     * Creates a copy of the given task, recreating the Task from the original text
+     * after it has been run through the RegEx and returning a new Task
+     */
     override fun processTask(task: ModifiedTask): ModifiedTask {
         val removeRegex = state.settings.taskRemoveRegex
-        task.original = task.original.replace(removeRegex.toRegex(), "")
+
+        val updatedDescription = task.original.full.replace(removeRegex.toRegex(), "")
+        task.original = taskService.crea
         return task
     }
 

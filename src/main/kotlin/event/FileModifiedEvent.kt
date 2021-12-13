@@ -1,20 +1,22 @@
 package event
 
+import ModifiedTask
 import NeuralLinkPlugin
 import NeuralLinkState
 import TFile
 import processor.RecurringProcessor
 import processor.RemoveRegexFromTask
-import service.ModifiedTask
 import service.TaskService
 
 /**
  * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this
  * handler needs to be *very* quick to not cause performance issues when typing.
  */
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val taskService: TaskService) : Event(plugin) {
+class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val taskService: TaskService) :
+    Event(plugin) {
     @Suppress("NON_EXPORTABLE_TYPE")
     val taskProcessors = listOf(
         RemoveRegexFromTask(state),
@@ -32,28 +34,25 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
                 val fileListItems = plugin.app.metadataCache.getFileCache(context)?.listItems ?: arrayOf()
                 val taskModel = taskService.buildTaskModel(fileContents, fileListItems)
                 console.log("taskModel size ${taskModel.size}", taskModel)
-                fileListItems
-                    .filter { item ->
-                        item.parent.toInt() < 0
+                taskModel
+                    .filter { (_, task) ->
+                        task.completed
                     }
-                    .forEach { listItem ->
-                        if (listItem.task?.uppercase() == "X") {
-                            var lineContents = ModifiedTask(fileContents[listItem.position.start.line.toInt()])
-                            // Pass the task line through all the configured TaskProcessors
-                            taskProcessors.forEach { processor ->
-                                console.log("taskProcessors lineContents: ", lineContents.original)
-                                lineContents = processor.processTask(lineContents)
-                            }
+                    .forEach { (line, task) ->
+                        var modifiedTask = ModifiedTask(task)
+                        taskProcessors.forEach { processor ->
+                            console.log("taskProcessors lineContents: ", modifiedTask.original)
+                            modifiedTask = processor.processTask(modifiedTask)
+                        }
 
-                            if (lineContents.original != fileContents[listItem.position.start.line.toInt()]
-                                || lineContents.before.isNotEmpty()
-                                || lineContents.after.isNotEmpty()
-                            ) {
-                                val totalLines =
-                                    lineContents.before.plus(lineContents.original).plus(lineContents.after)
-                                fileContents[listItem.position.start.line.toInt()] = totalLines.joinToString("\n")
-                                modified = true
-                            }
+                        if (modifiedTask.original.full != fileContents[line]
+                            || modifiedTask.before.isNotEmpty()
+                            || modifiedTask.after.isNotEmpty()
+                        ) {
+                            val totalLines =
+                                modifiedTask.before.plus(modifiedTask.original).plus(modifiedTask.after)
+                            fileContents[line] = totalLines.joinToString("\n")
+                            modified = true
                         }
                     }
 

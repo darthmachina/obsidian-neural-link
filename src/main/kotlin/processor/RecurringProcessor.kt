@@ -1,7 +1,7 @@
 package processor
 
+import ModifiedTask
 import NeuralLinkState
-import service.ModifiedTask
 import service.TaskService
 
 class RecurringProcessor(state: NeuralLinkState, private val taskService: TaskService) : TaskProcessor {
