@@ -19,7 +19,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
     Event(plugin) {
     @Suppress("NON_EXPORTABLE_TYPE")
     val taskProcessors = listOf(
-        RemoveRegexFromTask(state),
+        RemoveRegexFromTask(state, taskService),
         RecurringProcessor(state, taskService)
     ).sortedBy { it.getPriority() }
 

@@ -22,6 +22,8 @@ class TaskService() {
     private val spanRegex = spanValues.plus(specificValues).joinToString("|")
     private val repeatItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
     private val allTagsRegex = Regex("""#([a-zA-Z][0-9a-zA-Z-_/]*)""")
+    @Suppress("RegExpRedundantEscape")
+    private val completedRegex = Regex("""- \[[xX]\]""")
 
     /**
      * Builds up a model of Tasks based on the file contents.
@@ -41,12 +43,13 @@ class TaskService() {
         val taskList = mutableMapOf<Int,Task>() // Map of position -> Task
 
         listItems.forEach { listItem ->
-            val lineContents = fileContents[listItem.position.start.line.toInt()]
+            val taskLine = listItem.position.start.line.toInt()
+            val lineContents = fileContents[taskLine]
             if (listItem.parent.toInt() < 0) {
                 // Root level list item
                 if (listItem.task != null) {
                     // Only care about root items that are tasks
-                    val task = createTask(listItem, lineContents)
+                    val task = createTask(lineContents, taskLine)
                     console.log("root task:", task)
                     taskList[listItem.position.start.line.toInt()] = task
                 }
@@ -59,7 +62,7 @@ class TaskService() {
                     parentTask.notes.add(lineContents.trim().drop(2))
                 } else {
                     // Is a task, construct task and find the parent task to add to subtasks list
-                    val subtask = createTask(listItem, lineContents)
+                    val subtask = createTask(lineContents, taskLine)
                     console.log("Subtask for task at ${listItem.parent}: ", subtask)
                     parentTask.subtasks.add(subtask)
                 }
@@ -70,8 +73,7 @@ class TaskService() {
     }
 
 
-     // TODO Remove listItem from signature, added `line` to Task
-    fun createTask(listItem: ListItemCache, text: String) : Task {
+    fun createTask(text: String, line: Int? = null) : Task {
         // Pull out due and completed dates
         val due = getDueDateFromTask(text)
         val completedDate = getCompletedDateFromTask(text)
@@ -86,7 +88,7 @@ class TaskService() {
         }
 
          // TODO Replace with RegEx so listItem isn't required
-        val completed = (listItem.task?.uppercase() == "X")
+        val completed = completedRegex.containsMatchIn(text)
 
         // Strip out due, tags, dataview and task notation from the text, then clean up whitespace
         val stripped = text
@@ -96,7 +98,7 @@ class TaskService() {
             .trim()
             .replace("""\s+""".toRegex(), " ")
             .replace("""- \[[Xx ]\] """.toRegex(), "")
-        return Task(text, stripped, due, completedDate, tagMatches, dataviewMatches, completed)
+        return Task(text, line, stripped, due, completedDate, tagMatches, dataviewMatches, completed)
     }
 
     /**

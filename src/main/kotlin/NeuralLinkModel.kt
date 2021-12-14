@@ -5,6 +5,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import moment.moment
 import kotlin.js.Date
 
 /**
@@ -24,12 +25,12 @@ import kotlin.js.Date
 @Serializable
 data class Task(
     val full: String,
-    val line: Int,
+    val line: Int?, // null means it has not been written to the file yet
     val description: String,
     @Serializable(with = DateAsDoubleSerializer::class)
     var due: Date?, // Moment format yyyy-MM-DD
     @Serializable(with = DateAsDoubleSerializer::class)
-    var completedDate: Date?,
+    var completedDate: Date?, // Moment format yyyy-MM-DDTHH:mm:ss
     val tags: List<String>, // TODO Need a Tag class?
     val dataviewFields: MutableMap<String,String>,
     var completed: Boolean,
@@ -40,6 +41,21 @@ data class Task(
     fun deepCopy(): Task {
         val bytes = Cbor.encodeToByteArray(this)
         return Cbor.decodeFromByteArray(bytes)
+    }
+
+    /**
+     * Creates a Markdown String, suitable for writing to a Markdown file.
+     *
+     * Does not indent itself, but will recursively call this on any subtasks, applying
+     * indentation where needed to maintain the hierarchy.
+     */
+    fun toMarkdown(): String {
+        val completedMarker = if (completed) "X" else " "
+        val markdownTags = tags.joinToString(" ") { tag -> "#$tag" }
+        val markdownDataview = dataviewFields.map { (key, value) -> "[$key:: $value]"}.joinToString(" ")
+        val markdownDue = if (due == null) "" else "@due(${moment(due).format("yyyy-MM-DD")})"
+        val markdownCompleted = if (completedDate == null) "" else "@completed(${moment(due).format("yyyy-MM-DDTHH:mm:ss")})"
+        return "- [$completedMarker] $description $markdownDataview $markdownTags} $markdownDue $markdownCompleted"
     }
 }
 
