@@ -50,7 +50,6 @@ class TaskService() {
                 if (listItem.task != null) {
                     // Only care about root items that are tasks
                     val task = createTask(lineContents, taskLine)
-                    console.log("root task:", task)
                     taskList[listItem.position.start.line.toInt()] = task
                 }
             } else {
@@ -72,7 +71,6 @@ class TaskService() {
         return taskList
     }
 
-
     fun createTask(text: String, line: Int? = null) : Task {
         // Pull out due and completed dates
         val due = getDueDateFromTask(text)
@@ -87,7 +85,6 @@ class TaskService() {
             it.groupValues[1] to it.groupValues[2]
         }
 
-         // TODO Replace with RegEx so listItem isn't required
         val completed = completedRegex.containsMatchIn(text)
 
         // Strip out due, tags, dataview and task notation from the text, then clean up whitespace
@@ -115,16 +112,13 @@ class TaskService() {
      * 3. Replaces the due date with the next date in the cycle
      */
     fun getNextRepeatingTask(task: Task) : Task {
+        console.log("Before copy", task)
         val repeatTask = task.deepCopy()
+        console.log("After copy", repeatTask)
         repeatTask.due = getNextRepeatDate(task)
         repeatTask.completed = false
         repeatTask.completedDate = null
         return repeatTask
-    }
-
-    fun removeRepeatText(task: Task) : Task {
-        task.dataviewFields.remove("repeat")
-        return task
     }
 
     private fun getNextRepeatDate(task: Task) : Date {
@@ -161,7 +155,7 @@ class TaskService() {
      * Parse out the repeating text into a RepeatItem object
      */
     private fun parseRepeating(repeatText: String) : RepeatItem {
-        console.log("repeatItemRegex: for repeatText", repeatItemRegex, repeatText)
+        console.log("repeatItemRegex: for repeatText", repeatText)
         val matches = repeatItemRegex.find(repeatText)
         console.log("matches: ", matches)
         if (matches?.groupValues == null) {
@@ -188,11 +182,10 @@ class TaskService() {
      */
     private fun getDueDateFromTask(task: String) : Date? {
         val dateMatch = dueDateRegex.find(task)
-        console.log("dateMatch: ${dateMatch?.groupValues?.get(1)}")
         return if (dateMatch == null) {
             null
         } else {
-            Date(dateMatch?.groupValues[1])
+            Date(dateMatch.groupValues[1])
         }
     }
 
@@ -207,11 +200,10 @@ class TaskService() {
      */
     private fun getCompletedDateFromTask(task: String) : Date? {
         val dateMatch = completedDateRegex.find(task)
-        console.log("dateMatch: ${dateMatch?.groupValues?.get(1)}")
         return if (dateMatch == null) {
             null
         } else {
-            Date(dateMatch?.groupValues[1])
+            Date(dateMatch.groupValues[1])
         }
     }
 }

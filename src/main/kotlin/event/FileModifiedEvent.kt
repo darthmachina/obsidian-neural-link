@@ -36,22 +36,23 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
                 console.log("taskModel size ${taskModel.size}", taskModel)
                 taskModel
                     .filter { (_, task) ->
-                        task.completed
+                        if (taskModel.size > 4) false
+                        else
+                            task.completed
                     }
                     .forEach { (line, task) ->
                         var modifiedTask = ModifiedTask(task)
+                        console.log("Before processing: ", modifiedTask)
                         taskProcessors.forEach { processor ->
                             console.log("taskProcessors lineContents: ", modifiedTask.original)
                             modifiedTask = processor.processTask(modifiedTask)
                         }
+                        console.log("After processing: ", modifiedTask)
 
-                        if (modifiedTask.original.full != fileContents[line]
-                            || modifiedTask.before.isNotEmpty()
-                            || modifiedTask.after.isNotEmpty()
-                        ) {
+                        if (modifiedTask.modified) {
                             val totalLines =
                                 modifiedTask.before.plus(modifiedTask.original).plus(modifiedTask.after)
-                            fileContents[line] = totalLines.joinToString("\n")
+                            fileContents[line] = totalLines.joinToString("\n") { it.toMarkdown() }
                             modified = true
                         }
                     }

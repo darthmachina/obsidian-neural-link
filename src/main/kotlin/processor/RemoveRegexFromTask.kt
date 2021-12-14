@@ -4,7 +4,7 @@ import ModifiedTask
 import NeuralLinkState
 import service.TaskService
 
-class RemoveRegexFromTask(val state: NeuralLinkState, val taskService: TaskService) : TaskProcessor {
+class RemoveRegexFromTask(private val state: NeuralLinkState, private val taskService: TaskService) : TaskProcessor {
     /**
      * Creates a copy of the given task, recreating the Task from the original text
      * after it has been run through the RegEx and returns the new Task
@@ -13,7 +13,10 @@ class RemoveRegexFromTask(val state: NeuralLinkState, val taskService: TaskServi
         val removeRegex = state.settings.taskRemoveRegex
 
         val updatedDescription = task.original.full.replace(removeRegex.toRegex(), "")
-        task.original = taskService.createTask(updatedDescription)
+        if (updatedDescription != task.original.full) {
+            task.original = taskService.createTask(updatedDescription)
+            task.modified = true
+        }
         return task
     }
 

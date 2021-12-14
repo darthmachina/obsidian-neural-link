@@ -52,10 +52,12 @@ data class Task(
     fun toMarkdown(): String {
         val completedMarker = if (completed) "X" else " "
         val markdownTags = tags.joinToString(" ") { tag -> "#$tag" }
-        val markdownDataview = dataviewFields.map { (key, value) -> "[$key:: $value]"}.joinToString(" ")
-        val markdownDue = if (due == null) "" else "@due(${moment(due).format("yyyy-MM-DD")})"
-        val markdownCompleted = if (completedDate == null) "" else "@completed(${moment(due).format("yyyy-MM-DDTHH:mm:ss")})"
-        return "- [$completedMarker] $description $markdownDataview $markdownTags} $markdownDue $markdownCompleted"
+        val markdownDataview = dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString(" ")
+        val markdownDue = if (due == null) "" else "@due(${moment.utc(due).format("yyyy-MM-DD")})"
+        val markdownCompleted = if (completedDate == null) "" else "@completed(${moment.utc(completedDate).format("yyyy-MM-DDTHH:mm:ss")})"
+        val markdownSubtasks = subtasks.joinToString("\n\t") { it.toMarkdown() }
+        val markdownNotes = notes.joinToString("\n\t") { note -> "- $note" }
+        return "- [$completedMarker] $description $markdownDataview $markdownTags $markdownDue $markdownCompleted\n\t$markdownSubtasks\n\t$markdownNotes"
     }
 }
 
@@ -70,6 +72,4 @@ object DateAsDoubleSerializer : KSerializer<Date> {
 @JsExport
 data class RepeatItem(val type: String, val span: String, val fromComplete: Boolean, val amount: Int)
 
-data class ModifiedTask(var original: Task, val before: MutableList<Task>, val after: MutableList<Task>) {
-    constructor(original: Task) : this(original, mutableListOf(), mutableListOf())
-}
+data class ModifiedTask(var original: Task, val before: MutableList<Task> = mutableListOf(), val after: MutableList<Task> = mutableListOf(), var modified: Boolean = false)
