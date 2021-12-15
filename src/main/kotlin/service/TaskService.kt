@@ -71,13 +71,13 @@ class TaskService() {
         return taskList
     }
 
-    fun createTask(text: String) : Task {
+    private fun createTask(text: String) : Task {
         // Pull out due and completed dates
         val due = getDueDateFromTask(text)
         val completedDate = getCompletedDateFromTask(text)
 
         // Pull out all tags
-        val tagMatches = allTagsRegex.findAll(text).map { it.groupValues[1] }.toList()
+        val tagMatches = allTagsRegex.findAll(text).map { it.groupValues[1] }.toMutableList()
 
         // Pull out all Dataview fields
         val dataviewMatches = mutableMapOf<String,String>()
@@ -90,12 +90,26 @@ class TaskService() {
         // Strip out due, tags, dataview and task notation from the text, then clean up whitespace
         val stripped = text
             .replace(dueDateRegex, "")
+            .replace(completedDateRegex, "")
             .replace(allTagsRegex, "")
             .replace(dataviewRegex, "")
             .trim()
             .replace("""\s+""".toRegex(), " ")
             .replace("""- \[[Xx ]\] """.toRegex(), "")
         return Task(text, stripped, due, completedDate, tagMatches, dataviewMatches, completed)
+    }
+
+    /**
+     * Recursive method to get the number of indented items.
+     */
+    fun indentedCount(task: Task) : Int {
+        return if (task.subtasks.size == 0 && task.notes.size == 0) {
+            0
+        } else {
+            task.subtasks.size + task.notes.size + task.subtasks.fold(0) { accumulator, task ->
+                accumulator + indentedCount(task)
+            }
+        }
     }
 
     /**

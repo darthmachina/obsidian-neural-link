@@ -30,7 +30,7 @@ data class Task(
     var due: Date?, // Moment format yyyy-MM-DD
     @Serializable(with = DateAsDoubleSerializer::class)
     var completedDate: Date?, // Moment format yyyy-MM-DDTHH:mm:ss
-    val tags: List<String>, // TODO Need a Tag class?
+    val tags: MutableList<String>, // TODO Need a Tag class?
     val dataviewFields: MutableMap<String,String>,
     var completed: Boolean,
     val subtasks: MutableList<Task> = mutableListOf(),
@@ -50,13 +50,29 @@ data class Task(
      */
     fun toMarkdown(): String {
         val completedMarker = if (completed) "X" else " "
-        val markdownTags = tags.joinToString(" ") { tag -> "#$tag" }
-        val markdownDataview = dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString(" ")
-        val markdownDue = if (due == null) "" else "@due(${moment.utc(due).format("yyyy-MM-DD")})"
-        val markdownCompleted = if (completedDate == null) "" else "@completed(${moment.utc(completedDate).format("yyyy-MM-DDTHH:mm:ss")})"
-        val markdownSubtasks = subtasks.joinToString("\n\t") { it.toMarkdown() }
-        val markdownNotes = notes.joinToString("\n\t") { note -> "- $note" }
-        return "- [$completedMarker] $description $markdownDataview $markdownTags $markdownDue $markdownCompleted\n\t$markdownSubtasks\n\t$markdownNotes"
+        val markdownTags = if (tags.size > 0) {
+            " " + tags.joinToString(" ") { tag -> "#$tag" }
+        } else {
+            ""
+        }
+        val markdownDataview = if (dataviewFields.isNotEmpty()) {
+            " " + dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString(" ")
+        } else {
+            ""
+        }
+        val markdownDue = if (due == null) "" else " @due(${moment.utc(due).format("yyyy-MM-DD")})"
+        val markdownCompleted = if (completedDate == null) "" else " @completed(${moment.utc(completedDate).format("yyyy-MM-DDTHH:mm:ss")})"
+        val markdownSubtasks = if (subtasks.size > 0) {
+            "\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() }
+        } else {
+            ""
+        }
+        val markdownNotes = if (notes.size > 0) {
+            "\n\t" + notes.joinToString("\n\t") { note -> "- $note" }
+        } else {
+            ""
+        }
+        return "- [$completedMarker] $description$markdownDataview$markdownTags$markdownDue$markdownCompleted$markdownSubtasks$markdownNotes"
     }
 }
 

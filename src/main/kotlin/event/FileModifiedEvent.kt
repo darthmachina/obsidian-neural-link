@@ -4,8 +4,9 @@ import ModifiedTask
 import NeuralLinkPlugin
 import NeuralLinkState
 import TFile
-import processor.RecurringProcessor
-import processor.RemoveRegexFromTask
+import kotlinx.html.InputType
+import processor.RepeatingProcessor
+import processor.RemoveTagsFromTask
 import service.TaskService
 
 /**
@@ -19,50 +20,58 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
     Event(plugin) {
     @Suppress("NON_EXPORTABLE_TYPE")
     val taskProcessors = listOf(
-        RemoveRegexFromTask(state, taskService),
-        RecurringProcessor(state, taskService)
+        RemoveTagsFromTask(state, taskService),
+        RepeatingProcessor(state, taskService)
     ).sortedBy { it.getPriority() }
+
+    private fun printMap(map: MutableMap<String, String>) : String {
+        return map.map { (key, value) -> "[$key, $value]" }.joinToString(", ")
+    }
 
     override fun processEvent(context: Any) {
         console.log("processEvent: ", context)
         if (context is TFile) {
-            // Only mark as modified if the line was changed in some way so we only write the file is we need to
+            // Only mark as modified if the line was changed in some way so we only write the file if we need to
             var modified = false
             val fileContents = mutableListOf<String>()
+
+            // Collect lines to delete from file. Will do this after the tasks have been
+            // written to the file so the fileContents list indices are not messed up
+            var linesToRemove = mutableListOf<Int>()
+
             plugin.app.vault.read(context).then { contents ->
                 fileContents.addAll(contents.split('\n'))
                 val fileListItems = plugin.app.metadataCache.getFileCache(context)?.listItems ?: arrayOf()
                 val taskModel = taskService.buildTaskModel(fileContents, fileListItems)
-                console.log("taskModel: ", taskModel)
-                taskModel.forEach { (line, task) ->
-                    console.log("Task at line $line: ${task.toMarkdown()}")
-                }
-                console.log("taskModel size ${taskModel.size}", taskModel)
                 taskModel
                     .filter { (_, task) ->
-                        if (taskModel.size > 4) false
-                        else
-                            task.completed
+                        task.completed
                     }
                     .forEach { (line, task) ->
-                        var modifiedTask = ModifiedTask(task)
-                        console.log("Before processing: ", modifiedTask)
+                        val modifiedTask = ModifiedTask(task)
+
+                        // TaskProcessors have side effects on modifiedTask
                         taskProcessors.forEach { processor ->
-                            console.log("taskProcessors lineContents: ", modifiedTask.original)
-                            modifiedTask = processor.processTask(modifiedTask)
+                            processor.processTask(modifiedTask)
                         }
-                        console.log("After processing: ", modifiedTask)
 
                         if (modifiedTask.modified) {
                             val totalLines =
                                 modifiedTask.before.plus(modifiedTask.original).plus(modifiedTask.after)
                             fileContents[line] = totalLines.joinToString("\n") { it.toMarkdown() }
+                            val firstIndent = line + 1
+                            linesToRemove.addAll((firstIndent).rangeTo(firstIndent + taskService.indentedCount(modifiedTask.original)).toList())
                             modified = true
                         }
                     }
 
                 if (modified) {
                     console.log("File was modified, writing new content")
+                    // Remove the old indented lines from Tasks that were processed
+                    // Sorted in descending order to maintain each index
+                    linesToRemove.sortedDescending().forEach {
+                        fileContents.removeAt(it)
+                    }
                     plugin.app.vault.modify(context, fileContents.joinToString("\n"))
                 }
             }
