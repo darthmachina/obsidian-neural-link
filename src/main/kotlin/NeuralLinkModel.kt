@@ -25,7 +25,6 @@ import kotlin.js.Date
 @Serializable
 data class Task(
     val full: String,
-    val line: Int?, // null means it has not been written to the file yet
     val description: String,
     @Serializable(with = DateAsDoubleSerializer::class)
     var due: Date?, // Moment format yyyy-MM-DD

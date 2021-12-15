@@ -49,7 +49,7 @@ class TaskService() {
                 // Root level list item
                 if (listItem.task != null) {
                     // Only care about root items that are tasks
-                    val task = createTask(lineContents, taskLine)
+                    val task = createTask(lineContents)
                     taskList[listItem.position.start.line.toInt()] = task
                 }
             } else {
@@ -61,7 +61,7 @@ class TaskService() {
                     parentTask.notes.add(lineContents.trim().drop(2))
                 } else {
                     // Is a task, construct task and find the parent task to add to subtasks list
-                    val subtask = createTask(lineContents, taskLine)
+                    val subtask = createTask(lineContents)
                     console.log("Subtask for task at ${listItem.parent}: ", subtask)
                     parentTask.subtasks.add(subtask)
                 }
@@ -71,7 +71,7 @@ class TaskService() {
         return taskList
     }
 
-    fun createTask(text: String, line: Int? = null) : Task {
+    fun createTask(text: String) : Task {
         // Pull out due and completed dates
         val due = getDueDateFromTask(text)
         val completedDate = getCompletedDateFromTask(text)
@@ -95,7 +95,7 @@ class TaskService() {
             .trim()
             .replace("""\s+""".toRegex(), " ")
             .replace("""- \[[Xx ]\] """.toRegex(), "")
-        return Task(text, line, stripped, due, completedDate, tagMatches, dataviewMatches, completed)
+        return Task(text, stripped, due, completedDate, tagMatches, dataviewMatches, completed)
     }
 
     /**

@@ -33,6 +33,10 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
                 fileContents.addAll(contents.split('\n'))
                 val fileListItems = plugin.app.metadataCache.getFileCache(context)?.listItems ?: arrayOf()
                 val taskModel = taskService.buildTaskModel(fileContents, fileListItems)
+                console.log("taskModel: ", taskModel)
+                taskModel.forEach { (line, task) ->
+                    console.log("Task at line $line: ${task.toMarkdown()}")
+                }
                 console.log("taskModel size ${taskModel.size}", taskModel)
                 taskModel
                     .filter { (_, task) ->
@@ -58,6 +62,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
                     }
 
                 if (modified) {
+                    console.log("File was modified, writing new content")
                     plugin.app.vault.modify(context, fileContents.joinToString("\n"))
                 }
             }

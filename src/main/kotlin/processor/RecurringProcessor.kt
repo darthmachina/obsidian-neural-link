@@ -7,6 +7,7 @@ import service.TaskService
 class RecurringProcessor(state: NeuralLinkState, private val taskService: TaskService) : TaskProcessor {
     override fun processTask(task: ModifiedTask): ModifiedTask {
         console.log("RecurringProcessor, checking", task.original)
+        console.log("\tbefore: ", task.before)
         if (taskService.isTaskRepeating(task.original)) {
             val newTask = taskService.getNextRepeatingTask(task.original)
             console.log("New task: $newTask")
