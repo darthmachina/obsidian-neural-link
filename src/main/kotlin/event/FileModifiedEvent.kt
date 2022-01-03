@@ -4,7 +4,6 @@ import ModifiedTask
 import NeuralLinkPlugin
 import NeuralLinkState
 import TFile
-import kotlinx.html.InputType
 import processor.RepeatingProcessor
 import processor.RemoveTagsFromTask
 import service.TaskService
@@ -37,7 +36,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
 
             // Collect lines to delete from file. Will do this after the tasks have been
             // written to the file so the fileContents list indices are not messed up
-            var linesToRemove = mutableListOf<Int>()
+            val linesToRemove = mutableListOf<Int>()
 
             plugin.app.vault.read(context).then { contents ->
                 fileContents.addAll(contents.split('\n'))
