@@ -11,8 +11,13 @@ I don't want to use my development versions in my regular vault, and having to m
 
 ### What's included?
 
-#### Remove text matching a RegEx from a completed task
-I use [CardBoard](https://github.com/roovo/obsidian-card-board) for managing my tasks, but I create a LOT of tasks. This can lead to performance problems as the tasks that CardBaord has to process constantly increases. I use this to remove the tags related to the status columns when the task is completed, to keep CardBoard snappy.  
+#### Remove tags matching a RegEx from a completed task
+I use [CardBoard](https://github.com/roovo/obsidian-card-board) for managing my tasks, but I create a LOT of tasks. This can lead to performance problems as the tasks that CardBaord has to process constantly increases. I use this to remove the tags related to the status columns when the task is completed, to keep CardBoard snappy.
+
+This uses a RegEx to define which tags to remove, and it is based on the actual tag text. This lets me define a full tag hierarchy to remove (like everything under `#kanban/`).
+
+#### Repeating Tasks
+Tasks can include some metadata that defines a repeating task. This will watch for completed tasks that include the metadata and create a new task that is a copy with all indented list items included, marking any subtasks as incomplete to get a fresh task.
 
 ## Contributing
 Please see the [contributing doc](CONTRIBUTING.md) for more information on helping out if you would like to.
