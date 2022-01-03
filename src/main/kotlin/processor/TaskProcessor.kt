@@ -1,6 +1,6 @@
 package processor
 
-import service.ModifiedTask
+import ModifiedTask
 
 /**
  * Interface for doing something to a task.

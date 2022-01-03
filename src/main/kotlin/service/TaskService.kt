@@ -1,71 +1,147 @@
 package service
 
+import ListItemCache
+import RepeatItem
+import Task
 import kotlin.js.Date
 import moment.moment
 
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 class TaskService() {
-    private val dueDateFormat = "yyyy-MM-DD"
+    // momentDateFormat = "yyyy-MM-DD"
 
     private val taskPaperTagDateFormat = """\(([0-9\-T:]*)\)"""
     private val dueDateRegex = Regex("""@due$taskPaperTagDateFormat""")
     private val completedDateRegex = Regex("""@completed$taskPaperTagDateFormat""")
-//    private val isRecurringTaskRegex = Regex("""((@due.*\[repeat::)|(\[repeat::.*@due))""")
-    private val repeatingRequires = listOf("@due(", "[repeat::")
     @Suppress("RegExpRedundantEscape")
-    private val repeatTextRegex = Regex("""\[repeat:: ([\d\w!: ]*)\]""")
-
+    private val dataviewRegex = Regex("""\[([a-zA-Z]*):: ([\d\w!: -]*)\]""")
     private val spanValues = listOf("daily", "weekly", "monthly", "yearly")
     private val specificValues = listOf("month", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
     private val spanRegex = spanValues.plus(specificValues).joinToString("|")
     private val repeatItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
+    private val allTagsRegex = Regex("""#([a-zA-Z][0-9a-zA-Z-_/]*)""")
     @Suppress("RegExpRedundantEscape")
-    private val completedTaskRegex = Regex("""- \[[xX]\] """)
+    private val completedRegex = Regex("""- \[[xX]\]""")
+
+    /**
+     * Builds up a model of Tasks based on the file contents.
+     *
+     * Parameters are used instead of the TFile directly to simplify Promise usage, since vault.read()
+     * return a Promise and this method returns an already built model. This method can now be called
+     * within a Promise.then block with no issues.
+     *
+     * @param fileContents The contents of the file with each item being a line (file is split on newline)
+     * @param listItems List of ListItemCache objects representing the list items in the file
+     *
+     * TODO Support 'root' tasks that are children of regular list items
+     * TODO Support more than one child level (subtask of a subtask)
+     */
+    @Suppress("NON_EXPORTABLE_TYPE")
+    fun buildTaskModel(fileContents: List<String>, listItems: Array<ListItemCache>) : Map<Int,Task> {
+        val taskList = mutableMapOf<Int,Task>() // Map of position -> Task
+
+        listItems.forEach { listItem ->
+            val taskLine = listItem.position.start.line.toInt()
+            val lineContents = fileContents[taskLine]
+            if (listItem.parent.toInt() < 0) {
+                // Root level list item
+                if (listItem.task != null) {
+                    // Only care about root items that are tasks
+                    val task = createTask(lineContents)
+                    taskList[listItem.position.start.line.toInt()] = task
+                }
+            } else {
+                val parentTask = taskList[listItem.parent.toInt()]!! // TODO Handle error better
+                // Child list item
+                if (listItem.task == null) {
+                    // Is a note, find the parent task and add this line to the notes list
+                    // removing the first two characters (the list marker, '- ')
+                    parentTask.notes.add(lineContents.trim().drop(2))
+                } else {
+                    // Is a task, construct task and find the parent task to add to subtasks list
+                    val subtask = createTask(lineContents)
+                    console.log("Subtask for task at ${listItem.parent}: ", subtask)
+                    parentTask.subtasks.add(subtask)
+                }
+            }
+        }
+
+        return taskList
+    }
+
+    private fun createTask(text: String) : Task {
+        // Pull out due and completed dates
+        val due = getDueDateFromTask(text)
+        val completedDate = getCompletedDateFromTask(text)
+
+        // Pull out all tags
+        val tagMatches = allTagsRegex.findAll(text).map { it.groupValues[1] }.toMutableList()
+
+        // Pull out all Dataview fields
+        val dataviewMatches = mutableMapOf<String,String>()
+        dataviewRegex.findAll(text).associateTo(dataviewMatches) {
+            it.groupValues[1] to it.groupValues[2]
+        }
+
+        val completed = completedRegex.containsMatchIn(text)
+
+        // Strip out due, tags, dataview and task notation from the text, then clean up whitespace
+        val stripped = text
+            .replace(dueDateRegex, "")
+            .replace(completedDateRegex, "")
+            .replace(allTagsRegex, "")
+            .replace(dataviewRegex, "")
+            .trim()
+            .replace("""\s+""".toRegex(), " ")
+            .replace("""- \[[Xx ]\] """.toRegex(), "")
+        return Task(text, stripped, due, completedDate, tagMatches, dataviewMatches, completed)
+    }
+
+    /**
+     * Recursive method to get the number of indented items.
+     */
+    fun indentedCount(task: Task) : Int {
+        return if (task.subtasks.size == 0 && task.notes.size == 0) {
+            0
+        } else {
+            task.subtasks.size + task.notes.size + task.subtasks.fold(0) { accumulator, task ->
+                accumulator + indentedCount(task)
+            }
+        }
+    }
 
     /**
      * Detects whether the given task is a repeating task
      */
-    fun isTaskRepeating(task: String) : Boolean {
-        return repeatingRequires.all { task.contains(it) }
+    fun isTaskRepeating(task: Task) : Boolean {
+        return task.dataviewFields.containsKey("repeat") && task.due != null
     }
 
     /**
      * Gets the repeated task to the given task. Will do the following:
      * 1. Remove the @completed tag that CardBoard adds when a task is completed
-     * 2. Unchecks the checkbox
+     * 2. Marks as incomplete
      * 3. Replaces the due date with the next date in the cycle
      */
-    fun getNextRepeatingTask(task: String) : String {
-        val nextDate = getNextRepeatDate(task)
-        console.log("getNextRepeatingTask for: ", task)
-        var nextTaskVersion = task.replace(completedTaskRegex, "- [ ] ")
-        console.log("\tafter completedTaskRegex: ", nextTaskVersion)
-        nextTaskVersion = task.replace(completedDateRegex, "")
-        console.log("\tafter completedDateRegex: ", nextTaskVersion)
-        nextTaskVersion = task.replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
-        console.log("\tafter dueDateRegex: ", nextTaskVersion)
-
-        return task
-            .replace(completedTaskRegex, "- [ ] ")
-            .replace(completedDateRegex, "")
-            .replace(dueDateRegex, "@due(${moment(nextDate).format(dueDateFormat)})")
+    fun getNextRepeatingTask(task: Task) : Task {
+        console.log("Before copy", task)
+        val repeatTask = task.deepCopy()
+        console.log("After copy", repeatTask)
+        repeatTask.due = getNextRepeatDate(task)
+        repeatTask.completed = false
+        repeatTask.completedDate = null
+        return repeatTask
     }
 
-    fun removeRepeatText(task: String) : String {
-        return task.replace(repeatTextRegex, "")
-    }
-
-    private fun getNextRepeatDate(task: String) : Date {
+    private fun getNextRepeatDate(task: Task) : Date {
         // If there isn't a due date and repeating note then there is no next date
         if (!isTaskRepeating(task))
             throw IllegalArgumentException("Task requires a due date and repeating note to calculate next date\n\t$task")
 
-        val repeatMatches = repeatTextRegex.find(task) ?: throw IllegalStateException("No match found for repeating note")
-        console.log("repeatMatches: ", repeatMatches)
-        val repeatItem = parseRepeating(repeatMatches.groupValues[1])
-
-        val fromDate = if (repeatItem.fromComplete) Date() else getDueDateFromTask(task)
+        val repeatItem = parseRepeating(task.dataviewFields["repeat"]!!)
+        val fromDate = if (repeatItem.fromComplete) Date() else task.due!!
         val currentYear = fromDate.getFullYear()
         val currentMonth = fromDate.getMonth()
         val currentDay = fromDate.getDate()
@@ -93,7 +169,7 @@ class TaskService() {
      * Parse out the repeating text into a RepeatItem object
      */
     private fun parseRepeating(repeatText: String) : RepeatItem {
-        console.log("repeatItemRegex: for repeatText", repeatItemRegex, repeatText)
+        console.log("repeatItemRegex: for repeatText", repeatText)
         val matches = repeatItemRegex.find(repeatText)
         console.log("matches: ", matches)
         if (matches?.groupValues == null) {
@@ -110,28 +186,38 @@ class TaskService() {
     }
 
     /**
-     * Gets a date from the task string tagged with the given tag.
+     * Gets the due date from the task string
      *
-     * So, given `Task @due(2021-01-01T00:00:00)`, this will return a Date object set to`2021-01-01T00:00:00` when asking for the `due` tag
-     *
+     * So, given `Task @due(2021-01-01)`, this will return a Date object set to`2021-01-01`
      * TODO Support Dataview style inline fields
      *
      * @param task The task String
      * @return A Date object representing the due date or null if no due date is present
      */
-    private fun getDueDateFromTask(task: String) : Date {
+    private fun getDueDateFromTask(task: String) : Date? {
         val dateMatch = dueDateRegex.find(task)
-        console.log("dateMatch: ${dateMatch?.groupValues?.get(1)}")
-        return dateMatch?.let {
-            return Date(dateMatch.groupValues[1])
-        } ?: throw IllegalStateException("No match found for due date in task text")
+        return if (dateMatch == null) {
+            null
+        } else {
+            Date(dateMatch.groupValues[1])
+        }
     }
-}
 
-@OptIn(ExperimentalJsExport::class)
-@JsExport
-data class RepeatItem(val type: String, val span: String, val fromComplete: Boolean, val amount: Int)
-
-data class ModifiedTask(var original: String, val before: MutableList<String>, val after: MutableList<String>) {
-    constructor(original: String) : this(original, mutableListOf(), mutableListOf())
+    /**
+     * Gets the completed date from the task string
+     *
+     * So, given `Task @completed(2021-01-01)`, this will return a Date object set to`2021-01-01`
+     * TODO Support Dataview style inline fields
+     *
+     * @param task The task String
+     * @return A Date object representing the completed date or null if no completed date is present
+     */
+    private fun getCompletedDateFromTask(task: String) : Date? {
+        val dateMatch = completedDateRegex.find(task)
+        return if (dateMatch == null) {
+            null
+        } else {
+            Date(dateMatch.groupValues[1])
+        }
+    }
 }

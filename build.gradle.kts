@@ -1,5 +1,6 @@
 plugins {
     kotlin("js") version "1.6.0"
+    kotlin("plugin.serialization") version "1.6.0"
 }
 
 group = "io.github.darthmachina"
@@ -18,9 +19,10 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-html-js:$kotlinxHtmlVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxHtmlVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.3.1")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.6.0-RC")
 
     implementation("io.sunland:kotlin-moment:2.29.1-pre.14-kotlin-1.5.31")
