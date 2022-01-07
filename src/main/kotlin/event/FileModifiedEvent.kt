@@ -34,8 +34,10 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
             var modified = false
             val fileContents = mutableListOf<String>()
 
-            // Collect lines to delete from file. Will do this after the tasks have been
-            // written to the file so the fileContents list indices are not messed up
+            // Collect lines to delete from file. Needed mainly for indented items as they are included in the Task
+            // markdown which replaces just the main task line in fileContents but are separate lines in the original
+            // fileContents. No items are added to fileContents itself so these indices remain consistent even if
+            // more than one task is processed.
             val linesToRemove = mutableListOf<Int>()
 
             plugin.app.vault.read(context).then { contents ->
@@ -55,11 +57,17 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
                         }
 
                         if (modifiedTask.modified) {
+                            console.log("Task modified, writing new contents to file", modifiedTask)
                             val totalLines =
                                 modifiedTask.before.plus(modifiedTask.original).plus(modifiedTask.after)
                             fileContents[line] = totalLines.joinToString("\n") { it.toMarkdown() }
-                            val firstIndent = line + 1
-                            linesToRemove.addAll((firstIndent).rangeTo(firstIndent + taskService.indentedCount(modifiedTask.original)).toList())
+                            val indentedCount = taskService.indentedCount(modifiedTask.original)
+                            if (indentedCount > 0) {
+                                val firstIndent = line + 1
+                                // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
+                                linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
+                                console.log("linesToRemove now", linesToRemove)
+                            }
                             modified = true
                         }
                     }
