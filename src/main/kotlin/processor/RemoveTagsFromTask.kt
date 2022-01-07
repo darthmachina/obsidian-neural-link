@@ -30,11 +30,7 @@ class RemoveTagsFromTask(private val state: NeuralLinkState, private val taskSer
      */
     private fun removeTagsFromTask(task: Task, regex: Regex) : Boolean {
         val removed = task.tags.removeAll { tag -> regex.containsMatchIn(tag) }
-        return if (task.subtasks.size > 0) {
-            val subtasksRemoved = task.subtasks.map { subtask -> removeTagsFromTask(subtask, regex) }
-            removed || (true in subtasksRemoved)
-        } else {
-            removed
-        }
+        val subtasksRemoved = task.subtasks.map { subtask -> removeTagsFromTask(subtask, regex) }
+        return removed || (true in subtasksRemoved)
     }
 }
