@@ -9,12 +9,12 @@ class RemoveTagsFromTask(private val state: NeuralLinkState, private val taskSer
     /**
      * Removes any tags matching the user-specified RegEx in settings
      */
-    override fun processTask(task: ModifiedTask): ModifiedTask {
+    override fun processTask(task: ModifiedTask): Boolean {
         if (state.settings.taskRemoveRegex.isNotEmpty()) {
             val tagsRegex = Regex(state.settings.taskRemoveRegex)
             task.modified = removeTagsFromTask(task.original, tagsRegex)
         }
-        return task
+        return task.modified
     }
 
     override fun getPriority(): Int {

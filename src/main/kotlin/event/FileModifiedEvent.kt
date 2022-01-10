@@ -53,7 +53,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
 
                         // TaskProcessors have side effects on modifiedTask
                         taskProcessors.forEach { processor ->
-                            processor.processTask(modifiedTask)
+                            modified = modified || processor.processTask(modifiedTask) // Keep modified true if it's already true
                         }
 
                         if (modifiedTask.modified) {
@@ -68,7 +68,6 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
                                 linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
                                 console.log("linesToRemove now", linesToRemove)
                             }
-                            modified = true
                         }
                     }
 

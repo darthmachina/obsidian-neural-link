@@ -6,8 +6,8 @@ import Task
 import service.TaskService
 
 class RepeatingProcessor(state: NeuralLinkState, private val taskService: TaskService) : TaskProcessor {
-    override fun processTask(task: ModifiedTask): ModifiedTask {
-        console.log("RecurringProcessor, checking", task.original)
+    override fun processTask(task: ModifiedTask): Boolean {
+        console.log("RepeatingProcessor, checking", task.original)
         if (taskService.isTaskRepeating(task.original)) {
             val newTask = taskService.getNextRepeatingTask(task.original)
             markIncomplete(newTask)
@@ -15,9 +15,9 @@ class RepeatingProcessor(state: NeuralLinkState, private val taskService: TaskSe
             task.before.add(newTask)
             task.original.dataviewFields.remove("repeat")
             task.modified = true
+            console.log("RepeatingProcessor, modified task", task)
         }
-        console.log("RecurringProcessor, returning task", task)
-        return task
+        return task.modified
     }
 
     override fun getPriority(): Int {
