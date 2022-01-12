@@ -12,7 +12,7 @@ interface TaskProcessor {
     /**
      * Performs some work on a task and returns the updated task.
      */
-    fun processTask(task: ModifiedTask): ModifiedTask
+    fun processTask(task: ModifiedTask): Boolean
 
     fun getPriority() : Int
 }

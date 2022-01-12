@@ -4,12 +4,11 @@ import ListItemCache
 import RepeatItem
 import Task
 import kotlin.js.Date
-import moment.moment
 
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class TaskService() {
+class TaskService {
     // momentDateFormat = "yyyy-MM-DD"
 
     private val taskPaperTagDateFormat = """\(([0-9\-T:]*)\)"""
@@ -17,10 +16,10 @@ class TaskService() {
     private val completedDateRegex = Regex("""@completed$taskPaperTagDateFormat""")
     @Suppress("RegExpRedundantEscape")
     private val dataviewRegex = Regex("""\[([a-zA-Z]*):: ([\d\w!: -]*)\]""")
-    private val spanValues = listOf("daily", "weekly", "monthly", "yearly")
+    private val spanValues = listOf("daily", "weekly", "monthly", "yearly", "weekday")
     private val specificValues = listOf("month", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
     private val spanRegex = spanValues.plus(specificValues).joinToString("|")
-    private val repeatItemRegex = Regex("""($spanRegex)([!]?): ([0-9]{1,2})""")
+    private val repeatItemRegex = Regex("""($spanRegex)([!]?)(: ([0-9]{1,2}))?""")
     private val allTagsRegex = Regex("""#([a-zA-Z][0-9a-zA-Z-_/]*)""")
     @Suppress("RegExpRedundantEscape")
     private val completedRegex = Regex("""- \[[xX]\]""")
@@ -88,6 +87,7 @@ class TaskService() {
         val completed = completedRegex.containsMatchIn(text)
 
         // Strip out due, tags, dataview and task notation from the text, then clean up whitespace
+        @Suppress("RegExpRedundantEscape")
         val stripped = text
             .replace(dueDateRegex, "")
             .replace(completedDateRegex, "")
@@ -106,8 +106,8 @@ class TaskService() {
         return if (task.subtasks.size == 0 && task.notes.size == 0) {
             0
         } else {
-            task.subtasks.size + task.notes.size + task.subtasks.fold(0) { accumulator, task ->
-                accumulator + indentedCount(task)
+            task.subtasks.size + task.notes.size + task.subtasks.fold(0) { accumulator, subtask ->
+                accumulator + indentedCount(subtask)
             }
         }
     }
@@ -153,6 +153,16 @@ class TaskService() {
                     "weekly" -> Date(currentYear, currentMonth, currentDay + (repeatItem.amount * 7) + 1, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
                     "monthly" -> Date(currentYear, currentMonth + repeatItem.amount, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
                     "yearly" -> Date(currentYear + repeatItem.amount, currentMonth, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    "weekday" -> {
+                        // Calculate how many days to add to the current day (Sunday, Friday, Saturday go to next Monday)
+                        val addDays = when (fromDate.getUTCDay()) {
+                            0 -> 1
+                            5 -> 3
+                            6 -> 2
+                            else -> 1
+                        }
+                        Date(currentYear, currentMonth, currentDay + addDays, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    }
                     else -> throw IllegalStateException("Recur span ${repeatItem.span} is not valid")
                 }
 
@@ -179,7 +189,9 @@ class TaskService() {
         var index = 1
         val type = matches.groupValues[index++]
         val fromComplete = matches.groupValues[index++] == "!"
-        val amount = matches.groupValues[index].toInt()
+        index++ // Skip the group for the optional repeat amount section (group 3)
+        val amountValue = matches.groupValues[index]
+        val amount = if (amountValue.isEmpty()) 0 else amountValue.toInt()
         val repeatType = if (type in spanValues) "SPAN" else "SPECIFIC"
 
         return RepeatItem(repeatType, type, fromComplete, amount)
@@ -189,7 +201,7 @@ class TaskService() {
      * Gets the due date from the task string
      *
      * So, given `Task @due(2021-01-01)`, this will return a Date object set to`2021-01-01`
-     * TODO Support Dataview style inline fields
+     * TODO Support Dataview style inline field for Due Date
      *
      * @param task The task String
      * @return A Date object representing the due date or null if no due date is present
@@ -207,7 +219,7 @@ class TaskService() {
      * Gets the completed date from the task string
      *
      * So, given `Task @completed(2021-01-01)`, this will return a Date object set to`2021-01-01`
-     * TODO Support Dataview style inline fields
+     * TODO Support Dataview style inline field for Completed Date
      *
      * @param task The task String
      * @return A Date object representing the completed date or null if no completed date is present
