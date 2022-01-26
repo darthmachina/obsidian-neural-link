@@ -33,7 +33,7 @@ open external class Plugin(app: App, manifest: PluginManifest) : Component {
     open fun addStatusBarItem(): HTMLElement
     open fun addCommand(command: Command): Command
     open fun addSettingTab(settingTab: PluginSettingTab)
-//    open fun registerView(type: String, viewCreator: ViewCreator)
+    open fun registerView(type: String, viewCreator: (leaf: WorkspaceLeaf) -> View)
     open fun registerExtensions(extensions: Array<String>, viewType: String)
     open fun registerMarkdownPostProcessor(postProcessor: MarkdownPostProcessor): MarkdownPostProcessor
     open fun registerMarkdownCodeBlockProcessor(language: String, handler: (source: String, el: HTMLElement, ctx: MarkdownPostProcessorContext) -> Any): MarkdownPostProcessor
@@ -396,8 +396,6 @@ open external class WorkspaceLeaf : WorkspaceItem {
     open fun on(name: String /* "group-change" */, callback: (group: String) -> Any, ctx: Any = definedExternally): EventRef
     open fun on(name: String /* "group-change" */, callback: (group: String) -> Any): EventRef
 }
-
-//typealias ViewCreator = (leaf: WorkspaceLeaf) -> View
 
 open external class View(leaf: WorkspaceLeaf) : Component {
     open var app: App

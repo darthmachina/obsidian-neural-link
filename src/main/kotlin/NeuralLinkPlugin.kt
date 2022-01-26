@@ -1,6 +1,7 @@
 import event.FileModifiedEvent
 import service.SettingsService
 import service.TaskService
+import view.KanbanView
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
@@ -25,6 +26,15 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
         // Add Settings tab
         addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, state))
+
+        // Kanban View
+        this.registerView(KanbanView.VIEW_TYPE, ::KanbanView)
+        this.addCommand(KanbanViewCommand(
+            "neural-link-kanban",
+            "Open Neural Link Kanban") {
+            activateView()
+        })
+
         console.log("NeuralLinkPlugin onload()")
     }
 
@@ -35,4 +45,13 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     private fun loadSettings() {
         loadData().then { result -> settingsService.loadFromJson(result) }
     }
+
+    private fun activateView() {
+        this.app.workspace.getLeaf(true)
+        val leaf = this.app.workspace.getLeavesOfType(KanbanView.VIEW_TYPE)[0]
+        console.log("leaf found:")
+        this.app.workspace.revealLeaf(leaf)
+    }
+
+    class KanbanViewCommand(override var id: String, override var name: String, override var callback: (() -> Any)?) : Command {}
 }
