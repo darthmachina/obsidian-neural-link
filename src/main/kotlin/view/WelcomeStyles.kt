@@ -1,6 +1,9 @@
 import kotlinx.css.*
 import styled.StyleSheet
 
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
 object WelcomeStyles : StyleSheet("WelcomeStyles", isStatic = true) {
     val textContainer by css {
         padding(5.px)

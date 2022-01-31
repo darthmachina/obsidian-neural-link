@@ -10,14 +10,22 @@ import styled.css
 import styled.styledDiv
 import styled.styledInput
 
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
 external interface WelcomeProps : Props {
     var name: String
 }
 
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
 data class WelcomeState(val name: String) : State
 
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
 class Welcome(props: WelcomeProps) : RComponent<WelcomeProps, WelcomeState>(props) {
-
     init {
         state = WelcomeState(props.name)
     }

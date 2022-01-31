@@ -47,10 +47,15 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun activateView() {
-        this.app.workspace.getLeaf(true)
-        val leaf = this.app.workspace.getLeavesOfType(KanbanView.VIEW_TYPE)[0]
-        console.log("leaf found:")
-        this.app.workspace.revealLeaf(leaf)
+        this.app.workspace.detachLeavesOfType(KanbanView.VIEW_TYPE)
+
+        val viewState = object : ViewState {
+            override var type: String = KanbanView.VIEW_TYPE
+        }
+        this.app.workspace.getRightLeaf(false).setViewState(viewState)
+//        val leaf = this.app.workspace.getLeavesOfType(KanbanView.VIEW_TYPE)
+//        console.log("leaf found: [$leaf]")
+//        this.app.workspace.revealLeaf(leaf[0])
     }
 
     class KanbanViewCommand(override var id: String, override var name: String, override var callback: (() -> Any)?) : Command {}

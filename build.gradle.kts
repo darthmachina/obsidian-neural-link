@@ -16,6 +16,7 @@ dependencies {
     val kotlinxHtmlVersion = "0.7.3"
 
     implementation(npm("obsidian", "0.12.17"))
+    implementation(npm("react-beautiful-dnd", "13.1.0"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-html-js:$kotlinxHtmlVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxHtmlVersion")
