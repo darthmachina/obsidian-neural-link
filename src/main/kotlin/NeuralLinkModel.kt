@@ -48,7 +48,7 @@ data class Task(
      * indentation where needed to maintain the hierarchy.
      */
     fun toMarkdown(): String {
-        val completedMarker = if (completed) "X" else " "
+        val completedMarker = if (completed) "x" else " "
         val markdownTags = if (tags.size > 0) {
             " " + tags.joinToString(" ") { tag -> "#$tag" }
         } else {
