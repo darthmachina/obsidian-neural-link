@@ -15,7 +15,7 @@ class RepeatingProcessor(state: NeuralLinkState, private val taskService: TaskSe
             task.before.add(newTask)
             task.original.dataviewFields.remove("repeat")
             task.modified = true
-            console.log("RepeatingProcessor, modified task", task)
+            console.log("RepeatingProcessor, modified task: ${task.modified}", task)
         }
         return task.modified
     }
