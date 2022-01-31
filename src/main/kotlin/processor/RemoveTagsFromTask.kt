@@ -14,6 +14,7 @@ class RemoveTagsFromTask(private val state: NeuralLinkState, private val taskSer
             val tagsRegex = Regex(state.settings.taskRemoveRegex)
             task.modified = removeTagsFromTask(task.original, tagsRegex)
         }
+        console.log("RemoveTagsFromTask completed: modified: ${task.modified}")
         return task.modified
     }
 

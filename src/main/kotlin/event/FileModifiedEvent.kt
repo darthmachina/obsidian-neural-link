@@ -56,7 +56,7 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, state: NeuralLinkState, val ta
                             modified = modified || processor.processTask(modifiedTask) // Keep modified true if it's already true
                         }
 
-                        if (modifiedTask.modified) {
+                        if (modified) {
                             console.log("Task modified, writing new contents to file", modifiedTask)
                             val totalLines =
                                 modifiedTask.before.plus(modifiedTask.original).plus(modifiedTask.after)
