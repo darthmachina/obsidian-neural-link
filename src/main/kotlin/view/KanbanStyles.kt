@@ -26,6 +26,10 @@ object KanbanStyles : StyleSheet("KanbanStyles", isStatic = true) {
         gridAutoFlow = GridAutoFlow.row
     }
 
+    val columnHeader by css {
+
+    }
+
     val kanbanCard by css {
         display = Display.grid
         gridAutoFlow = GridAutoFlow.row

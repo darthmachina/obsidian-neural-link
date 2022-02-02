@@ -47,14 +47,20 @@ class Kanban(props: KanbanProps) : RComponent<KanbanProps, KanbanState>(props) {
 
             state.columns.forEach { column ->
                 console.log("Outputting column $column")
-                +column
-                hr {  }
 
                 styledUl {
                     css {
                         +KanbanStyles.kanbanColumn
                     }
 
+                    styledLi {
+                        css {
+                            +KanbanStyles.columnHeader
+                        }
+
+                        +column
+                    }
+                    hr {  }
                     state.tasks[column]?.forEach { task ->
                         styledLi {
                             css {
