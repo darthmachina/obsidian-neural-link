@@ -22,10 +22,12 @@ object KanbanStyles : StyleSheet("KanbanStyles", isStatic = true) {
     }
 
     val kanbanColumn by css {
-
+        display = Display.grid
+        gridAutoFlow = GridAutoFlow.row
     }
 
     val kanbanCard by css {
-
+        display = Display.grid
+        gridAutoFlow = GridAutoFlow.row
     }
 }

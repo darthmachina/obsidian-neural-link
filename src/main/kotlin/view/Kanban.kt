@@ -7,6 +7,7 @@ import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
+import react.dom.hr
 import styled.css
 import styled.styledDiv
 import styled.styledLi
@@ -38,12 +39,17 @@ class Kanban(props: KanbanProps) : RComponent<KanbanProps, KanbanState>(props) {
 
     // Board -> Column -> Card
     override fun RBuilder.render() {
+        console.log("render()")
         styledDiv {
             css {
                 +KanbanStyles.kanbanBoard
             }
 
             state.columns.forEach { column ->
+                console.log("Outputting column $column")
+                +column
+                hr {  }
+
                 styledUl {
                     css {
                         +KanbanStyles.kanbanColumn

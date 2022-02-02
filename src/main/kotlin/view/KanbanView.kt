@@ -31,9 +31,10 @@ class KanbanView(leaf: WorkspaceLeaf) : ItemView(leaf) {
         console.log("onOpen")
 
         render(this.contentEl) {
-            child(Welcome::class) {
+            child(Kanban::class) {
                 attrs {
-                    name = "Kotlin/JS"
+                    columns = listOf("Backlog", "In Progress", "Waiting", "Completed")
+                    tasks = mapOf(Pair("Backlog", listOf()), Pair("In Progress", listOf()), Pair("Waiting", listOf()), Pair("Completed", listOf()))
                 }
             }
         }
