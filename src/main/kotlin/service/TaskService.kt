@@ -1,8 +1,10 @@
 package service
 
 import ListItemCache
+import MetadataCache
 import RepeatItem
 import Task
+import Vault
 import kotlin.js.Date
 import moment.moment
 
@@ -24,6 +26,33 @@ class TaskService() {
     private val allTagsRegex = Regex("""#([a-zA-Z][0-9a-zA-Z-_/]*)""")
     @Suppress("RegExpRedundantEscape")
     private val completedRegex = Regex("""- \[[xX]\]""")
+
+    /**
+     * @param vault Obsidian vault
+     * @param columns Map of tag -> display name
+     */
+    fun buildKanbanModel(vault: Vault, metadataCache: MetadataCache, columns: Map<String, String>) : Map<String, List<Task>> {
+        val columnTasks = mutableMapOf<String, MutableList<Task>>()
+        val columnTags = columns.keys
+        columns.values.forEach { columnTasks[it] = mutableListOf() }
+
+        vault.getFiles().forEach { file ->
+            vault.read(file).then { contents ->
+                val fileListItems = metadataCache.getFileCache(file)?.listItems ?: arrayOf()
+                val tasks = buildTaskModel(contents.split('\n'), fileListItems).values
+                tasks.forEach { task ->
+                    val taskColumnTags = task.tags.intersect(columnTags)
+                    if (taskColumnTags.isNotEmpty()) {
+                        taskColumnTags.forEach { taskColumnTag ->
+                            columnTasks[columns[taskColumnTag]]?.add(task)
+                        }
+                    }
+                }
+            }
+        }
+
+        return columnTasks
+    }
 
     /**
      * Builds up a model of Tasks based on the file contents.

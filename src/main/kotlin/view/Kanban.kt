@@ -66,7 +66,27 @@ class Kanban(props: KanbanProps) : RComponent<KanbanProps, KanbanState>(props) {
                             css {
                                 +KanbanStyles.kanbanCard
                             }
-                            +task.description
+
+                            styledDiv {
+                                +task.description
+                            }
+                            if (task.due != null) {
+                                styledDiv {
+                                    +"Due : ${task.due}"
+                                }
+                            }
+                            styledUl {
+                                task.tags.forEach { tag ->
+                                    styledLi {
+                                        +tag
+                                    }
+                                }
+                            }
+                            styledUl {
+                                task.dataviewFields.forEach { (field, value) ->
+                                    +"$field : $value"
+                                }
+                            }
                         }
                     }
                 }

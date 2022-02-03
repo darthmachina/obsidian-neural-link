@@ -1,12 +1,8 @@
 package view
 
-import kotlinx.css.Display
-import kotlinx.css.GridAutoColumns
-import kotlinx.css.GridAutoFlow
-import kotlinx.css.LinearDimension
-import kotlinx.css.display
-import kotlinx.css.gridAutoColumns
-import kotlinx.css.gridAutoFlow
+import kotlinx.css.*
+import kotlinx.css.properties.border
+import kotlinx.css.properties.borderBottom
 import styled.StyleSheet
 
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED", "NON_EXPORTABLE_TYPE")
@@ -24,14 +20,19 @@ object KanbanStyles : StyleSheet("KanbanStyles", isStatic = true) {
     val kanbanColumn by css {
         display = Display.grid
         gridAutoFlow = GridAutoFlow.row
+        margin(LinearDimension("1"))
+        border(LinearDimension("1"), BorderStyle.solid, Color.white)
     }
 
     val columnHeader by css {
-
+        margin(LinearDimension("1"))
+        borderBottom(LinearDimension("1"), BorderStyle.solid, Color.white)
     }
 
     val kanbanCard by css {
         display = Display.grid
         gridAutoFlow = GridAutoFlow.row
+        margin(LinearDimension("1"))
+        border(LinearDimension("1"), BorderStyle.solid, Color.white)
     }
 }
