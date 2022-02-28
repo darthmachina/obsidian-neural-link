@@ -141,7 +141,8 @@ class TaskService {
             throw IllegalArgumentException("Task requires a due date and repeating note to calculate next date\n\t$task")
 
         val repeatItem = parseRepeating(task.dataviewFields["repeat"]!!)
-        val fromDate = if (repeatItem.fromComplete) Date() else task.due!!
+        val currentDate = Date()
+        val fromDate = if (repeatItem.fromComplete) Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()) else task.due!!
         val currentYear = fromDate.getFullYear()
         val currentMonth = fromDate.getMonth()
         val currentDay = fromDate.getDate()
