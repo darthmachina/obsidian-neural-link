@@ -151,7 +151,7 @@ class TaskService {
             "SPAN" ->
                 when (repeatItem.span) {
                     "daily" -> Date(currentYear, currentMonth, currentDay + repeatItem.amount, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    "weekly" -> Date(currentYear, currentMonth, currentDay + (repeatItem.amount * 7) + 1, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    "weekly" -> Date(currentYear, currentMonth, currentDay + (repeatItem.amount * 7), fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
                     "monthly" -> Date(currentYear, currentMonth + repeatItem.amount, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
                     "yearly" -> Date(currentYear + repeatItem.amount, currentMonth, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
                     "weekday" -> {
