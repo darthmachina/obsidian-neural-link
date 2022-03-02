@@ -212,7 +212,8 @@ class TaskService {
         return if (dateMatch == null) {
             null
         } else {
-            Date(dateMatch.groupValues[1])
+            val dateSplit = dateMatch.groupValues[1].split('-')
+            Date(dateSplit[0].toInt(), dateSplit[1].toInt(), dateSplit[2].toInt())
         }
     }
 
