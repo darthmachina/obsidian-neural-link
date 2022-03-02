@@ -26,9 +26,9 @@ data class Task(
     val full: String,
     val description: String,
     @Serializable(with = DateAsDoubleSerializer::class)
-    var due: Date?, // Moment format yyyy-MM-DD
+    var due: Date?,
     @Serializable(with = DateAsDoubleSerializer::class)
-    var completedDate: Date?, // Moment format yyyy-MM-DDTHH:mm:ss
+    var completedDate: Date?,
     val tags: MutableList<String>, // TODO Need a Tag class?
     val dataviewFields: MutableMap<String,String>,
     var completed: Boolean,

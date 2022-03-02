@@ -141,7 +141,8 @@ class TaskService {
             throw IllegalArgumentException("Task requires a due date and repeating note to calculate next date\n\t$task")
 
         val repeatItem = parseRepeating(task.dataviewFields["repeat"]!!)
-        val fromDate = if (repeatItem.fromComplete) Date() else task.due!!
+        val currentDate = Date()
+        val fromDate = if (repeatItem.fromComplete) Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()) else task.due!!
         val currentYear = fromDate.getFullYear()
         val currentMonth = fromDate.getMonth()
         val currentDay = fromDate.getDate()
@@ -149,10 +150,10 @@ class TaskService {
         return when (repeatItem.type) {
             "SPAN" ->
                 when (repeatItem.span) {
-                    "daily" -> Date(currentYear, currentMonth, currentDay + repeatItem.amount, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    "weekly" -> Date(currentYear, currentMonth, currentDay + (repeatItem.amount * 7) + 1, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    "monthly" -> Date(currentYear, currentMonth + repeatItem.amount, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    "yearly" -> Date(currentYear + repeatItem.amount, currentMonth, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    "daily" -> Date(currentYear, currentMonth, currentDay + repeatItem.amount)
+                    "weekly" -> Date(currentYear, currentMonth, currentDay + (repeatItem.amount * 7))
+                    "monthly" -> Date(currentYear, currentMonth + repeatItem.amount, currentDay)
+                    "yearly" -> Date(currentYear + repeatItem.amount, currentMonth, currentDay)
                     "weekday" -> {
                         // Calculate how many days to add to the current day (Sunday, Friday, Saturday go to next Monday)
                         val addDays = when (fromDate.getUTCDay()) {
@@ -161,15 +162,15 @@ class TaskService {
                             6 -> 2
                             else -> 1
                         }
-                        Date(currentYear, currentMonth, currentDay + addDays, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                        Date(currentYear, currentMonth, currentDay + addDays)
                     }
                     else -> throw IllegalStateException("Recur span ${repeatItem.span} is not valid")
                 }
 
             "SPECIFIC" ->
                 when (repeatItem.span) {
-                    "month" -> Date(currentYear, currentMonth + 1, repeatItem.amount, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
-                    else -> Date(currentYear + 1, currentMonth, currentDay, fromDate.getHours(), fromDate.getMinutes(), fromDate.getSeconds())
+                    "month" -> Date(currentYear, currentMonth + 1, repeatItem.amount)
+                    else -> Date(currentYear + 1, currentMonth, currentDay)
                 }
             else -> throw IllegalStateException("Recurring type ${repeatItem.type} is not valid")
         }
@@ -211,7 +212,8 @@ class TaskService {
         return if (dateMatch == null) {
             null
         } else {
-            Date(dateMatch.groupValues[1])
+            val dateSplit = dateMatch.groupValues[1].split('-')
+            Date(dateSplit[0].toInt(), dateSplit[1].toInt(), dateSplit[2].toInt())
         }
     }
 
