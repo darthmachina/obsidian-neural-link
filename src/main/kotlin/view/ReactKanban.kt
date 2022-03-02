@@ -9,5 +9,5 @@ import react.Props
 external val ReactKanban: ComponentClass<ReactKanbanProps>
 
 external interface ReactKanbanProps : Props {
-    var board: KanbanView.Board
+    var initialBoard: Board
 }

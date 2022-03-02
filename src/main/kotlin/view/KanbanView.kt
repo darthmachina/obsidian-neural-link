@@ -12,6 +12,26 @@ import kotlin.js.Promise
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
+data class Board(val columns: Array<Column>)
+
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+data class ColumnList(val columns: Array<Column>)
+
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+data class Column(val id: Int, val title: String, val cards: Array<Card>)
+
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+data class Card(val id: Int, val title: String, val description: String)
+
+@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
+@OptIn(ExperimentalJsExport::class)
+@JsExport
 class KanbanView(leaf: WorkspaceLeaf) : ItemView(leaf) {
     companion object {
         val VIEW_TYPE = "NEURAL-LINK-KANBAN-VIEW"
@@ -32,12 +52,17 @@ class KanbanView(leaf: WorkspaceLeaf) : ItemView(leaf) {
     override fun onOpen(): Promise<Unit> {
         console.log("onOpen")
 
+        val startBoard = Board(arrayOf(
+            Column(1, "Backlog", arrayOf(Card(1, "Test 1", "Testing"))),
+            Column(2, "In Progress", arrayOf(Card(2, "Test 2", "Working")))
+        ))
+        console.log("Initial Board: $startBoard")
+
+        kotlinext.js.require("@asseinfo/react-kanban/dist/styles.css")
         render(this.contentEl) {
             ReactKanban {
                 attrs {
-                    board = Board(listOf(
-                        Column(1, "Backlog", listOf(Card(1, "Test 1", "Testing")))
-                    ))
+                    initialBoard = startBoard
                 }
             }
         }
@@ -46,12 +71,6 @@ class KanbanView(leaf: WorkspaceLeaf) : ItemView(leaf) {
         // Need a return
         return Promise { _: (Unit) -> Unit, _: (Throwable) -> Unit -> }
     }
-
-    data class Board(val columns: List<Column>)
-
-    data class Column(val id: Int, val title: String, val cards: List<Card>)
-
-    data class Card(val id: Int, val title: String, val description: String)
 
     private fun createRandomTasks(start: Int, total: Int) : List<Task> {
         val tasks = mutableListOf<Task>()
