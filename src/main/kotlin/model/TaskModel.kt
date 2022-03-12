@@ -10,5 +10,14 @@ import NeuralLinkPluginSettings
  */
 data class TaskModel(
     val settings: NeuralLinkPluginSettings,
-    val tasks: MutableList<Task> = mutableListOf()
-)
+    val tasks: MutableList<Task> = mutableListOf(),
+    val kanbanColumns: MutableMap<String,MutableList<Task>> = mutableMapOf()
+) {
+    init {
+        // Populate the map with the columng tags we are using
+        // TODO Update this map if the columnTags value changes in settings
+        settings.columnTags.forEach {
+            kanbanColumns[it] = mutableListOf()
+        }
+    }
+}
