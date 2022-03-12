@@ -14,6 +14,7 @@ repositories {
 dependencies {
     val kotlinVersion = "1.6.0"
     val kotlinxHtmlVersion = "0.7.3"
+    val kvisionVersion = "5.8.2"
 
     implementation(npm("obsidian", "0.12.17"))
 
@@ -27,6 +28,10 @@ dependencies {
     implementation("org.reduxkotlin:redux-kotlin:0.5.5")
     implementation("org.reduxkotlin:redux-kotlin-reselect:0.2.10")
     implementation("app.softwork:kotlinx-uuid-core:0.0.12")
+
+    implementation("io.kvision:kvision:$kvisionVersion")
+    implementation("io.kvision:kvision-bootstrap:$kvisionVersion")
+    implementation("io.kvision:kvision-bootstrap-css:$kvisionVersion")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }
