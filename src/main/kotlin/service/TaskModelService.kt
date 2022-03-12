@@ -33,7 +33,7 @@ class TaskModelService {
     @Suppress("RegExpRedundantEscape")
     private val completedRegex = Regex("""- \[[xX]\]""")
 
-    fun loadTasKModel(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
+    fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
         val taskModel = TaskModel(store.state.settings) // Reuse Setting from Store
 
         val jobList = listOf<Job>()

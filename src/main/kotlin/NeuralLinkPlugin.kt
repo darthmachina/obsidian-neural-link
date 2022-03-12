@@ -1,3 +1,4 @@
+import kotlinx.coroutines.*
 import model.TaskModel
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
@@ -37,19 +38,16 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 //    private val fileModifiedEvent = FileModifiedEvent(this, state, taskService)
 
     override fun onload() {
-        loadSettings()
+//        this.app.workspace.onLayoutReady {
+//            // TODO Need to check if it's loaded already, I think
+//            loadTaskModel()
+//        }
+        // TODO Need to wrap this around something so it's delayed on app startup
+        loadSettingAndTaskModel()
 
 //        this.registerEvent(this.app.metadataCache.on("changed") { file ->
 //            fileModifiedEvent.processEvent(file)
 //        })
-
-        this.app.workspace.onLayoutReady {
-            // TODO Need to check if it's loaded already, I think
-//            loadTaskModel()
-        }
-        // TODO Need to wrap this around something so it's delayed on app startup
-        // TODO Need to wait on the settings to load before this happens
-        loadTaskModel()
 
         // Add Settings tab
         addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, store))
@@ -60,16 +58,20 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         console.log("NeuralLinkPlugin onunload()")
     }
 
-    private fun loadTaskModel() {
-        console.log("loadTaskModel()")
-        val taskModel = taskModelService.loadTasKModel(
-            this.app.vault,
-            this.app.metadataCache,
-            store
-        )
+    private fun loadSettingAndTaskModel() {
+        console.log("loadSettingAndTaskModel()")
+        CoroutineScope(Dispatchers.Main).launch {
+            withContext(Dispatchers.Default) { loadSettings() } // Load settings first and wait
+            taskModelService.loadTasKModelIntoStore(
+                app.vault,
+                app.metadataCache,
+                store
+            )
+
+        }
     }
 
-    private fun loadSettings() {
-        loadData().then { result -> settingsService.loadFromJson(result) }
+    private suspend fun loadSettings() {
+        loadData().then { result -> settingsService.loadFromJson(result) }.await()
     }
 }
