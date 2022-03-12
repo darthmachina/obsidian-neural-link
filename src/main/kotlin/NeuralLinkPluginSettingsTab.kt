@@ -1,5 +1,7 @@
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
+import model.TaskModel
+import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
 import service.SettingsService
 
@@ -9,7 +11,7 @@ class NeuralLinkPluginSettingsTab(
     override var app: App,
     private var plugin: NeuralLinkPlugin,
     private val settingsService: SettingsService,
-    private val state: NeuralLinkState
+    private val state: Store<TaskModel>
 ) : PluginSettingTab(app, plugin) {
     override fun display() {
         while (containerEl.firstChild != null) {
@@ -26,10 +28,10 @@ class NeuralLinkPluginSettingsTab(
             .setDesc("Contents to remove from task on completion")
             .addText { text ->
                 text.setPlaceholder("Regex")
-                    .setValue(state.settings.taskRemoveRegex)
+                    .setValue(state.state.settings.taskRemoveRegex)
                     .onChange { value ->
                         console.log("Regex: $value")
-                        state.settings.taskRemoveRegex = value
+                        state.state.settings.taskRemoveRegex = value
                         plugin.saveData(settingsService.toJson())
                     }
             }

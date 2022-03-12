@@ -59,8 +59,8 @@ data class Task(
         } else {
             ""
         }
-        val markdownDue = if (due == null) "" else " @due(${moment.utc(due).format("yyyy-MM-DD")})"
-        val markdownCompleted = if (completedDate == null) "" else " @completed(${moment.utc(completedDate).format("yyyy-MM-DDTHH:mm:ss")})"
+        val markdownDue = if (due == null) "" else " @due(${due})"
+        val markdownCompleted = if (completedDate == null) "" else " @completed(${completedDate})"
         val markdownSubtasks = if (subtasks.size > 0) {
             "\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() }
         } else {

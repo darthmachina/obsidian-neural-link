@@ -1,11 +1,13 @@
 package service
 
 import NeuralLinkPluginSettings
-import NeuralLinkState
+import model.TaskModel
+import org.reduxkotlin.Store
+import store.UpdateSettings
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class SettingsService(private val state: NeuralLinkState) {
+class SettingsService(private val state: Store<TaskModel>) {
     /**
      * Processes the results of a `loadData()` call.
      *
@@ -17,21 +19,20 @@ class SettingsService(private val state: NeuralLinkState) {
      *
      * @return A fully populated `NeuralLinkPluginSettings` object at the current version.
      */
-    fun loadFromJson(json: Any?): NeuralLinkPluginSettings {
+    fun loadFromJson(json: Any?) {
         // TODO implement example of versioned settings
         if (json == null) {
-            state.settings = NeuralLinkPluginSettings.default()
+            val newSettings = NeuralLinkPluginSettings.default()
+            state.dispatch(UpdateSettings(newSettings))
         } else {
             val loadedSettings = JSON.parse<NeuralLinkPluginSettings>(json as String)
             console.log("loadedSettings: ", loadedSettings)
-            state.settings = loadedSettings
+            state.dispatch(UpdateSettings(loadedSettings))
         }
-
-        return state.settings
     }
 
     fun toJson(): String {
-        val json = JSON.stringify(state.settings)
+        val json = JSON.stringify(state.state.settings)
         console.log("saveSettings: ", json)
         return json
     }
