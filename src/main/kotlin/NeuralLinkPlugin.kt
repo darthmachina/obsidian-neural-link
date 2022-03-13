@@ -1,5 +1,6 @@
 import kotlinx.coroutines.*
 import model.TaskModel
+import org.reduxkotlin.Store
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
@@ -17,15 +18,23 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
      * Logs all actions and states after they are dispatched.
      */
     val loggerMiddleware = middleware<TaskModel> { store, next, action ->
+        console.log("INCOMING STATE: ", store.state)
+        store.state.kanbanColumns.keys.forEach { status ->
+            console.log(" - incoming task list for $status : ", store.state.kanbanColumns[status]!!)
+        }
+
         val result = next(action)
         console.log("DISPATCH action: ${action::class.simpleName}: $action")
-        console.log("next state: ${store.state}")
+        console.log("next state :", store.state)
+        store.state.kanbanColumns.keys.forEach { status ->
+            console.log(" - next task list for $status : ", store.state.kanbanColumns[status]!!)
+        }
         result
     }
 
     private val store = createStore(
         reducer,
-        TaskModel(NeuralLinkPluginSettings.default()),
+        TaskModel(NeuralLinkPluginSettings.default(), mutableListOf(), mutableMapOf()),
         applyMiddleware(loggerMiddleware)
     )
 
@@ -55,7 +64,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
         // Kanban View
         this.registerView(KanbanView.VIEW_TYPE) { leaf ->
-            KanbanView(leaf, store)
+            KanbanView(leaf, store, taskModelService)
         }
         this.addCommand(KanbanViewCommand(
             "neural-link-kanban",

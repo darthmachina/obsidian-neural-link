@@ -34,7 +34,7 @@ class TaskModelService {
     private val completedRegex = Regex("""- \[[xX]\]""")
 
     fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
-        val taskModel = TaskModel(store.state.settings) // Reuse Setting from Store
+        val taskModel = TaskModel(store.state.settings, mutableListOf(), mutableMapOf()) // Reuse Setting from Store
 
         val jobList = listOf<Job>()
         val deferredJob = CoroutineScope(Dispatchers.Main).launch {
@@ -42,6 +42,21 @@ class TaskModelService {
             store.dispatch(VaultLoaded(taskModel))
         }
     }
+
+    fun findTaskInStatus(store: Store<TaskModel>, taskId: String, status: String): Task? {
+        val matchingTasks = store.state.kanbanColumns[status]?.filter { task -> task.id == taskId }
+        if (matchingTasks == null || matchingTasks.isEmpty()) {
+            console.log("Task not found for taskId: ", taskId)
+            return null
+        } else if (matchingTasks.size > 1) {
+            console.log("Found more than one Task for taskId, returning first: ", taskId)
+            return matchingTasks[0]
+        } else {
+            // By default size == 1 here
+            return matchingTasks[0]
+        }
+    }
+
 
     private suspend fun processAllFiles(vault: Vault, metadataCache: MetadataCache, taskModel: TaskModel): TaskModel = coroutineScope {
         vault.getFiles().map { file ->

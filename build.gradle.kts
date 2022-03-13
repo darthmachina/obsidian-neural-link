@@ -30,8 +30,6 @@ dependencies {
     implementation("app.softwork:kotlinx-uuid-core:0.0.12")
 
     implementation("io.kvision:kvision:$kvisionVersion")
-    implementation("io.kvision:kvision-bootstrap:$kvisionVersion")
-    implementation("io.kvision:kvision-bootstrap-css:$kvisionVersion")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }

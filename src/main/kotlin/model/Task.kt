@@ -22,7 +22,7 @@ data class Task(
     var completed: Boolean,
     val subtasks: MutableList<Task> = mutableListOf(),
     val notes: MutableList<String> = mutableListOf(),
-    val id: UUID = UUID()
+    val id: String = UUID().toString()
 ) {
     @OptIn(ExperimentalSerializationApi::class)
     fun deepCopy(): Task {
