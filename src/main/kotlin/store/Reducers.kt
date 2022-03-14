@@ -1,6 +1,7 @@
 package store
 
 import model.Task
+import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Reducer
 
@@ -18,20 +19,34 @@ val reducer: Reducer<TaskModel> = { store, action ->
 }
 
 class Reducers {
+    private val taskComparator = compareBy<Task,Int?>(nullsLast()) {
+        val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt()
+        console.log(" - position for Task '${it.description}' : $position")
+        position
+    }
+
     /**
      * Called when the vault is initially loaded with a task list, will populate the kanban data
      */
     fun vaultLoaded(newTaskModel: TaskModel): TaskModel {
         console.log("vaultLoaded()")
         val columnTags = newTaskModel.settings.columnTags
-        newTaskModel.tasks.forEach { task ->
-            val statusColumn = task.tags.filter { it in columnTags }
-            if (statusColumn.size > 1) {
-                console.log("ERROR: More than one status column is on the task: ", statusColumn)
-            } else if (statusColumn.size == 1) {
-                newTaskModel.kanbanColumns[statusColumn[0]]?.add(task)
-            } // Don't care about size == 0
-        }
+        newTaskModel.tasks
+            // First, sort by TASK_ORDER to maintain any previously saved order
+            .sortedWith(taskComparator)
+            // Now add the tasks into the appropriate status column, adding a TASK_ORDER value if it doesn't exist
+            .forEach { task ->
+                val statusColumn = task.tags.filter { it in columnTags }
+                if (statusColumn.size > 1) {
+                    console.log("ERROR: More than one status column is on the task: ", statusColumn)
+                } else if (statusColumn.size == 1) {
+                    val statusTasks = newTaskModel.kanbanColumns[statusColumn[0]]!!
+                    statusTasks.add(task)
+                    if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
+                        task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = statusTasks.indexOf(task).toString()
+                    }
+                } // Don't care about size == 0
+            }
 
         return newTaskModel
     }
@@ -43,8 +58,6 @@ class Reducers {
         taskModel.kanbanColumns.keys.forEach { status ->
             updatedKanbanColumns[status] = mutableListOf()
             updatedKanbanColumns[status]!!.addAll(taskModel.kanbanColumns[status]!!.map { it.deepCopy() })
-        }
-        updatedKanbanColumns.keys.forEach { status ->
         }
 
         // First, find the current status column
@@ -70,7 +83,14 @@ class Reducers {
                     updatedKanbanColumns[newStatus]!!.add(task)
                 } else {
                     val statusTasks = updatedKanbanColumns[newStatus]!!
-                    statusTasks.add(statusTasks.indexOf(beforeTasks[0]), task)
+                    val beforeTaskIndex = statusTasks.indexOf(beforeTasks[0])
+                    if (beforeTaskIndex == -1) {
+                        // Not found, log it and just add to the end of the list
+                        console.log("ERROR: Task $beforeTaskId not found in status $newStatus, adding to end of list")
+                        statusTasks.add(task)
+                    } else {
+                        insertAndUpdateTaskOrder(task, statusTasks, beforeTaskIndex)
+                    }
                 }
                 task.tags.add(newStatus)
             }
@@ -79,11 +99,22 @@ class Reducers {
         return taskModel.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
     }
 
-    fun taskCompleted() {
-
-    }
-
-    private fun moveTaskStatus(taskModel: TaskModel, task: Task, oldStatus: String, newStatus: String) {
-
+    /**
+     * Inserts the given task into the task list at position.
+     *
+     * NOTE: Side effect: tasks is mutated directly
+     */
+    private fun insertAndUpdateTaskOrder(task: Task, tasks: MutableList<Task>, position: Int) {
+        console.log("insertAndUpdateTaskOrder(task, tasks, $position)")
+        // Move Order for each task
+        for (i in position until tasks.size) {
+            val newOrder = (tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt() + 1).toString()
+            tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = newOrder
+        }
+        // Incoming task gets the position
+        task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
+        tasks.add(task)
+        tasks.sortWith(taskComparator)
+        console.log(" - tasks after sorting : ", tasks)
     }
 }

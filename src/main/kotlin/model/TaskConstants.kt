@@ -3,7 +3,7 @@ package model
 object TaskConstants {
     const val DUE_ON_PROPERTY = "due"
     const val COMPLETED_ON_PROPERTY = "completed"
-    const val TASK_ORDER_PROPERTY = "order"
+    const val TASK_ORDER_PROPERTY = "pos"
 
     enum class REPEATING_TYPE(val tag: String) {
         DAILY("daily"),

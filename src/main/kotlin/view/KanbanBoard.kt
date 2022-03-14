@@ -21,6 +21,7 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
     private val columnPanels = mutableMapOf<String,KanbanColumnPanel>()
 
     init {
+        addCssStyle(KanbanStyles.ROOT)
         // If the columns are different update the board
         if (boardCache.columns != store.state.settings.columnTags) {
             updateCacheColumns(store.state.settings.columnTags)
@@ -61,18 +62,6 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
         }
     }
 
-    /**
-     * Keeping for now, but I don't think I need this method
-     */
-    private fun removeOldColumns() {
-        console.log("removeOldColumns()")
-        val oldColumns = boardCache.tasks.keys.filter { !store.state.settings.columnTags.contains(it) }
-        if (oldColumns.isNotEmpty()) {
-            console.log("- removing columns: ", oldColumns)
-            oldColumns.forEach { boardCache.tasks.remove(it) }
-        }
-    }
-
     private fun checkAndUpdateTasks() {
         console.log("checkAndUpdateTasks()")
         store.state.settings.columnTags.forEach { status ->
@@ -92,15 +81,6 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
     private fun createColumn(name: String, cards: MutableList<Task>): VPanel {
         console.log("createColumn(): ", name)
         val column = KanbanColumnPanel(name, cards.map { createCard(it) })
-//        val column = VPanel(spacing = 5, alignItems = AlignItems.CENTER) {
-//            addCssStyle(KanbanStyles.KANBAN_COLUMN)
-//            div {
-//                +name
-//            }
-//            cards.forEach { task ->
-//                add(createCard(task))
-//            }
-//        }
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
                 store.dispatch(TaskStatusChanged(cardId, column.status, dragoverCardId))

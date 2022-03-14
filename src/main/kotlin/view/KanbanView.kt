@@ -48,6 +48,7 @@ class KanbanView(leaf: WorkspaceLeaf, val store: Store<TaskModel>, val taskModel
     inner class KanbanApp: Application() {
         override fun start() {
             root(contentEl) {
+                addCssStyle(KanbanStyles.ROOT)
                 add(KanbanBoard(store, taskModelService))
             }
         }
