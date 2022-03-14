@@ -1,8 +1,6 @@
 package view
 
-import io.kvision.core.AlignItems
 import io.kvision.html.Div
-import io.kvision.html.div
 import io.kvision.panel.HPanel
 import io.kvision.panel.VPanel
 import model.Task
@@ -20,7 +18,7 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
 
     private var dragoverCardId: String? = null
     private val boardCache = BoardCache(mutableListOf(), mutableMapOf())
-    private val columnPanels = mutableMapOf<String,KanbanColumn>()
+    private val columnPanels = mutableMapOf<String,KanbanColumnPanel>()
 
     init {
         // If the columns are different update the board
@@ -93,7 +91,7 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
 
     private fun createColumn(name: String, cards: MutableList<Task>): VPanel {
         console.log("createColumn(): ", name)
-        val column = KanbanColumn(name, cards.map { createCard(it) })
+        val column = KanbanColumnPanel(name, cards.map { createCard(it) })
 //        val column = VPanel(spacing = 5, alignItems = AlignItems.CENTER) {
 //            addCssStyle(KanbanStyles.KANBAN_COLUMN)
 //            div {
@@ -105,7 +103,7 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
 //        }
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
-                store.dispatch(TaskStatusChanged(cardId, column.status))
+                store.dispatch(TaskStatusChanged(cardId, column.status, dragoverCardId))
             }
         }
         columnPanels[name] = column

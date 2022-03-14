@@ -5,7 +5,7 @@ import io.kvision.html.Div
 import io.kvision.html.div
 import io.kvision.panel.VPanel
 
-class KanbanColumn(val status: String, private val cards: List<Div>): VPanel(spacing = 5, alignItems = AlignItems.CENTER) {
+class KanbanColumnPanel(val status: String, private val cards: List<Div>): VPanel(spacing = 5, alignItems = AlignItems.CENTER) {
     init {
         addCssStyle(KanbanStyles.KANBAN_COLUMN)
         div {

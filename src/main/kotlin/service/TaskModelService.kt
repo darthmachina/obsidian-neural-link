@@ -7,11 +7,16 @@ import Vault
 import kotlinx.coroutines.*
 import model.SimpleDate
 import model.Task
+import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
 private const val TASK_PAPER_DATE_FORMAT = """\(([0-9\-T:]*)\)"""
+private const val ALL_TAGS_REGEX = """#([a-zA-Z][0-9a-zA-Z-_/]*)"""
+private const val DATAVIEW_REGEX = """\[([a-zA-Z]*):: ([\d\w!: -]*)\]"""
+@Suppress("RegExpRedundantEscape")
+private const val COMPLETED_REGEX = """- \[[xX]\]"""
 
 /**
  * Service for interacting with a TaskModel. Main use is to process files
@@ -21,44 +26,51 @@ private const val TASK_PAPER_DATE_FORMAT = """\(([0-9\-T:]*)\)"""
  * TODO: Create a method to process a modified/created file
  */
 class TaskModelService {
-    private val dueDateRegex = Regex("""@due$TASK_PAPER_DATE_FORMAT""")
-    private val completedDateRegex = Regex("""@completed$TASK_PAPER_DATE_FORMAT""")
+    private val dueDateRegex = Regex("""@${TaskConstants.DUE_ON_PROPERTY}$TASK_PAPER_DATE_FORMAT""")
+    private val completedDateRegex = Regex("""@${TaskConstants.COMPLETED_ON_PROPERTY}$TASK_PAPER_DATE_FORMAT""")
     @Suppress("RegExpRedundantEscape")
-    private val dataviewRegex = Regex("""\[([a-zA-Z]*):: ([\d\w!: -]*)\]""")
-    private val spanValues = listOf("daily", "weekly", "monthly", "yearly", "weekday")
-    private val specificValues = listOf("month", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-    private val spanRegex = spanValues.plus(specificValues).joinToString("|")
+    private val dataviewRegex = Regex(DATAVIEW_REGEX)
+    private val spanRegex =
+        TaskConstants.REPEATING_TYPE.getAllTags()
+            .plus(TaskConstants.SPECIFIC_INSTANTS.getAllTags())
+            .joinToString("|")
     private val repeatItemRegex = Regex("""($spanRegex)([!]?)(: ([0-9]{1,2}))?""")
-    private val allTagsRegex = Regex("""#([a-zA-Z][0-9a-zA-Z-_/]*)""")
-    @Suppress("RegExpRedundantEscape")
-    private val completedRegex = Regex("""- \[[xX]\]""")
+    private val allTagsRegex = Regex(ALL_TAGS_REGEX)
+    private val completedRegex = Regex(COMPLETED_REGEX)
 
     fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
-        val taskModel = TaskModel(store.state.settings, mutableListOf(), mutableMapOf()) // Reuse Setting from Store
-
-        val jobList = listOf<Job>()
-        val deferredJob = CoroutineScope(Dispatchers.Main).launch {
-            val taskModel = processAllFiles(vault, metadataCache, taskModel)
-            store.dispatch(VaultLoaded(taskModel))
+        CoroutineScope(Dispatchers.Main).launch {
+            store.dispatch(VaultLoaded(processAllFiles(vault, metadataCache, store.state.copy())))
         }
     }
 
     fun findTaskInStatus(store: Store<TaskModel>, taskId: String, status: String): Task? {
         val matchingTasks = store.state.kanbanColumns[status]?.filter { task -> task.id == taskId }
-        if (matchingTasks == null || matchingTasks.isEmpty()) {
+        return if (matchingTasks == null || matchingTasks.isEmpty()) {
             console.log("Task not found for taskId: ", taskId)
-            return null
+            null
         } else if (matchingTasks.size > 1) {
             console.log("Found more than one Task for taskId, returning first: ", taskId)
-            return matchingTasks[0]
+            matchingTasks[0]
         } else {
             // By default size == 1 here
-            return matchingTasks[0]
+            matchingTasks[0]
         }
     }
 
-
-    private suspend fun processAllFiles(vault: Vault, metadataCache: MetadataCache, taskModel: TaskModel): TaskModel = coroutineScope {
+    /**
+     * Processes all files in the Vault and loads any tasks into the TaskModel.
+     *
+     * NOTE: This makes changes to the TaskModel so it assumes that the Redux Store has already been copied into a
+     * new state
+     *
+     * @param vault The Obsidian Vault to process
+     * @param metadataCache Obsidian cache
+     * @param taskModel The TaskModel to populate
+     * @return A filled TaskModel. This is the same instance as the taskModel parameter
+     */
+    private suspend fun processAllFiles(vault: Vault, metadataCache: MetadataCache, taskModel: TaskModel): TaskModel
+    = coroutineScope {
         vault.getFiles().map { file ->
             async {
                 taskModel.tasks.addAll(readFile(file, vault, metadataCache))

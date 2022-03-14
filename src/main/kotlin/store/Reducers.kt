@@ -3,21 +3,13 @@ package store
 import model.Task
 import model.TaskModel
 import org.reduxkotlin.Reducer
-import org.reduxkotlin.Store
 
 val reducerFunctions = Reducers()
 
 val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
         is VaultLoaded -> reducerFunctions.vaultLoaded(action.newTaskModel)
-        is TaskStatusChanged -> {
-            console.log("Action: TaskStatusChanged")
-            val taskModel = reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus)
-            taskModel.kanbanColumns.keys.forEach { status ->
-                console.log(" - task list for $status : ", taskModel.kanbanColumns[status]!!)
-            }
-            taskModel
-        }
+        is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> store
         is TaskCompleted -> store
         is UpdateSettings -> store.copy(settings = action.newSettings)
@@ -44,19 +36,15 @@ class Reducers {
         return newTaskModel
     }
 
-    fun taskStatusChanged(taskModel: TaskModel, taskId: String, newStatus: String): TaskModel {
-        console.log("taskStatusChaged()")
+    fun taskStatusChanged(taskModel: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
+        console.log("taskStatusChanged()")
         val updatedTaskList = taskModel.tasks.map { it.deepCopy() }.toMutableList()
         val updatedKanbanColumns = mutableMapOf<String,MutableList<Task>>()
         taskModel.kanbanColumns.keys.forEach { status ->
-            console.log(" - task list for $status : ", taskModel.kanbanColumns[status]!!)
-            console.log("  - copied task list : ", taskModel.kanbanColumns[status]!!.map { it.deepCopy() })
             updatedKanbanColumns[status] = mutableListOf()
             updatedKanbanColumns[status]!!.addAll(taskModel.kanbanColumns[status]!!.map { it.deepCopy() })
         }
-        console.log(" ---")
         updatedKanbanColumns.keys.forEach { status ->
-            console.log(" - task list for $status : ", updatedKanbanColumns[status]!!)
         }
 
         // First, find the current status column
@@ -68,32 +56,27 @@ class Reducers {
             // Remove the task from that column
             updatedKanbanColumns.keys.forEach taskLoop@{ status ->
                 if (updatedKanbanColumns[status]!!.contains(task)) {
-                    console.log(" - found task in column $status")
                     updatedKanbanColumns[status]!!.remove(task)
                     task.tags.remove(status)
                     return@taskLoop
                 }
             }
-            // Add the task to the bottom of the list for the new status
+            // Add the task to the list for the new status
+            // If beforeTasksId is set add it at the same position (so pushes beforeTask down), else just add to the end
             if (updatedKanbanColumns.keys.contains(newStatus)) {
-                console.log(" - adding task to newStatus $newStatus")
-                updatedKanbanColumns[newStatus]!!.add(task)
+                val beforeTasks = updatedTaskList.filter { it.id == beforeTaskId }
+                if (beforeTasks.isEmpty() || beforeTasks.size > 1) {
+                    console.log("Did not find just one task to place before, adding to bottom")
+                    updatedKanbanColumns[newStatus]!!.add(task)
+                } else {
+                    val statusTasks = updatedKanbanColumns[newStatus]!!
+                    statusTasks.add(statusTasks.indexOf(beforeTasks[0]), task)
+                }
                 task.tags.add(newStatus)
             }
         }
 
-        updatedKanbanColumns.keys.forEach { status ->
-            console.log(" - creating new task list for $status : ", updatedKanbanColumns[status]!!)
-        }
-        val newTaskModel = TaskModel(
-            taskModel.settings,
-            updatedTaskList,
-            updatedKanbanColumns
-        )
-        newTaskModel.kanbanColumns.keys.forEach { status ->
-            console.log(" - final task list for $status : ", newTaskModel.kanbanColumns[status]!!)
-        }
-        return newTaskModel
+        return taskModel.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
     }
 
     fun taskCompleted() {

@@ -3,7 +3,7 @@ package model
 import NeuralLinkPluginSettings
 
 /**
- * Right now this just holds a full list of all of the Tasks in the Vault.
+ * Right now this just holds a full list of all the Tasks in the Vault.
  *
  * The idea is that there will be helper properties and methods to work with
  * this list.
