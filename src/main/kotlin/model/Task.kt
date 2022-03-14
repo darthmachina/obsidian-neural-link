@@ -22,6 +22,7 @@ data class Task(
     var completed: Boolean,
     val subtasks: MutableList<Task> = mutableListOf(),
     val notes: MutableList<String> = mutableListOf(),
+    var original: Task? = null, // TODO try to automate setting this
     val id: String = UUID().toString()
 ) {
     @OptIn(ExperimentalSerializationApi::class)

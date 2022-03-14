@@ -43,6 +43,7 @@ class Reducers {
                     val statusTasks = newTaskModel.kanbanColumns[statusColumn[0]]!!
                     statusTasks.add(task)
                     if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
+                        task.original = task.deepCopy()
                         task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = statusTasks.indexOf(task).toString()
                     }
                 } // Don't care about size == 0
@@ -108,10 +109,13 @@ class Reducers {
         console.log("insertAndUpdateTaskOrder(task, tasks, $position)")
         // Move Order for each task
         for (i in position until tasks.size) {
-            val newOrder = (tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt() + 1).toString()
-            tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = newOrder
+            val newOrder = tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt() + 1
+            console.log(" - newOrder for Task '${tasks[i].description}' is $newOrder")
+            tasks[i].original = tasks[i].deepCopy()
+            tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = newOrder.toString()
         }
         // Incoming task gets the position
+        task.original = task.deepCopy()
         task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
         tasks.add(task)
         tasks.sortWith(taskComparator)

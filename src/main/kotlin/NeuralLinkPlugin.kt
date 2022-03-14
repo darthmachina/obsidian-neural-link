@@ -1,6 +1,5 @@
 import kotlinx.coroutines.*
 import model.TaskModel
-import org.reduxkotlin.Store
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
@@ -18,17 +17,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
      * Logs all actions and states after they are dispatched.
      */
     val loggerMiddleware = middleware<TaskModel> { store, next, action ->
-        console.log("INCOMING STATE: ", store.state)
-        store.state.kanbanColumns.keys.forEach { status ->
-            console.log(" - incoming task list for $status : ", store.state.kanbanColumns[status]!!)
-        }
-
         val result = next(action)
         console.log("DISPATCH action: ${action::class.simpleName}: $action")
         console.log("next state :", store.state)
-        store.state.kanbanColumns.keys.forEach { status ->
-            console.log(" - next task list for $status : ", store.state.kanbanColumns[status]!!)
-        }
         result
     }
 
@@ -36,7 +27,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         reducer,
         TaskModel(NeuralLinkPluginSettings.default(), mutableListOf(), mutableMapOf()),
         applyMiddleware(loggerMiddleware)
-    )
+    ).apply {
+        subscribe(::taskModifiedListener)
+    }
 
     // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
     // SERVICES
@@ -48,10 +41,6 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 //    private val fileModifiedEvent = FileModifiedEvent(this, state, taskService)
 
     override fun onload() {
-//        this.app.workspace.onLayoutReady {
-//            // TODO Need to check if it's loaded already, I think
-//            loadTaskModel()
-//        }
         // TODO Need to wrap this around something so it's delayed on app startup
         loadSettingAndTaskModel()
 
@@ -79,6 +68,16 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         console.log("NeuralLinkPlugin onunload()")
     }
 
+    private fun taskModifiedListener() {
+        console.log("taskModifiedListener()")
+        CoroutineScope(Dispatchers.Main).launch {
+            taskModelService.writeModifiedTasks(
+                store.state.tasks,
+                app.vault
+            )
+        }
+    }
+
     private fun loadSettingAndTaskModel() {
         console.log("loadSettingAndTaskModel()")
         CoroutineScope(Dispatchers.Main).launch {
@@ -88,7 +87,6 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
                 app.metadataCache,
                 store
             )
-
         }
     }
 

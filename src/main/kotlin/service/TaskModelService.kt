@@ -4,7 +4,14 @@ import ListItemCache
 import MetadataCache
 import TFile
 import Vault
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.await
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import model.SimpleDate
 import model.Task
 import model.TaskConstants
@@ -44,17 +51,39 @@ class TaskModelService {
         }
     }
 
-    fun findTaskInStatus(store: Store<TaskModel>, taskId: String, status: String): Task? {
-        val matchingTasks = store.state.kanbanColumns[status]?.filter { task -> task.id == taskId }
-        return if (matchingTasks == null || matchingTasks.isEmpty()) {
-            console.log("Task not found for taskId: ", taskId)
-            null
-        } else if (matchingTasks.size > 1) {
-            console.log("Found more than one Task for taskId, returning first: ", taskId)
-            matchingTasks[0]
-        } else {
-            // By default size == 1 here
-            matchingTasks[0]
+    suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
+        console.log("writeModifiedTasks()")
+        withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
+            tasks
+                .filter { it.original != null }
+                .groupBy { it.file }
+                .forEach { entry ->
+                launch {
+                    val file = vault.getAbstractFileByPath(entry.key) as TFile
+                    val linesToRemove = mutableListOf<Int>()
+                    vault.read(file).then { contents ->
+                        val fileContents = mutableListOf<String>().apply {
+                            addAll(contents.split('\n'))
+                        }
+                        entry.value
+                            .sortedByDescending { it.filePosition }
+                            .forEach { task ->
+                                fileContents[task.filePosition] = task.toMarkdown()
+                                val indentedCount = indentedCount(task.original!!)
+                                if (indentedCount > 0) {
+                                    val firstIndent = task.filePosition + 1
+                                    // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
+                                    linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
+                                    console.log("linesToRemove now", linesToRemove)
+                                }
+                            }
+                        linesToRemove.sortedDescending().forEach {
+                            fileContents.removeAt(it)
+                        }
+                        vault.modify(file, fileContents.joinToString("\n"))
+                    }
+                }
+            }
         }
     }
 
@@ -81,12 +110,11 @@ class TaskModelService {
     }
 
     private suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): MutableList<Task> {
-        val fullname = file.path + '/' + file.name
         val taskList = mutableListOf<Task>()
         vault.read(file).then { contents ->
             val fileContents = contents.split('\n')
             val fileListItems = metadataCache.getFileCache(file)?.listItems ?: arrayOf()
-            val tasksForFile = processFile(fullname, fileContents, fileListItems)
+            val tasksForFile = processFile(file.path, fileContents, fileListItems)
             taskList.addAll(tasksForFile)
         }.await()
         return taskList
@@ -218,14 +246,19 @@ class TaskModelService {
     }
     /**
      * Recursive method to get the number of indented items.
+     *
+     * TODO: Does not handle notes with subnotes
      */
     fun indentedCount(task: Task) : Int {
         return if (task.subtasks.size == 0 && task.notes.size == 0) {
             0
         } else {
-            task.subtasks.size + task.notes.size + task.subtasks.fold(0) { accumulator, subtask ->
-                accumulator + indentedCount(subtask)
-            }
+            task.subtasks.size +
+                    task.notes.size +
+                    task.subtasks.fold(0) { accumulator, subtask ->
+                        accumulator + indentedCount(subtask)
+                    }
+
         }
     }
 }
