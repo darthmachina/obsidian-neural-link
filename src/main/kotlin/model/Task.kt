@@ -37,29 +37,27 @@ data class Task(
      * indentation where needed to maintain the hierarchy.
      */
     fun toMarkdown(): String {
-        val completedMarker = if (completed) "x" else " "
-        val markdownTags = if (tags.size > 0) {
-            " " + tags.joinToString(" ") { tag -> "#$tag" }
-        } else {
-            ""
+        val markdownElements = mutableListOf<String>()
+        markdownElements.add(if (completed) "- [x]" else "- [ ]")
+        markdownElements.add(description)
+        if (tags.size > 0) {
+            markdownElements.add(tags.joinToString(" ") { tag -> "#$tag" })
         }
-        val markdownDataview = if (dataviewFields.isNotEmpty()) {
-            " " + dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString(" ")
-        } else {
-            ""
+        if (dataviewFields.isNotEmpty()) {
+            markdownElements.add(dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString(" "))
         }
-        val markdownDue = dueOn?.toMarkdown("due") ?: ""
-        val markdownCompleted = completedOn?.toMarkdown("completed", true) ?: ""
-        val markdownSubtasks = if (subtasks.size > 0) {
-            "\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() }
-        } else {
-            ""
+        if (dueOn != null) {
+            markdownElements.add(dueOn!!.toMarkdown("due"))
         }
-        val markdownNotes = if (notes.size > 0) {
-            "\n\t" + notes.joinToString("\n\t") { note -> "- $note" }
-        } else {
-            ""
+        if (completedOn != null) {
+            markdownElements.add(completedOn!!.toMarkdown("completed", true))
         }
-        return "- [$completedMarker] $description $markdownDataview $markdownTags $markdownDue $markdownCompleted $markdownSubtasks $markdownNotes"
+        if (subtasks.size > 0) {
+            markdownElements.add("\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() })
+        }
+        if (notes.size > 0) {
+            markdownElements.add("\n\t" + notes.joinToString("\n\t") { note -> "- $note" })
+        }
+        return markdownElements.joinToString(" ")
     }
 }
