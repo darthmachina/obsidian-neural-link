@@ -79,18 +79,20 @@ class Reducers {
             // If beforeTasksId is set add it at the same position (so pushes beforeTask down), else just add to the end
             if (updatedKanbanColumns.keys.contains(newStatus)) {
                 val beforeTasks = updatedTaskList.filter { it.id == beforeTaskId }
+                val statusTasks = updatedKanbanColumns[newStatus]!!
                 if (beforeTasks.isEmpty() || beforeTasks.size > 1) {
                     console.log("Did not find just one task to place before, adding to bottom")
-                    updatedKanbanColumns[newStatus]!!.add(task)
+                    statusTasks.add(updateTaskOrder(task, statusTasks.size))
                 } else {
-                    val statusTasks = updatedKanbanColumns[newStatus]!!
                     val beforeTaskIndex = statusTasks.indexOf(beforeTasks[0])
                     if (beforeTaskIndex == -1) {
                         // Not found, log it and just add to the end of the list
                         console.log("ERROR: Task $beforeTaskId not found in status $newStatus, adding to end of list")
-                        statusTasks.add(task)
+                        // FIXME statusTasks updates not getting pushed into the full task list?
+                        statusTasks.add(updateTaskOrder(task, statusTasks.size))
                     } else {
                         insertAndUpdateTaskOrder(task, statusTasks, beforeTaskIndex)
+                        console.log(" - tasks after calling insertAndUpdateTaskOrder : ", statusTasks)
                     }
                 }
                 task.tags.add(newStatus)
@@ -111,14 +113,28 @@ class Reducers {
         for (i in position until tasks.size) {
             val newOrder = tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt() + 1
             console.log(" - newOrder for Task '${tasks[i].description}' is $newOrder")
-            tasks[i].original = tasks[i].deepCopy()
-            tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = newOrder.toString()
+            updateTaskOrder(tasks[i], newOrder)
         }
         // Incoming task gets the position
-        task.original = task.deepCopy()
-        task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
-        tasks.add(task)
+        tasks.add(updateTaskOrder(task, position))
         tasks.sortWith(taskComparator)
         console.log(" - tasks after sorting : ", tasks)
+    }
+
+    /**
+     * Updates the task order for a task, saving the original before making the change
+     */
+    private fun updateTaskOrder(task: Task, position: Int): Task {
+        task.original = getCopyIfNeeded(task)
+        task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
+        return task
+    }
+
+    /**
+     * Gets a copy of the task if required (it has not already been set by a different modification), otherwise just
+     * returns the original Task that was already set.
+     */
+    private fun getCopyIfNeeded(task: Task): Task {
+        return if (task.original == null) task.deepCopy() else task.original!!
     }
 }

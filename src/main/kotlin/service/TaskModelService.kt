@@ -59,6 +59,7 @@ class TaskModelService {
                 .groupBy { it.file }
                 .forEach { entry ->
                 launch {
+                    console.log(" - writing file ${entry.key}")
                     val file = vault.getAbstractFileByPath(entry.key) as TFile
                     val linesToRemove = mutableListOf<Int>()
                     vault.read(file).then { contents ->
@@ -68,19 +69,22 @@ class TaskModelService {
                         entry.value
                             .sortedByDescending { it.filePosition }
                             .forEach { task ->
+                                console.log(" - Updating task : ${task.description}")
                                 fileContents[task.filePosition] = task.toMarkdown()
                                 val indentedCount = indentedCount(task.original!!)
                                 if (indentedCount > 0) {
                                     val firstIndent = task.filePosition + 1
                                     // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
                                     linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
-                                    console.log("linesToRemove now", linesToRemove)
+                                    console.log(" - linesToRemove now", linesToRemove)
                                 }
                             }
                         linesToRemove.sortedDescending().forEach {
                             fileContents.removeAt(it)
                         }
                         vault.modify(file, fileContents.joinToString("\n"))
+
+                        // TODO Do I need to unset task.original? Or will that happen when I re-read the file
                     }
                 }
             }
