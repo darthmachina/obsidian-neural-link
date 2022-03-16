@@ -52,7 +52,7 @@ class TaskModelService {
     }
 
     suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
-        console.log("writeModifiedTasks()")
+        console.log("writeModifiedTasks()", tasks)
         withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
             tasks
                 .filter { it.original != null }

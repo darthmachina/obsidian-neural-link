@@ -43,8 +43,7 @@ class Reducers {
                     val statusTasks = newTaskModel.kanbanColumns[statusColumn[0]]!!
                     statusTasks.add(task)
                     if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                        task.original = task.deepCopy()
-                        task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = statusTasks.indexOf(task).toString()
+                        updateTaskOrder(task, statusTasks.indexOf(task))
                     }
                 } // Don't care about size == 0
             }
@@ -58,7 +57,10 @@ class Reducers {
         val updatedKanbanColumns = mutableMapOf<String,MutableList<Task>>()
         taskModel.kanbanColumns.keys.forEach { status ->
             updatedKanbanColumns[status] = mutableListOf()
-            updatedKanbanColumns[status]!!.addAll(taskModel.kanbanColumns[status]!!.map { it.deepCopy() })
+            updatedKanbanColumns[status]!!.addAll(taskModel.kanbanColumns[status]!!.map { statusTask ->
+                // Find the cloned task in the task list to put in the column map
+                updatedTaskList.find { task -> task.id == statusTask.id }!!
+            })
         }
 
         // First, find the current status column
@@ -103,7 +105,7 @@ class Reducers {
     }
 
     /**
-     * Inserts the given task into the task list at position.
+     * Inserts the given task into the task list at position.sudo pacman -S archlinux-keyring
      *
      * NOTE: Side effect: tasks is mutated directly
      */
