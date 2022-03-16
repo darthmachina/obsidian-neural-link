@@ -11,7 +11,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
         is VaultLoaded -> reducerFunctions.vaultLoaded(action.newTaskModel)
         is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
-        is ModifyFileTasks -> store
+        is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks)
         is TaskCompleted -> store
         is UpdateSettings -> store.copy(settings = action.newSettings)
         else -> store
@@ -31,37 +31,17 @@ class Reducers {
     fun vaultLoaded(newTaskModel: TaskModel): TaskModel {
         console.log("vaultLoaded()")
         val columnTags = newTaskModel.settings.columnTags
-        newTaskModel.tasks
-            // First, sort by TASK_ORDER to maintain any previously saved order
-            .sortedWith(taskComparator)
-            // Now add the tasks into the appropriate status column, adding a TASK_ORDER value if it doesn't exist
-            .forEach { task ->
-                val statusColumn = task.tags.filter { it in columnTags }
-                if (statusColumn.size > 1) {
-                    console.log("ERROR: More than one status column is on the task: ", statusColumn)
-                } else if (statusColumn.size == 1) {
-                    val statusTasks = newTaskModel.kanbanColumns[statusColumn[0]]!!
-                    statusTasks.add(task)
-                    if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                        updateTaskOrder(task, statusTasks.indexOf(task))
-                    }
-                } // Don't care about size == 0
-            }
+        // Insert tasks sorted by TASK_ORDER to maintain any previously saved order into the kanban
+        insertTasksIntoKanban(newTaskModel.kanbanColumns, newTaskModel.tasks.sortedWith(taskComparator))
 
         return newTaskModel
     }
 
-    fun taskStatusChanged(taskModel: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
+    fun taskStatusChanged(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
         console.log("taskStatusChanged()")
-        val updatedTaskList = taskModel.tasks.map { it.deepCopy() }.toMutableList()
-        val updatedKanbanColumns = mutableMapOf<String,MutableList<Task>>()
-        taskModel.kanbanColumns.keys.forEach { status ->
-            updatedKanbanColumns[status] = mutableListOf()
-            updatedKanbanColumns[status]!!.addAll(taskModel.kanbanColumns[status]!!.map { statusTask ->
-                // Find the cloned task in the task list to put in the column map
-                updatedTaskList.find { task -> task.id == statusTask.id }!!
-            })
-        }
+        val newTaskModel = copyTasksIntoNewModel(store)
+        val updatedTaskList = newTaskModel.tasks
+        val updatedKanbanColumns = newTaskModel.kanbanColumns
 
         // First, find the current status column
         val filteredTasks = updatedTaskList.filter { it.id == taskId }
@@ -90,7 +70,6 @@ class Reducers {
                     if (beforeTaskIndex == -1) {
                         // Not found, log it and just add to the end of the list
                         console.log("ERROR: Task $beforeTaskId not found in status $newStatus, adding to end of list")
-                        // FIXME statusTasks updates not getting pushed into the full task list?
                         statusTasks.add(updateTaskOrder(task, statusTasks.size))
                     } else {
                         insertAndUpdateTaskOrder(task, statusTasks, beforeTaskIndex)
@@ -101,7 +80,71 @@ class Reducers {
             }
         }
 
-        return taskModel.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
+        return store.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
+    }
+
+    fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>): TaskModel {
+        console.log("modifyFileTasks()")
+        val newTaskModel = copyTasksIntoNewModel(store)
+        clearFileTasksFromModel(newTaskModel, file)
+        newTaskModel.tasks.addAll(fileTasks)
+        insertTasksIntoKanban(newTaskModel.kanbanColumns, fileTasks)
+
+        return newTaskModel
+    }
+
+    /**
+     * Inserts the tasks given into the correct column in kanbanColumns.
+     *
+     * NOTE: kanbanColumns must contain keys for every status in use already
+     * SIDE EFFECT: kanbanColumns is modified in place
+     */
+    private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>) {
+        tasks.forEach { task ->
+            val statusColumn = task.tags.filter { it in kanbanColumns.keys }
+            if (statusColumn.size > 1) {
+                console.log("ERROR: More than one status column is on the task: ", statusColumn)
+            } else if (statusColumn.size == 1) {
+                val statusTasks = kanbanColumns[statusColumn[0]]!!
+                statusTasks.add(task)
+                if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
+                    updateTaskOrder(task, statusTasks.indexOf(task))
+                }
+            } // Don't care about size == 0
+        }
+    }
+
+    /**
+     * Creates a new TaskModel with updated tasks and kanbanColumns collections containing cloned tasks.
+     */
+    private fun copyTasksIntoNewModel(store: TaskModel): TaskModel {
+        val updatedTaskList = store.tasks.map { it.deepCopy() }.toMutableList()
+        val updatedKanbanColumns = mutableMapOf<String,MutableList<Task>>()
+        store.kanbanColumns.keys.forEach { status ->
+            updatedKanbanColumns[status] = mutableListOf()
+            updatedKanbanColumns[status]!!.addAll(store.kanbanColumns[status]!!.map { statusTask ->
+                // Find the cloned task in the task list to put in the column map
+                updatedTaskList.find { task -> task.id == statusTask.id }!!
+            })
+        }
+
+        return store.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
+    }
+
+    /**
+     * Removes all tasks from the store that are from the given file.
+     *
+     * SIDE EFFECT: taskModel.tasks is updated in place
+     */
+    private fun clearFileTasksFromModel(taskModel: TaskModel, file: String) {
+        console.log("clearFileTasksFromModel()")
+        val fileTasks = taskModel.tasks.filter { it.file == file }
+        console.log(" - remove tasks in file from task list:", fileTasks)
+        taskModel.tasks.removeAll(fileTasks)
+        console.log(" - remove tasks in file from kanban columns")
+        taskModel.kanbanColumns.forEach { entry ->
+            entry.value.removeAll { it.file == file }
+        }
     }
 
     /**
