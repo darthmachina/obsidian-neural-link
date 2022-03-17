@@ -53,8 +53,7 @@ class Reducers {
             // Remove the task from that column
             updatedKanbanColumns.keys.forEach taskLoop@{ status ->
                 if (updatedKanbanColumns[status]!!.contains(task)) {
-                    updatedKanbanColumns[status]!!.remove(task)
-                    task.tags.remove(status)
+                    removeAndUpdateTaskOrder(task, updatedKanbanColumns[status]!!, status)
                     return@taskLoop
                 }
             }
@@ -107,7 +106,8 @@ class Reducers {
                 console.log("ERROR: More than one status column is on the task: ", statusColumn)
             } else if (statusColumn.size == 1) {
                 val statusTasks = kanbanColumns[statusColumn[0]]!!
-                statusTasks.add(updateTaskOrder(task, statusTasks.indexOf(task)))
+                statusTasks.add(task)
+                updateTaskOrder(task, statusTasks.indexOf(task))
             } // Don't care about size == 0
         }
     }
@@ -169,9 +169,21 @@ class Reducers {
      *
      * @param task The task to remove from the task list
      * @param tasks Task list for a single stats assumed to already be sorted by position
+     * @param status The old status of the task
      */
-    private fun removeAndUpdateTaskOrder(task: Task, tasks: MutableList<Task>) {
-
+    private fun removeAndUpdateTaskOrder(task: Task, tasks: MutableList<Task>, status: String) {
+        console.log("removeAndUpdateTaskOrder()")
+        val taskIndex = tasks.indexOf(task)
+        if (taskIndex == -1) {
+            console.log("ERROR: task not found in task list", task)
+            return
+        }
+        setModifiedIfNeeded(task)
+        tasks.remove(task)
+        task.tags.remove(status)
+        for (i in taskIndex until tasks.size) {
+            updateTaskOrder(tasks[i], i)
+        }
     }
 
     /**
@@ -183,17 +195,17 @@ class Reducers {
         val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
         if (taskOrder == null || taskOrder.toInt() != position) {
             console.log(" - task order needs to be updated : $taskOrder -> $position")
-            task.original = getCopyIfNeeded(task)
+            setModifiedIfNeeded(task)
             task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
         }
         return task
     }
 
     /**
-     * Gets a copy of the task if required (it has not already been set by a different modification), otherwise just
-     * returns the original Task that was already set.
+     * Saves the original task if needed (if it has not already been set for a different modification).
      */
-    private fun getCopyIfNeeded(task: Task): Task {
-        return if (task.original == null) task.deepCopy() else task.original!!
+    private fun setModifiedIfNeeded(task: Task) {
+        console.log("setModifiedIfNeeded()", task)
+        if (task.original == null) task.original = task.deepCopy()
     }
 }
