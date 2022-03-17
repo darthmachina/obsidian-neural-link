@@ -113,7 +113,7 @@ class TaskModelService {
         taskModel
     }
 
-    private suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): MutableList<Task> {
+    suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): MutableList<Task> {
         val taskList = mutableListOf<Task>()
         vault.read(file).then { contents ->
             val fileContents = contents.split('\n')

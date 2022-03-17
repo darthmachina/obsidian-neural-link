@@ -1,3 +1,4 @@
+import event.FileModifiedEvent
 import kotlinx.coroutines.*
 import model.TaskModel
 import org.reduxkotlin.applyMiddleware
@@ -5,7 +6,6 @@ import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
 import service.SettingsService
 import service.TaskModelService
-import service.TaskService
 import store.reducer
 import view.KanbanView
 
@@ -37,15 +37,15 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     private val taskModelService = TaskModelService()
 
     // EVENTS
-//    private val fileModifiedEvent = FileModifiedEvent(this, state, taskService)
+    private val fileModifiedEvent = FileModifiedEvent(this, store, taskModelService)
 
     override fun onload() {
         // TODO Need to wrap this around something so it's delayed on app startup
         loadSettingAndTaskModel()
 
-//        this.registerEvent(this.app.metadataCache.on("changed") { file ->
-//            fileModifiedEvent.processEvent(file)
-//        })
+        this.registerEvent(this.app.metadataCache.on("changed") { file ->
+            fileModifiedEvent.processEvent(file)
+        })
 
         // Add Settings tab
         addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, store))

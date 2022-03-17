@@ -32,7 +32,8 @@ class Reducers {
         console.log("vaultLoaded()")
         val columnTags = newTaskModel.settings.columnTags
         // Insert tasks sorted by TASK_ORDER to maintain any previously saved order into the kanban
-        insertTasksIntoKanban(newTaskModel.kanbanColumns, newTaskModel.tasks.sortedWith(taskComparator))
+        val filteredTasks = newTaskModel.tasks.filter { task -> task.tags.any { it in newTaskModel.kanbanColumns.keys } }
+        insertTasksIntoKanban(newTaskModel.kanbanColumns, filteredTasks.sortedWith(taskComparator))
 
         return newTaskModel
     }
