@@ -33,7 +33,7 @@ class Reducers {
         val columnTags = newTaskModel.settings.columnTags
         // Insert tasks sorted by TASK_ORDER to maintain any previously saved order into the kanban
         val filteredTasks = newTaskModel.tasks.filter { task -> task.tags.any { it in newTaskModel.kanbanColumns.keys } }
-        insertTasksIntoKanban(newTaskModel.kanbanColumns, filteredTasks.sortedWith(taskComparator))
+        insertTasksIntoKanban(newTaskModel.kanbanColumns, filteredTasks)
 
         return newTaskModel
     }
@@ -64,7 +64,7 @@ class Reducers {
                 val beforeTasks = updatedTaskList.filter { it.id == beforeTaskId }
                 val statusTasks = updatedKanbanColumns[newStatus]!!
                 if (beforeTasks.isEmpty() || beforeTasks.size > 1) {
-                    console.log("Did not find just one task to place before, adding to bottom")
+                    console.log(" - Did not find just one task to place before, adding to bottom")
                     statusTasks.add(updateTaskOrder(task, statusTasks.size))
                 } else {
                     val beforeTaskIndex = statusTasks.indexOf(beforeTasks[0])
@@ -101,16 +101,13 @@ class Reducers {
      * SIDE EFFECT: kanbanColumns is modified in place
      */
     private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>) {
-        tasks.forEach { task ->
+        tasks.sortedWith(taskComparator).forEach { task ->
             val statusColumn = task.tags.filter { it in kanbanColumns.keys }
             if (statusColumn.size > 1) {
                 console.log("ERROR: More than one status column is on the task: ", statusColumn)
             } else if (statusColumn.size == 1) {
                 val statusTasks = kanbanColumns[statusColumn[0]]!!
-                statusTasks.add(task)
-                if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                    updateTaskOrder(task, statusTasks.indexOf(task))
-                }
+                statusTasks.add(updateTaskOrder(task, statusTasks.indexOf(task)))
             } // Don't care about size == 0
         }
     }
@@ -149,7 +146,7 @@ class Reducers {
     }
 
     /**
-     * Inserts the given task into the task list at position.sudo pacman -S archlinux-keyring
+     * Inserts the given task into the task list at position.
      *
      * NOTE: Side effect: tasks is mutated directly
      */
@@ -168,11 +165,27 @@ class Reducers {
     }
 
     /**
-     * Updates the task order for a task, saving the original before making the change
+     * Removes the given task from the task list and updates the order of all tasks below it.
+     *
+     * @param task The task to remove from the task list
+     * @param tasks Task list for a single stats assumed to already be sorted by position
+     */
+    private fun removeAndUpdateTaskOrder(task: Task, tasks: MutableList<Task>) {
+
+    }
+
+    /**
+     * Updates the task order for a task if required (order is null or already set to the given value), saving the
+     * original before making the change.
      */
     private fun updateTaskOrder(task: Task, position: Int): Task {
-        task.original = getCopyIfNeeded(task)
-        task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
+        console.log("updateTaskOrder()", task, position)
+        val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
+        if (taskOrder == null || taskOrder.toInt() != position) {
+            console.log(" - task order needs to be updated : $taskOrder -> $position")
+            task.original = getCopyIfNeeded(task)
+            task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
+        }
         return task
     }
 
