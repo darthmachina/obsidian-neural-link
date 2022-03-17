@@ -18,7 +18,7 @@ data class TaskModel(
         // TODO Update this map if the columnTags value changes in settings
         if (kanbanColumns.isEmpty()) {
             settings.columnTags.forEach {
-                kanbanColumns[it] = mutableListOf()
+                kanbanColumns[it.tag] = mutableListOf()
             }
         }
     }

@@ -18,7 +18,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
      */
     val loggerMiddleware = middleware<TaskModel> { store, next, action ->
         val result = next(action)
-        console.log("DISPATCH action: ${action::class.simpleName}: $action")
+        console.log("DISPATCH action: ${action::class.simpleName}:", action)
         console.log("next state :", store.state)
         result
     }

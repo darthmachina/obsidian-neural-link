@@ -1,5 +1,6 @@
 package store
 
+import model.StatusTag
 import model.Task
 import model.TaskConstants
 import model.TaskModel
@@ -32,7 +33,7 @@ class Reducers {
         console.log("vaultLoaded()")
         val columnTags = newTaskModel.settings.columnTags
         // Insert tasks sorted by TASK_ORDER to maintain any previously saved order into the kanban
-        val filteredTasks = newTaskModel.tasks.filter { task -> task.tags.any { it in newTaskModel.kanbanColumns.keys } }
+        val filteredTasks = newTaskModel.tasks.filter { task -> task.tags.any { tag -> tag in newTaskModel.kanbanColumns.keys } }
         insertTasksIntoKanban(newTaskModel.kanbanColumns, filteredTasks)
 
         return newTaskModel
@@ -101,7 +102,7 @@ class Reducers {
      */
     private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>) {
         tasks.sortedWith(taskComparator).forEach { task ->
-            val statusColumn = task.tags.filter { it in kanbanColumns.keys }
+            val statusColumn = task.tags.filter { tag -> tag in kanbanColumns.keys }
             if (statusColumn.size > 1) {
                 console.log("ERROR: More than one status column is on the task: ", statusColumn)
             } else if (statusColumn.size == 1) {
