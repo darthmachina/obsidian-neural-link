@@ -18,5 +18,9 @@ data class SimpleDate(
         val time = if (includeTime) "T$hour:$minute:$second" else ""
         return "@$tag($year-$month-$day$time)"
     }
+
+    override fun toString(): String {
+        return "$year-$month-$day"
+    }
 }
 

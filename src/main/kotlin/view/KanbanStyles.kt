@@ -18,7 +18,12 @@ class KanbanStyles {
             height = 100.perc
         }
 
-        val DRAG_OVER_CARD = Style(".nl-kanban-card") {
+        val KANBAN_CARD = Style(".nl-kanban-card") {
+            width = 100.perc
+            padding = 5.px
+        }
+
+        val DRAG_OVER_CARD = Style(".nl-kanban-card-dragover") {
             borderTop = Border(1.px, BorderStyle.DASHED, Color.name(Col.RED))
         }
     }
