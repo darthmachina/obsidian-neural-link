@@ -5,6 +5,7 @@ import model.TaskModel
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
 import service.SettingsService
+import store.UpdateSettings
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
@@ -21,6 +22,7 @@ class NeuralLinkPluginSettingsTab(
 
         containerEl.append.h2 { +"Neural Link Settings." }
         createTaskTextRemovalRegexSetting(containerEl)
+        createColumnListSetting(containerEl)
     }
 
     private fun createTaskTextRemovalRegexSetting(containerEl: HTMLElement): Setting {
@@ -32,28 +34,32 @@ class NeuralLinkPluginSettingsTab(
                     .setValue(store.state.settings.taskRemoveRegex)
                     .onChange { value ->
                         console.log("Regex: $value")
-                        store.state.settings.taskRemoveRegex = value
-                        plugin.saveData(settingsService.toJson())
+                        store.dispatch(UpdateSettings(plugin, settingsService, taskRemoveRegex = value))
                     }
             }
     }
 
     private fun createColumnListSetting(containerEl: HTMLElement): Setting {
+        console.log("createColumnListSetting()")
         return Setting(containerEl)
             .setName("Kanban Columns")
             .setDesc("List of columns to use for the Kanban board")
             .addTextArea { text ->
                 val columns = store.state.settings.columnTags
-                val textVersion =
-                    columns.joinToString("\n") { statusTag -> "${statusTag.tag}:${statusTag.displayName}" }
-                text.setValue(textVersion)
+                console.log(" - current columns", columns)
+                val stringList = columns.map { statusTag -> "${statusTag.tag}:${statusTag.displayName}" }
+                console.log(" - stringList", stringList)
+                val textVersion = stringList.joinToString("\n")
+                console.log(" - textVersion", textVersion)
+                text.setPlaceholder("'tag:display name' separated by newlines")
+                    .setValue(textVersion)
                     .onChange { value ->
                         val statusList = mutableListOf<StatusTag>()
                         value.split("\n").forEach { column ->
                             val tagValues = column.split(":")
                             statusList.add(StatusTag(tagValues[0], tagValues[1]))
                         }
-
+                        store.dispatch(UpdateSettings(plugin, settingsService, columnTags = statusList))
                     }
             }
     }

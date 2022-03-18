@@ -7,6 +7,7 @@ import Vault
 import model.StatusTag
 import model.Task
 import model.TaskModel
+import service.SettingsService
 
 open interface Action
 
@@ -14,4 +15,9 @@ data class VaultLoaded(val newTaskModel: TaskModel) : Action
 data class TaskStatusChanged(val taskId: String, val newStatus: String, val beforeTask: String?) : Action
 data class ModifyFileTasks(val file: String, val fileTasks: List<Task>) : Action
 class TaskCompleted : Action
-data class UpdateSettings(val plugin: Plugin, val taskRemoveRegex: String, val columnTags: MutableList<StatusTag>) : Action
+data class UpdateSettings(
+    val plugin: Plugin,
+    val settingsService: SettingsService,
+    var taskRemoveRegex: String? = null,
+    var columnTags: List<StatusTag>? = null
+) : Action

@@ -3,14 +3,13 @@ import model.StatusTag
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 data class NeuralLinkPluginSettings(
-    val version: Int,
     val taskRemoveRegex: String,
-    val columnTags: List<StatusTag>
+    val columnTags: List<StatusTag>,
+    val version: Int = 2
 ) {
     companion object {
         fun default(): NeuralLinkPluginSettings {
             return NeuralLinkPluginSettings(
-                2,
                 """#kanban/[\w-]+(\s|$)""",
                 listOf(
                     StatusTag("backlog", "Backlog"),

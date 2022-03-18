@@ -27,13 +27,19 @@ class Reducers {
         position
     }
 
+    /**
+     * Updates the settings, if any update value is null it will reuse the value in the store to allow for partial
+     * updates.
+     */
     fun updateSettings(store: TaskModel, updateSettings: UpdateSettings): TaskModel {
-        // TODO Update settings in plugin
-        return store.copy(
+        console.log("updateSettings()")
+        val updatedTaskModel = store.copy(
             settings = store.settings.copy(
-                taskRemoveRegex = updateSettings.taskRemoveRegex,
-                columnTags = updateSettings.columnTags
+                taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
+                columnTags = updateSettings.columnTags ?: store.settings.columnTags
             ))
+        updateSettings.plugin.saveData(updateSettings.settingsService.toJson(updatedTaskModel.settings))
+        return updatedTaskModel
     }
 
     /**

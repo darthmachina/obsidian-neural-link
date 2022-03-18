@@ -48,7 +48,7 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
         }
     }
 
-    private fun updateCacheColumns(columns: MutableList<StatusTag>) {
+    private fun updateCacheColumns(columns: List<StatusTag>) {
         console.log("updateCacheColumns(): ", columns)
         boardCache.columns.clear()
         boardCache.tasks.clear()
@@ -60,8 +60,6 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
         boardCache.columns.forEach { statusTag ->
             console.log(" - creating column", statusTag)
             add(createColumn(statusTag, boardCache.tasks[statusTag.tag]!!))
-        }
-        boardCache.tasks.forEach { (name, cards) ->
         }
     }
 

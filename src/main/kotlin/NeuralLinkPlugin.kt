@@ -33,7 +33,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
     // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
     // SERVICES
-    private val settingsService = SettingsService(store)
+    private val settingsService = SettingsService(store, this)
     private val taskModelService = TaskModelService()
 
     // EVENTS
