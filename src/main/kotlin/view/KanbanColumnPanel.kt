@@ -6,7 +6,7 @@ import io.kvision.html.div
 import io.kvision.panel.VPanel
 import model.StatusTag
 
-class KanbanColumnPanel(val status: StatusTag, private val cards: List<Div>): VPanel(spacing = 5, alignItems = AlignItems.CENTER) {
+class KanbanColumnPanel(val status: StatusTag, cards: List<Div>): VPanel(spacing = 5, alignItems = AlignItems.CENTER) {
     init {
         addCssStyle(KanbanStyles.KANBAN_COLUMN)
         div {
@@ -14,7 +14,6 @@ class KanbanColumnPanel(val status: StatusTag, private val cards: List<Div>): VP
         }
         cards.forEach { card ->
             add(card)
-            card.addCssClass("kanban-card")
         }
     }
 

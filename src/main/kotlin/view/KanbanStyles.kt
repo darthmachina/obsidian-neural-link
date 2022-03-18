@@ -8,10 +8,12 @@ class KanbanStyles {
     companion object {
         val ROOT = Style(".nl-root") {
             height = 100.perc
+            overflow = Overflow.SCROLL
         }
 
         val KANBAN_COLUMN = Style(".nl-kanban-column") {
             width = 272.px
+            minWidth = 272.px
             margin = 15.px
             height = 100.perc
         }
