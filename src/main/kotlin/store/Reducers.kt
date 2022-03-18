@@ -1,5 +1,6 @@
 package store
 
+import Plugin
 import model.StatusTag
 import model.Task
 import model.TaskConstants
@@ -14,7 +15,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks)
         is TaskCompleted -> store
-        is UpdateSettings -> store.copy(settings = action.newSettings)
+        is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
 }
@@ -24,6 +25,15 @@ class Reducers {
         val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt()
         console.log(" - position for Task '${it.description}' : $position")
         position
+    }
+
+    fun updateSettings(store: TaskModel, updateSettings: UpdateSettings): TaskModel {
+        // TODO Update settings in plugin
+        return store.copy(
+            settings = store.settings.copy(
+                taskRemoveRegex = updateSettings.taskRemoveRegex,
+                columnTags = updateSettings.columnTags
+            ))
     }
 
     /**
