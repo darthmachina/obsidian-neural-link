@@ -2,6 +2,9 @@ package service
 
 import NeuralLinkPluginSettings
 import Plugin
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import model.TaskModel
 import org.reduxkotlin.Store
 import store.UpdateSettings
@@ -21,19 +24,22 @@ class SettingsService(private val store: Store<TaskModel>, private val plugin: P
      * @return A fully populated `NeuralLinkPluginSettings` object at the current version.
      */
     fun loadFromJson(json: Any?) {
+        console.log("loadFromJson()")
         // TODO implement example of versioned settings
         if (json == null) {
             val newSettings = NeuralLinkPluginSettings.default()
             store.dispatch(UpdateSettings(plugin, this, newSettings.taskRemoveRegex, newSettings.columnTags))
         } else {
-            val loadedSettings = JSON.parse<NeuralLinkPluginSettings>(json as String)
-            console.log("loadedSettings: ", loadedSettings)
+            val jsonSettings = Json.decodeFromString<NeuralLinkPluginSettings>(json as String)
+            console.log(" - jsonSettings", jsonSettings)
+            val loadedSettings = jsonSettings
+            console.log(" - loadedSettings: ", loadedSettings)
             store.dispatch(UpdateSettings(plugin, this, loadedSettings.taskRemoveRegex, loadedSettings.columnTags))
         }
     }
 
     fun toJson(settings: NeuralLinkPluginSettings): String {
-        val json = JSON.stringify(settings)
+        val json = Json.encodeToString(settings)
         console.log("saveSettings: ", json)
         return json
     }

@@ -1,6 +1,5 @@
 package store
 
-import Plugin
 import model.StatusTag
 import model.Task
 import model.TaskConstants
@@ -33,11 +32,20 @@ class Reducers {
      */
     fun updateSettings(store: TaskModel, updateSettings: UpdateSettings): TaskModel {
         console.log("updateSettings()")
+        // If the columns have changed we need to reprocess the kanbanColumns data
+        var newKanbanColumns: MutableMap<String,MutableList<Task>>? = null
+        if (updateSettings.columnTags != null) {
+            newKanbanColumns = createKanbanColumns(updateSettings.columnTags!!)
+            insertTasksIntoKanban(newKanbanColumns, store.tasks)
+        }
+
         val updatedTaskModel = store.copy(
             settings = store.settings.copy(
                 taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
                 columnTags = updateSettings.columnTags ?: store.settings.columnTags
-            ))
+            ),
+            kanbanColumns = newKanbanColumns ?: store.kanbanColumns
+        )
         updateSettings.plugin.saveData(updateSettings.settingsService.toJson(updatedTaskModel.settings))
         return updatedTaskModel
     }
@@ -47,7 +55,6 @@ class Reducers {
      */
     fun vaultLoaded(newTaskModel: TaskModel): TaskModel {
         console.log("vaultLoaded()")
-        val columnTags = newTaskModel.settings.columnTags
         // Insert tasks sorted by TASK_ORDER to maintain any previously saved order into the kanban
         val filteredTasks = newTaskModel.tasks.filter { task -> task.tags.any { tag -> tag in newTaskModel.kanbanColumns.keys } }
         insertTasksIntoKanban(newTaskModel.kanbanColumns, filteredTasks)
@@ -108,6 +115,15 @@ class Reducers {
         insertTasksIntoKanban(newTaskModel.kanbanColumns, fileTasks)
 
         return newTaskModel
+    }
+
+    private fun createKanbanColumns(statusTags: List<StatusTag>): MutableMap<String,MutableList<Task>> {
+        console.log("createKanbanColumns()", statusTags)
+        val kanbanColumns = mutableMapOf<String,MutableList<Task>>()
+        statusTags.forEach { statusTag ->
+            kanbanColumns[statusTag.tag] = mutableListOf()
+        }
+        return kanbanColumns
     }
 
     /**

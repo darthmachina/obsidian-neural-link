@@ -1,15 +1,12 @@
 package store
 
-import NeuralLinkPluginSettings
 import Plugin
-import TFile
-import Vault
 import model.StatusTag
 import model.Task
 import model.TaskModel
 import service.SettingsService
 
-open interface Action
+interface Action
 
 data class VaultLoaded(val newTaskModel: TaskModel) : Action
 data class TaskStatusChanged(val taskId: String, val newStatus: String, val beforeTask: String?) : Action

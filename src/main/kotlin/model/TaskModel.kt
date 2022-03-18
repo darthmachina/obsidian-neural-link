@@ -17,6 +17,7 @@ data class TaskModel(
         // Populate the map with the column tags we are using if it's empty
         // TODO Update this map if the columnTags value changes in settings
         if (kanbanColumns.isEmpty()) {
+            console.log("kanbanColumns is empty, populating with initial data", settings.columnTags)
             settings.columnTags.forEach {
                 kanbanColumns[it.tag] = mutableListOf()
             }
