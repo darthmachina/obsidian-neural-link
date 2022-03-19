@@ -51,7 +51,7 @@ data class Task(
             markdownElements.add(dueOn!!.toMarkdown("due"))
         }
         if (completedOn != null) {
-            markdownElements.add(completedOn!!.toMarkdown("completed", true))
+            markdownElements.add(completedOn!!.toMarkdown("completed"))
         }
         if (subtasks.size > 0) {
             markdownElements.add("\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() })

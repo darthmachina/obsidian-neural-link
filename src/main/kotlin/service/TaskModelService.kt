@@ -244,7 +244,8 @@ class TaskModelService {
                 dateSplit[2].toInt(), // Day
                 timeSplit[0].toInt(), // Hour
                 timeSplit[1].toInt(), // Minute
-                timeSplit[2].toInt()  // Second
+                timeSplit[2].toInt(), // Second
+                includeTime = true
             )
         }
     }
