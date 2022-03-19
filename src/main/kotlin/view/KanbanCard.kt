@@ -39,7 +39,7 @@ class KanbanCard(val store: Store<TaskModel>, val task: Task): GridPanel(columnG
                         checkBox(subtask.completed, label = subtask.description) {
                             inline = true
                         }.onClick {
-                            store.dispatch(SubtaskCompleted(task.id, subtask.id))
+                            store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))
                         }
                     }
                 }

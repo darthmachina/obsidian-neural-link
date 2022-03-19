@@ -14,7 +14,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks)
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId)
-        is SubtaskCompleted -> reducerFunctions.subtaskCompleted(store, action.taskId, action.subtaskId)
+        is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -126,7 +126,7 @@ class Reducers {
         return newTaskModel
     }
 
-    fun subtaskCompleted(store: TaskModel, taskId: String, subtaskId: String): TaskModel {
+    fun markSubtaskCompletion(store: TaskModel, taskId: String, subtaskId: String, complete: Boolean): TaskModel {
         console.log("subtaskCompleted()")
         val newTaskModel = copyTasksIntoNewModel(store)
         val task = newTaskModel.tasks.find { task -> task.id == taskId }
@@ -141,7 +141,7 @@ class Reducers {
         }
 
         setModifiedIfNeeded(task)
-        subtask.completed = true
+        subtask.completed = complete
         // task is already in the task list so just return the new model
         return newTaskModel
     }
