@@ -253,7 +253,7 @@ class TaskModelService {
      *
      * TODO: Does not handle notes with subnotes
      */
-    fun indentedCount(task: Task) : Int {
+    private fun indentedCount(task: Task) : Int {
         return if (task.subtasks.size == 0 && task.notes.size == 0) {
             0
         } else {

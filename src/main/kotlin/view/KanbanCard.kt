@@ -7,13 +7,21 @@ import io.kvision.html.span
 import io.kvision.html.ul
 import io.kvision.panel.GridPanel
 import model.Task
+import model.TaskModel
+import org.reduxkotlin.Store
+import store.SubtaskCompleted
+import store.TaskCompleted
 
-class KanbanCard(val task: Task): GridPanel(columnGap = 5, rowGap = 5) {
+class KanbanCard(val store: Store<TaskModel>, val task: Task): GridPanel(columnGap = 5, rowGap = 5) {
     init {
         addCssStyle(KanbanStyles.KANBAN_CARD)
         // Description
         div {
-            checkBox(false, label = task.description) { inline = true }
+            checkBox(task.completed, label = task.description) {
+                inline = true
+            }.onClick {
+                store.dispatch(TaskCompleted(task.id))
+            }
         }
 
         // Tags
@@ -28,7 +36,11 @@ class KanbanCard(val task: Task): GridPanel(columnGap = 5, rowGap = 5) {
             div {
                 task.subtasks.forEach { subtask ->
                     div {
-                        checkBox(false, label = subtask.description) { inline = true }
+                        checkBox(subtask.completed, label = subtask.description) {
+                            inline = true
+                        }.onClick {
+                            store.dispatch(SubtaskCompleted(task.id, subtask.id))
+                        }
                     }
                 }
             }

@@ -109,11 +109,41 @@ class Reducers {
     }
 
     fun taskCompleted(store: TaskModel, taskId: String): TaskModel {
-        return store.copy()
+        console.log("taskCompleted()")
+        val newTaskModel = copyTasksIntoNewModel(store)
+        val task = newTaskModel.tasks.find { task -> task.id == taskId }
+        if (task == null) {
+            console.log(" - ERROR: Task not found for id: $taskId")
+            return store
+        }
+        setModifiedIfNeeded(task)
+        task.completed = true
+        val statusColumn = getStatusTagFromTask(task, newTaskModel.kanbanColumns.keys)
+        if (statusColumn != null) {
+            removeAndUpdateTaskOrder(task, newTaskModel.kanbanColumns[statusColumn]!!, statusColumn)
+        }
+        // task is already in the task list so just return the new model
+        return newTaskModel
     }
 
     fun subtaskCompleted(store: TaskModel, taskId: String, subtaskId: String): TaskModel {
-        return store.copy()
+        console.log("subtaskCompleted()")
+        val newTaskModel = copyTasksIntoNewModel(store)
+        val task = newTaskModel.tasks.find { task -> task.id == taskId }
+        if (task == null) {
+            console.log(" - ERROR: Task not found for id: $taskId")
+            return store
+        }
+        val subtask = task.subtasks.find { subtask -> subtask.id == subtaskId }
+        if (subtask == null) {
+            console.log(" - ERROR: Subtask not found in Task $taskId for subtask id $subtaskId")
+            return store
+        }
+
+        setModifiedIfNeeded(task)
+        subtask.completed = true
+        // task is already in the task list so just return the new model
+        return newTaskModel
     }
 
     fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>): TaskModel {
@@ -143,15 +173,25 @@ class Reducers {
      */
     private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>) {
         tasks.sortedWith(taskComparator).forEach { task ->
-            val statusColumn = task.tags.filter { tag -> tag in kanbanColumns.keys }
-            if (statusColumn.size > 1) {
-                console.log("ERROR: More than one status column is on the task: ", statusColumn)
-            } else if (statusColumn.size == 1) {
-                val statusTasks = kanbanColumns[statusColumn[0]]!!
+            val statusColumn = getStatusTagFromTask(task, kanbanColumns.keys)
+            if (statusColumn != null) {
+                val statusTasks = kanbanColumns[statusColumn]!!
                 statusTasks.add(task)
                 updateTaskOrder(task, statusTasks.indexOf(task))
-            } // Don't care about size == 0
+            }
         }
+    }
+
+    private fun getStatusTagFromTask(task: Task, kanbanKeys: MutableSet<String>): String? {
+        val statusColumn = task.tags.filter { tag -> tag in kanbanKeys }
+        if (statusColumn.size > 1) {
+            console.log("ERROR: More than one status column is on the task: ", statusColumn)
+            return null
+        } else if (statusColumn.size == 1) {
+            return statusColumn[0]
+        }
+        console.log("ERROR: status tag not found on task: ", task)
+        return null
     }
 
     /**
@@ -210,7 +250,7 @@ class Reducers {
      * Removes the given task from the task list and updates the order of all tasks below it.
      *
      * @param task The task to remove from the task list
-     * @param tasks Task list for a single stats assumed to already be sorted by position
+     * @param tasks Task list for a single status assumed to already be sorted by position
      * @param status The old status of the task
      */
     private fun removeAndUpdateTaskOrder(task: Task, tasks: MutableList<Task>, status: String) {
@@ -222,6 +262,7 @@ class Reducers {
         }
         setModifiedIfNeeded(task)
         tasks.remove(task)
+        task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
         task.tags.remove(status)
         for (i in taskIndex until tasks.size) {
             updateTaskOrder(tasks[i], i)
