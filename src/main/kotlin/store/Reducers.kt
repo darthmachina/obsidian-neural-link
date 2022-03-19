@@ -13,7 +13,8 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is VaultLoaded -> reducerFunctions.vaultLoaded(action.newTaskModel)
         is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks)
-        is TaskCompleted -> store
+        is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId)
+        is SubtaskCompleted -> reducerFunctions.subtaskCompleted(store, action.taskId, action.subtaskId)
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -105,6 +106,14 @@ class Reducers {
         }
 
         return store.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
+    }
+
+    fun taskCompleted(store: TaskModel, taskId: String): TaskModel {
+        return store.copy()
+    }
+
+    fun subtaskCompleted(store: TaskModel, taskId: String, subtaskId: String): TaskModel {
+        return store.copy()
     }
 
     fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>): TaskModel {

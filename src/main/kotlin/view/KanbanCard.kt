@@ -1,5 +1,6 @@
 package view
 
+import io.kvision.form.check.checkBox
 import io.kvision.html.div
 import io.kvision.html.li
 import io.kvision.html.span
@@ -12,8 +13,7 @@ class KanbanCard(val task: Task): GridPanel(columnGap = 5, rowGap = 5) {
         addCssStyle(KanbanStyles.KANBAN_CARD)
         // Description
         div {
-            span { +"[ ] " }
-            span { +task.description }
+            checkBox(false, label = task.description) { inline = true }
         }
 
         // Tags
@@ -28,8 +28,7 @@ class KanbanCard(val task: Task): GridPanel(columnGap = 5, rowGap = 5) {
             div {
                 task.subtasks.forEach { subtask ->
                     div {
-                        span { +"[ ] " }
-                        span { +subtask.description }
+                        checkBox(false, label = subtask.description) { inline = true }
                     }
                 }
             }
