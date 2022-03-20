@@ -23,7 +23,6 @@ val reducer: Reducer<TaskModel> = { store, action ->
 class Reducers {
     private val taskComparator = compareBy<Task,Int?>(nullsLast()) {
         val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt()
-        console.log(" - position for Task '${it.description}' : $position")
         position
     }
 

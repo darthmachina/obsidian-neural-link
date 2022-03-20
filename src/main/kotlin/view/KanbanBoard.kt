@@ -92,9 +92,9 @@ class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelSe
         return column
     }
 
-    private fun createCard(task: Task): KanbanCard {
+    private fun createCard(task: Task): KanbanCardPanel {
         console.log("createCard(): ", task.description)
-        val card = KanbanCard(store, task)
+        val card = KanbanCardPanel(store, task)
         card.id = task.id
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)
         card.setEventListener<Div> {
