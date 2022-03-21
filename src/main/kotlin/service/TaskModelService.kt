@@ -136,7 +136,8 @@ class TaskModelService {
             console.log(" - loading listItem", listItem)
             val taskLine = listItem.position.start.line.toInt()
             val lineContents = fileContents[taskLine]
-            if (listItem.parent.toInt() < 0) {
+            // If the parent is negative (no parent set), or there is no task seen previously (so parent was not a task)
+            if (listItem.parent.toInt() < 0 || !tasksByLine.contains(listItem.parent.toInt())) {
                 console.log(" - is a root level item")
                 // Root level list item
                 if (listItem.task != null) {
