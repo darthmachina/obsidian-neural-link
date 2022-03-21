@@ -129,26 +129,33 @@ class TaskModelService {
         fileContents: List<String>,
         listItems: Array<ListItemCache>
     ): MutableList<Task> {
+        console.log("processFile()", filename)
         val tasksByLine = mutableMapOf<Int,Task>() // Map of position -> Task
 
         listItems.forEach { listItem ->
+            console.log(" - loading listItem", listItem)
             val taskLine = listItem.position.start.line.toInt()
             val lineContents = fileContents[taskLine]
             if (listItem.parent.toInt() < 0) {
+                console.log(" - is a root level item")
                 // Root level list item
                 if (listItem.task != null) {
+                    console.log(" - is a task so add it")
                     // Only care about root items that are tasks
                     val task = createTask(filename, taskLine, lineContents)
                     tasksByLine[listItem.position.start.line.toInt()] = task
                 }
             } else {
+                console.log(" - is an indented item")
                 val parentTask = tasksByLine[listItem.parent.toInt()]!! // TODO Handle error better
                 // Child list item
                 if (listItem.task == null) {
+                    console.log(" - is a note")
                     // Is a note, find the parent task and add this line to the notes list
                     // removing the first two characters (the list marker, '- ')
                     parentTask.notes.add(lineContents.trim().drop(2))
                 } else {
+                    console.log(" - is a subtask")
                     // Is a task, construct task and find the parent task to add to subtasks list
                     val subtask = createTask(filename, taskLine, lineContents)
                     parentTask.subtasks.add(subtask)
@@ -156,6 +163,7 @@ class TaskModelService {
             }
         }
 
+        console.log("processFile() end")
         return tasksByLine.values.toMutableList()
     }
 
