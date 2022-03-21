@@ -19,12 +19,6 @@ import model.TaskModel
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
-private const val TASK_PAPER_DATE_FORMAT = """\(([0-9\-T:]*)\)"""
-private const val ALL_TAGS_REGEX = """#([a-zA-Z][0-9a-zA-Z-_/]*)"""
-private const val DATAVIEW_REGEX = """\[([a-zA-Z]*):: ([\d\w!: -]*)\]"""
-@Suppress("RegExpRedundantEscape")
-private const val COMPLETED_REGEX = """- \[[xX]\]"""
-
 /**
  * Service for interacting with a TaskModel. Main use is to process files
  * in the Vault to build up the list of tasks and to process modified/created
@@ -33,17 +27,12 @@ private const val COMPLETED_REGEX = """- \[[xX]\]"""
  * TODO: Create a method to process a modified/created file
  */
 class TaskModelService {
-    private val dueDateRegex = Regex("""@${TaskConstants.DUE_ON_PROPERTY}$TASK_PAPER_DATE_FORMAT""")
-    private val completedDateRegex = Regex("""@${TaskConstants.COMPLETED_ON_PROPERTY}$TASK_PAPER_DATE_FORMAT""")
+    private val dueDateRegex = Regex("""@${TaskConstants.DUE_ON_PROPERTY}${TaskConstants.TASK_PAPER_DATE_FORMAT}""")
+    private val completedDateRegex = Regex("""@${TaskConstants.COMPLETED_ON_PROPERTY}${TaskConstants.TASK_PAPER_DATE_FORMAT}""")
     @Suppress("RegExpRedundantEscape")
-    private val dataviewRegex = Regex(DATAVIEW_REGEX)
-    private val spanRegex =
-        TaskConstants.REPEATING_TYPE.getAllTags()
-            .plus(TaskConstants.SPECIFIC_INSTANTS.getAllTags())
-            .joinToString("|")
-    private val repeatItemRegex = Regex("""($spanRegex)([!]?)(: ([0-9]{1,2}))?""")
-    private val allTagsRegex = Regex(ALL_TAGS_REGEX)
-    private val completedRegex = Regex(COMPLETED_REGEX)
+    private val dataviewRegex = Regex(TaskConstants.DATAVIEW_REGEX)
+    private val allTagsRegex = Regex(TaskConstants.ALL_TAGS_REGEX)
+    private val completedRegex = Regex(TaskConstants.COMPLETED_REGEX)
 
     fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
         CoroutineScope(Dispatchers.Main).launch {
@@ -58,36 +47,35 @@ class TaskModelService {
                 .filter { it.original != null }
                 .groupBy { it.file }
                 .forEach { entry ->
-                launch {
-                    console.log(" - writing file ${entry.key}")
-                    val file = vault.getAbstractFileByPath(entry.key) as TFile
-                    val linesToRemove = mutableListOf<Int>()
-                    vault.read(file).then { contents ->
-                        val fileContents = mutableListOf<String>().apply {
-                            addAll(contents.split('\n'))
-                        }
-                        entry.value
-                            .sortedByDescending { it.filePosition }
-                            .forEach { task ->
-                                console.log(" - Updating task : ${task.description}")
-                                fileContents[task.filePosition] = task.toMarkdown()
-                                val indentedCount = indentedCount(task.original!!)
-                                if (indentedCount > 0) {
-                                    val firstIndent = task.filePosition + 1
-                                    // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
-                                    linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
-                                    console.log(" - linesToRemove now", linesToRemove)
-                                }
+                    launch {
+                        console.log(" - writing file ${entry.key}")
+                        val file = vault.getAbstractFileByPath(entry.key) as TFile
+                        val linesToRemove = mutableListOf<Int>()
+                        vault.read(file).then { contents ->
+                            val fileContents = mutableListOf<String>().apply {
+                                addAll(contents.split('\n'))
                             }
-                        linesToRemove.sortedDescending().forEach {
-                            fileContents.removeAt(it)
+                            entry.value
+                                .sortedByDescending { it.filePosition }
+                                .forEach { task ->
+                                    console.log(" - Updating task : ${task.description}")
+                                    fileContents[task.filePosition] = task.toMarkdown()
+                                    val indentedCount = indentedCount(task.original!!)
+                                    if (indentedCount > 0) {
+                                        val firstIndent = task.filePosition + 1
+                                        // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
+                                        linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
+                                        console.log(" - linesToRemove now", linesToRemove)
+                                    }
+                                }
+                            linesToRemove.sortedDescending().forEach {
+                                fileContents.removeAt(it)
+                            }
+                            vault.modify(file, fileContents.joinToString("\n"))
+                            // TODO Do I need to unset task.original? Or will that happen when I re-read the file
                         }
-                        vault.modify(file, fileContents.joinToString("\n"))
-
-                        // TODO Do I need to unset task.original? Or will that happen when I re-read the file
                     }
                 }
-            }
         }
     }
 

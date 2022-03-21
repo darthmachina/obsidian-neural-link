@@ -23,6 +23,9 @@ data class Task(
     val subtasks: MutableList<Task> = mutableListOf(),
     val notes: MutableList<String> = mutableListOf(),
     var original: Task? = null, // TODO try to automate setting this
+    // 'before' is for writing the repeat task
+    // TODO Find a better way to model this as I don't like needing to store this on the task itself
+    var before: Task? = null,
     val id: String = UUID().toString()
 ) {
     @OptIn(ExperimentalSerializationApi::class)

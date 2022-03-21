@@ -5,16 +5,18 @@ import model.Task
 import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Reducer
+import service.RepeatingTaskService
 
 val reducerFunctions = Reducers()
 
 val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
-        is VaultLoaded -> reducerFunctions.vaultLoaded(action.newTaskModel)
+        is VaultLoaded -> reducerFunctions.populateKanban(action.newTaskModel)
         is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks)
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
+        is RepeatTask -> reducerFunctions.repeatTask(store, action.taskId, action.repeatingTaskService)
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -24,6 +26,28 @@ class Reducers {
     private val taskComparator = compareBy<Task,Int?>(nullsLast()) {
         val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt()
         position
+    }
+
+    /**
+     * Repeats the given task if required.
+     *
+     * Sets the task.before field to the repeated task to write the new task before the current one in the file.
+     */
+    fun repeatTask(store: TaskModel, taskId: String, repeatingTaskService: RepeatingTaskService): TaskModel {
+        console.log("repeatTask()")
+        val newTaskModel = copyTasksIntoNewModel(store)
+        val task = newTaskModel.tasks.find { it.id == taskId }
+            ?: return store
+        if (repeatingTaskService.isTaskRepeating(task)) {
+            val repeatTask = repeatingTaskService.getNextRepeatingTask(task)
+            setModifiedIfNeeded(task)
+            task.dataviewFields.remove(TaskConstants.TASK_REPEAT_PROPERTY)
+            task.before = repeatTask
+            // TODO Do I actually need to insert the task into the kanban since it will be done when the modified file is loaded again
+//            insertSingleTaskIntoKanban(newTaskModel.kanbanColumns, repeatTask, repeatTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt())
+        }
+
+        return newTaskModel
     }
 
     /**
@@ -53,9 +77,8 @@ class Reducers {
     /**
      * Called when the vault is initially loaded with a task list, will populate the kanban data
      */
-    fun vaultLoaded(newTaskModel: TaskModel): TaskModel {
+    fun populateKanban(newTaskModel: TaskModel): TaskModel {
         console.log("vaultLoaded()")
-        // Insert tasks sorted by TASK_ORDER to maintain any previously saved order into the kanban
         val filteredTasks = newTaskModel.tasks.filter { task -> task.tags.any { tag -> tag in newTaskModel.kanbanColumns.keys } }
         insertTasksIntoKanban(newTaskModel.kanbanColumns, filteredTasks)
 
@@ -172,12 +195,16 @@ class Reducers {
      */
     private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>) {
         tasks.sortedWith(taskComparator).forEach { task ->
-            val statusColumn = getStatusTagFromTask(task, kanbanColumns.keys)
-            if (statusColumn != null) {
-                val statusTasks = kanbanColumns[statusColumn]!!
-                statusTasks.add(task)
-                updateTaskOrder(task, statusTasks.indexOf(task))
-            }
+            insertSingleTaskIntoKanban(kanbanColumns, task)
+        }
+    }
+
+    private fun insertSingleTaskIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, task: Task, position: Int? = null) {
+        val statusColumn = getStatusTagFromTask(task, kanbanColumns.keys)
+        if (statusColumn != null) {
+            val statusTasks = kanbanColumns[statusColumn]!!
+            statusTasks.add(task)
+            updateTaskOrder(task, position ?: statusTasks.indexOf(task))
         }
     }
 

@@ -7,13 +7,16 @@ import TFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
 import processor.RepeatingProcessor
 import processor.RemoveTagsFromTask
+import service.RepeatingTaskService
 import service.TaskModelService
 import service.TaskService
 import store.ModifyFileTasks
+import store.RepeatTask
 
 /**
  * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this
@@ -22,13 +25,13 @@ import store.ModifyFileTasks
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class FileModifiedEvent(plugin: NeuralLinkPlugin, store: Store<TaskModel>, val taskModelService: TaskModelService) :
-    Event(plugin, store) {
+class FileModifiedEvent(
+    plugin: NeuralLinkPlugin,
+    store: Store<TaskModel>,
+    val taskModelService: TaskModelService,
+    val repeatingTaskService: RepeatingTaskService
+) : Event(plugin, store) {
     @Suppress("NON_EXPORTABLE_TYPE")
-//    val taskProcessors = listOf(
-//        RemoveTagsFromTask(state, taskService),
-//        RepeatingProcessor(state, taskService)
-//    ).sortedBy { it.getPriority() }
 
     private fun printMap(map: MutableMap<String, String>) : String {
         return map.map { (key, value) -> "[$key, $value]" }.joinToString(", ")
@@ -42,7 +45,16 @@ class FileModifiedEvent(plugin: NeuralLinkPlugin, store: Store<TaskModel>, val t
                 fileContents.addAll(contents.split("\n"))
                 CoroutineScope(Dispatchers.Main).launch {
                     val tasks = taskModelService.readFile(context, plugin.app.vault, plugin.app.metadataCache)
-                    // TODO Run these tasks through any processors before dispatching the event to the store
+                    // Check for any completed tasks that are set to repeat
+                    tasks
+                        .filter { task ->
+                            task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY) &&
+                            task.completed
+                        }
+                        .forEach { task ->
+                            store.dispatch(RepeatTask(task.id, repeatingTaskService))
+                        }
+
                     store.dispatch(ModifyFileTasks(context.path, tasks))
                 }
             }
