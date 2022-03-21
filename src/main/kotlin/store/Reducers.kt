@@ -13,10 +13,10 @@ val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
         is VaultLoaded -> reducerFunctions.populateKanban(action.newTaskModel)
         is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
-        is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks)
+        is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
-        is RepeatTask -> reducerFunctions.repeatTask(store, action.taskId, action.repeatingTaskService)
+        is RepeatTask -> store
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -26,28 +26,6 @@ class Reducers {
     private val taskComparator = compareBy<Task,Int?>(nullsLast()) {
         val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt()
         position
-    }
-
-    /**
-     * Repeats the given task if required.
-     *
-     * Sets the task.before field to the repeated task to write the new task before the current one in the file.
-     */
-    fun repeatTask(store: TaskModel, taskId: String, repeatingTaskService: RepeatingTaskService): TaskModel {
-        console.log("repeatTask()")
-        val newTaskModel = copyTasksIntoNewModel(store)
-        val task = newTaskModel.tasks.find { it.id == taskId }
-            ?: return store
-        if (repeatingTaskService.isTaskRepeating(task)) {
-            val repeatTask = repeatingTaskService.getNextRepeatingTask(task)
-            setModifiedIfNeeded(task)
-            task.dataviewFields.remove(TaskConstants.TASK_REPEAT_PROPERTY)
-            task.before = repeatTask
-            // TODO Do I actually need to insert the task into the kanban since it will be done when the modified file is loaded again
-//            insertSingleTaskIntoKanban(newTaskModel.kanbanColumns, repeatTask, repeatTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt())
-        }
-
-        return newTaskModel
     }
 
     /**
@@ -168,14 +146,57 @@ class Reducers {
         return newTaskModel
     }
 
-    fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>): TaskModel {
+    fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
         console.log("modifyFileTasks()")
         val newTaskModel = copyTasksIntoNewModel(store)
         clearFileTasksFromModel(newTaskModel, file)
+        runFileModifiedListeners(newTaskModel, fileTasks, repeatingTaskService)
         newTaskModel.tasks.addAll(fileTasks)
         insertTasksIntoKanban(newTaskModel.kanbanColumns, fileTasks)
 
         return newTaskModel
+    }
+
+    private fun runFileModifiedListeners(taskModel: TaskModel, tasks: List<Task>, repeatingTaskService: RepeatingTaskService) {
+        console.log("runFileModifiedListeners()")
+
+        // Repeating tasks
+        tasks
+            .filter { task ->
+                task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY) &&
+                        task.completed
+            }
+            .forEach { task ->
+                repeatTask(task, repeatingTaskService)
+            }
+
+        // Check for completed tasks with a status tag and remove the tag (might have been completed outside the app)
+        tasks
+            .forEach { task ->
+                val statusTag = getStatusTagFromTask(task, taskModel.kanbanColumns.keys)
+                if (task.completed && statusTag != null) {
+                    setModifiedIfNeeded(task)
+                    task.tags.remove(statusTag)
+                }
+            }
+    }
+
+    /**
+     * Repeats the given task if required.
+     *
+     * Sets the task.before field to the repeated task to write the new task before the current one in the file.
+     */
+    private fun repeatTask(task: Task, repeatingTaskService: RepeatingTaskService) {
+        console.log("repeatTask()", task)
+        if (repeatingTaskService.isTaskRepeating(task)) {
+            console.log(" - task is a repeating task, processing")
+            val repeatTask = repeatingTaskService.getNextRepeatingTask(task)
+            setModifiedIfNeeded(task)
+            task.dataviewFields.remove(TaskConstants.TASK_REPEAT_PROPERTY)
+            task.before = repeatTask
+            // TODO Do I actually need to insert the task into the kanban since it will be done when the modified file is loaded again
+//            insertSingleTaskIntoKanban(newTaskModel.kanbanColumns, repeatTask, repeatTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt())
+        }
     }
 
     private fun createKanbanColumns(statusTags: List<StatusTag>): MutableMap<String,MutableList<Task>> {

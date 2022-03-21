@@ -42,6 +42,7 @@ data class Task(
      */
     fun toMarkdown(): String {
         val markdownElements = mutableListOf<String>()
+
         markdownElements.add(if (completed) "- [x]" else "- [ ]")
         markdownElements.add(description)
         if (tags.size > 0) {
@@ -62,6 +63,12 @@ data class Task(
         if (notes.size > 0) {
             markdownElements.add("\n\t" + notes.joinToString("\n\t") { note -> "- $note" })
         }
-        return markdownElements.joinToString(" ")
+
+        // Check for a 'before' task
+        var beforeMarkdown = ""
+        if (before != null) {
+            beforeMarkdown = "${before!!.toMarkdown()}\n"
+        }
+        return beforeMarkdown + markdownElements.joinToString(" ")
     }
 }

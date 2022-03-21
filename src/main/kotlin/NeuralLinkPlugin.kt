@@ -4,6 +4,7 @@ import model.TaskModel
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
+import service.RepeatingTaskService
 import service.SettingsService
 import service.TaskModelService
 import store.reducer
@@ -35,9 +36,10 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     // SERVICES
     private val settingsService = SettingsService(store, this)
     private val taskModelService = TaskModelService()
+    private val repeatingTaskService = RepeatingTaskService()
 
     // EVENTS
-    private val fileModifiedEvent = FileModifiedEvent(this, store, taskModelService)
+    private val fileModifiedEvent = FileModifiedEvent(this, store, taskModelService, repeatingTaskService)
 
     override fun onload() {
         // TODO Need to wrap this around something so it's delayed on app startup

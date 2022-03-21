@@ -45,17 +45,7 @@ class FileModifiedEvent(
                 fileContents.addAll(contents.split("\n"))
                 CoroutineScope(Dispatchers.Main).launch {
                     val tasks = taskModelService.readFile(context, plugin.app.vault, plugin.app.metadataCache)
-                    // Check for any completed tasks that are set to repeat
-                    tasks
-                        .filter { task ->
-                            task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY) &&
-                            task.completed
-                        }
-                        .forEach { task ->
-                            store.dispatch(RepeatTask(task.id, repeatingTaskService))
-                        }
-
-                    store.dispatch(ModifyFileTasks(context.path, tasks))
+                    store.dispatch(ModifyFileTasks(context.path, tasks, repeatingTaskService))
                 }
             }
         }

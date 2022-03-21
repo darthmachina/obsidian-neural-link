@@ -24,7 +24,7 @@ class RepeatingTaskService {
      * 3. Replaces the due date with the next date in the cycle
      */
     fun getNextRepeatingTask(task: Task) : Task {
-        console.log("getNextRepeatingTask()", task)
+        console.log("getNextRepeatingTask()")
         val repeatTask = task.deepCopy()
         repeatTask.dueOn = getNextRepeatDate(task)
         repeatTask.completed = false
