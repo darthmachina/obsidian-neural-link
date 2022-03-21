@@ -37,13 +37,21 @@ class KanbanStyles {
             fontSize = 13.px
         }
 
+        val KANBAN_DESCRIPTION = Style(".nl-kanban-description") {
+        }
+
         val KANBAN_SUBTASKS = Style(".nl-kanban-subtask-list") {
-            paddingLeft = 25.px
+            paddingLeft = 20.px
         }
 
         val KANBAN_NOTES = Style(".nl-kanban-notes-list") {
-            paddingLeft = 25.px
+            marginLeft = 8.px
+            marginTop = 0.px
             fontSize = 15.px
+
+//            style("li::marker") {
+//                marginRight = 5.px
+//            }
         }
 
         val KANBAN_DATAVIEW_TABLE = Style(".nl-kanban-dataview-table") {

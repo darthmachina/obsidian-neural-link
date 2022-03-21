@@ -42,6 +42,7 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task): VPanel(spaci
         }
 
         div {
+            addCssStyle(KanbanStyles.KANBAN_DESCRIPTION)
             checkBox(task.completed, label = task.description) {
                 inline = true
             }.onClick {
@@ -67,14 +68,17 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task): VPanel(spaci
 
         // Notes
         if (task.notes.isNotEmpty()) {
-            vPanel {
+            listTag(ListType.UL, task.notes) {
                 addCssStyle(KanbanStyles.KANBAN_NOTES)
-                task.notes.forEach { note ->
-                    li {
-                        +note
-                    }
-                }
             }
+//            vPanel {
+//                addCssStyle(KanbanStyles.KANBAN_NOTES)
+//                task.notes.forEach { note ->
+//                    li {
+//                        +note
+//                    }
+//                }
+//            }
         }
 
         // Dataview Fields
