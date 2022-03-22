@@ -49,7 +49,7 @@ data class Task(
             markdownElements.add(tags.joinToString(" ") { tag -> "#$tag" })
         }
         if (dataviewFields.isNotEmpty()) {
-            markdownElements.add(dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString(" "))
+            markdownElements.add(dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString("  "))
         }
         if (dueOn != null) {
             markdownElements.add(dueOn!!.toMarkdown("due"))

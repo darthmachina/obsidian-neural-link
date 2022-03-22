@@ -34,6 +34,10 @@ class TaskModelService {
     private val allTagsRegex = Regex(TaskConstants.ALL_TAGS_REGEX)
     private val completedRegex = Regex(TaskConstants.COMPLETED_REGEX)
 
+    private fun mapToString(map: MutableMap<String, String>, prepend: String) : String {
+        return prepend + map.map { (key, value) -> "[$key, $value]" }.joinToString(prepend)
+    }
+
     fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
         CoroutineScope(Dispatchers.Main).launch {
             store.dispatch(VaultLoaded(processAllFiles(vault, metadataCache, store.state.copy())))
@@ -121,30 +125,32 @@ class TaskModelService {
         val tasksByLine = mutableMapOf<Int,Task>() // Map of position -> Task
 
         listItems.forEach { listItem ->
-            console.log(" - loading listItem", listItem)
+//            console.log(" - loading listItem", listItem)
             val taskLine = listItem.position.start.line.toInt()
             val lineContents = fileContents[taskLine]
             // If the parent is negative (no parent set), or there is no task seen previously (so parent was not a task)
             if (listItem.parent.toInt() < 0 || !tasksByLine.contains(listItem.parent.toInt())) {
-                console.log(" - is a root level item")
+//                console.log(" - is a root level item")
                 // Root level list item
                 if (listItem.task != null) {
-                    console.log(" - is a task so add it")
+//                    console.log(" - is a task so add it")
                     // Only care about root items that are tasks
                     val task = createTask(filename, taskLine, lineContents)
+                    console.log(" - created task", task)
+                    console.log(mapToString(task.dataviewFields, "\n   -"))
                     tasksByLine[listItem.position.start.line.toInt()] = task
                 }
             } else {
-                console.log(" - is an indented item")
+//                console.log(" - is an indented item")
                 val parentTask = tasksByLine[listItem.parent.toInt()]!! // TODO Handle error better
                 // Child list item
                 if (listItem.task == null) {
-                    console.log(" - is a note")
+//                    console.log(" - is a note")
                     // Is a note, find the parent task and add this line to the notes list
                     // removing the first two characters (the list marker, '- ')
                     parentTask.notes.add(lineContents.trim().drop(2))
                 } else {
-                    console.log(" - is a subtask")
+//                    console.log(" - is a subtask")
                     // Is a task, construct task and find the parent task to add to subtasks list
                     val subtask = createTask(filename, taskLine, lineContents)
                     parentTask.subtasks.add(subtask)

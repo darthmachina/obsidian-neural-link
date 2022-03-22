@@ -215,12 +215,14 @@ class Reducers {
      * SIDE EFFECT: kanbanColumns is modified in place
      */
     private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>) {
+        console.log("insertTasksIntoKanban()")
         tasks.sortedWith(taskComparator).forEach { task ->
             insertSingleTaskIntoKanban(kanbanColumns, task)
         }
     }
 
     private fun insertSingleTaskIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, task: Task, position: Int? = null) {
+        console.log("insertSingleTaskIntoKanban()")
         val statusColumn = getStatusTagFromTask(task, kanbanColumns.keys)
         if (statusColumn != null) {
             val statusTasks = kanbanColumns[statusColumn]!!
@@ -323,6 +325,7 @@ class Reducers {
     private fun updateTaskOrder(task: Task, position: Int): Task {
         console.log("updateTaskOrder()", task, position)
         val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
+        console.log(" - current task order", taskOrder)
         if (taskOrder == null || taskOrder.toInt() != position) {
             console.log(" - task order needs to be updated : $taskOrder -> $position")
             setModifiedIfNeeded(task)
