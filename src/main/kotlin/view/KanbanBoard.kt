@@ -73,14 +73,14 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
                 boardCache.tasks[status.tag] = storeTasks
                 val column = columnPanels[status]!!
                 column.removeAllCards()
-                column.addAll(boardCache.tasks[status.tag]!!.map { createCard(it) })
+                column.addAll(boardCache.tasks[status.tag]!!.map { createCard(it, status.tag) })
             }
         }
     }
 
     private fun createColumn(name: StatusTag, cards: MutableList<Task>): VPanel {
         console.log("createColumn(): ", name)
-        val column = KanbanColumnPanel(name, cards.map { createCard(it) })
+        val column = KanbanColumnPanel(name, cards.map { createCard(it, name.tag) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
                 store.dispatch(TaskStatusChanged(cardId, column.status.tag, dragoverCardId))
@@ -91,9 +91,9 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
         return column
     }
 
-    private fun createCard(task: Task): KanbanCardPanel {
+    private fun createCard(task: Task, status: String): KanbanCardPanel {
         console.log("createCard(): ", task.description)
-        val card = KanbanCardPanel(store, task)
+        val card = KanbanCardPanel(store, task, status)
         card.id = task.id
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)
         card.setEventListener<Div> {

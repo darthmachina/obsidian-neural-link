@@ -10,17 +10,19 @@ import io.kvision.panel.vPanel
 import io.kvision.utils.perc
 import io.kvision.utils.px
 import model.Task
+import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
 import store.SubtaskCompleted
 import store.TaskCompleted
 
-class KanbanCardPanel(val store: Store<TaskModel>, val task: Task): VPanel(spacing = 5) {
+class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val status: String): VPanel(spacing = 5) {
     init {
         addCssStyle(KanbanStyles.KANBAN_CARD)
         // Description
         // Tags & Due
-        if (task.tags.isNotEmpty() || task.dueOn != null) {
+        val filteredTags = task.tags.filter { tag -> tag != status }
+        if (filteredTags.isNotEmpty() || task.dueOn != null) {
             hPanel {
                 addCssStyle(KanbanStyles.KANBAN_TAGS_DUE_PANEL)
                 if (task.dueOn != null) {
@@ -30,10 +32,10 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task): VPanel(spaci
                     }
                 }
 
-                if (task.tags.isNotEmpty()) {
+                if (filteredTags.isNotEmpty()) {
                     div {
                         addCssStyle(KanbanStyles.KANBAN_TAG_LIST)
-                        task.tags.forEach { tag ->
+                        filteredTags.forEach { tag ->
                             span { +"#$tag" }
                         }
                     }
@@ -74,10 +76,11 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task): VPanel(spaci
         }
 
         // Dataview Fields
-        if (task.dataviewFields.isNotEmpty()) {
+        val filteredDataviewFields = task.dataviewFields.filter { entry -> entry.key != TaskConstants.TASK_ORDER_PROPERTY }
+        if (filteredDataviewFields.isNotEmpty()) {
             table {
                 addCssStyle(KanbanStyles.KANBAN_DATAVIEW_TABLE)
-                task.dataviewFields.forEach { entry ->
+                filteredDataviewFields.forEach { entry ->
                     tr {
                         td {
                             width = 25.perc
