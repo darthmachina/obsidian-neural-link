@@ -12,7 +12,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import model.SimpleDate
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import model.Task
 import model.TaskConstants
 import model.TaskModel
@@ -209,13 +210,13 @@ class TaskModelService {
      * @param task The task String
      * @return A SimpleDate object representing the due date or null if no due date is present
      */
-    private fun getDueDateFromTask(task: String) : SimpleDate? {
+    private fun getDueDateFromTask(task: String) : LocalDate? {
         val dateMatch = dueDateRegex.find(task)
         return if (dateMatch == null) {
             null
         } else {
             val dateSplit = dateMatch.groupValues[1].split('-')
-            SimpleDate(
+            LocalDate(
                 dateSplit[0].toInt(),
                 dateSplit[1].toInt(),
                 dateSplit[2].toInt()
@@ -233,7 +234,7 @@ class TaskModelService {
      * @param task The task String
      * @return A Date object representing the completed date or null if no completed date is present
      */
-    private fun getCompletedDateFromTask(task: String) : SimpleDate? {
+    private fun getCompletedDateFromTask(task: String) : LocalDateTime? {
         val dateMatch = completedDateRegex.find(task)
         return if (dateMatch == null) {
             null
@@ -241,14 +242,13 @@ class TaskModelService {
             val dateAndTime = dateMatch.groupValues[1].split("T")
             val dateSplit = dateAndTime[0].split('-')
             val timeSplit = dateAndTime[1].split(':')
-            SimpleDate(
+            LocalDateTime(
                 dateSplit[0].toInt(), // Year
                 dateSplit[1].toInt(), // Month
                 dateSplit[2].toInt(), // Day
                 timeSplit[0].toInt(), // Hour
                 timeSplit[1].toInt(), // Minute
-                timeSplit[2].toInt(), // Second
-                includeTime = true
+                timeSplit[2].toInt() // Second
             )
         }
     }

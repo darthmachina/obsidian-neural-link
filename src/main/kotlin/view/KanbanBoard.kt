@@ -7,10 +7,9 @@ import model.StatusTag
 import model.Task
 import model.TaskModel
 import org.reduxkotlin.Store
-import service.TaskModelService
 import store.TaskStatusChanged
 
-class KanbanBoard(val store: Store<TaskModel>, val taskModelService: TaskModelService): HPanel() {
+class KanbanBoard(val store: Store<TaskModel>): HPanel() {
     companion object {
         const val CARD_MIME_TYPE = "text/x-card"
     }

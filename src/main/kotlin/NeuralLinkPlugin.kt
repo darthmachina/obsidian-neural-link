@@ -54,7 +54,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
         // Kanban View
         this.registerView(KanbanView.VIEW_TYPE) { leaf ->
-            KanbanView(leaf, store, taskModelService)
+            KanbanView(leaf, store)
         }
         this.addCommand(KanbanViewCommand(
             "neural-link-kanban",

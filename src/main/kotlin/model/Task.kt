@@ -1,5 +1,7 @@
 package model
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.cbor.Cbor
@@ -15,8 +17,8 @@ data class Task(
     val file: String,
     val filePosition: Int,
     var description: String,
-    var dueOn: SimpleDate?,
-    var completedOn: SimpleDate?,
+    var dueOn: LocalDate?,
+    var completedOn: LocalDateTime?,
     val tags: MutableSet<String>,
     val dataviewFields: MutableMap<String, String>,
     var completed: Boolean,
@@ -52,10 +54,10 @@ data class Task(
             markdownElements.add(dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString("  "))
         }
         if (dueOn != null) {
-            markdownElements.add(dueOn!!.toMarkdown("due"))
+            markdownElements.add("@due(${dueOn!!})")
         }
         if (completedOn != null) {
-            markdownElements.add(completedOn!!.toMarkdown("completed"))
+            markdownElements.add("@completed(${completedOn!!})")
         }
         if (subtasks.size > 0) {
             markdownElements.add("\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() })

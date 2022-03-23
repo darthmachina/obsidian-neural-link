@@ -1,10 +1,14 @@
 package service
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import model.RepeatItem
-import model.SimpleDate
 import model.Task
 import model.TaskConstants
-import kotlin.js.Date
 
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
@@ -32,33 +36,35 @@ class RepeatingTaskService {
         return repeatTask
     }
 
-    private fun getNextRepeatDate(task: Task) : SimpleDate {
+    private fun getNextRepeatDate(task: Task) : LocalDate {
         // If there isn't a due date and repeating note then there is no next date
         if (!isTaskRepeating(task))
             throw IllegalArgumentException("Task requires a due date and repeating note to calculate next date\n\t$task")
 
         val repeatItem = parseRepeating(task.dataviewFields["repeat"]!!)
-        val currentDate = Date()
-        val fromDate = if (repeatItem.fromComplete) SimpleDate(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()) else task.dueOn!!
+        val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) // TODO Is TimeZone here going to affect anything?
+        val fromDate = if (repeatItem.fromComplete) LocalDate(currentDate.year, currentDate.month, currentDate.dayOfMonth) else task.dueOn!!
 
         return when (repeatItem.span) {
-            TaskConstants.REPEAT_SPAN.DAILY -> SimpleDate(fromDate.year, fromDate.month, fromDate.day + repeatItem.amount)
-            TaskConstants.REPEAT_SPAN.WEEKLY -> SimpleDate(fromDate.year, fromDate.month, fromDate.day + (repeatItem.amount * 7))
-            TaskConstants.REPEAT_SPAN.MONTHLY -> SimpleDate(fromDate.year, fromDate.month + repeatItem.amount, fromDate.day)
-            TaskConstants.REPEAT_SPAN.YEARLY -> SimpleDate(fromDate.year + repeatItem.amount, fromDate.month, fromDate.day)
+            TaskConstants.REPEAT_SPAN.DAILY -> fromDate.plus(repeatItem.amount, DateTimeUnit.DAY)
+            TaskConstants.REPEAT_SPAN.WEEKLY -> fromDate.plus(repeatItem.amount, DateTimeUnit.WEEK)
+            TaskConstants.REPEAT_SPAN.MONTHLY -> fromDate.plus(repeatItem.amount, DateTimeUnit.MONTH)
+            TaskConstants.REPEAT_SPAN.YEARLY -> fromDate.plus(repeatItem.amount, DateTimeUnit.YEAR)
             TaskConstants.REPEAT_SPAN.WEEKDAY -> {
                 // Calculate how many days to add to the current day (Sunday, Friday, Saturday go to next Monday)
-                val addDays = when (fromDate.day) {
+                val addDays = when (fromDate.dayOfMonth) {
                     0 -> 1
                     5 -> 3
                     6 -> 2
                     else -> 1
                 }
-                SimpleDate(fromDate.year, fromDate.month, fromDate.day + addDays)
+                fromDate.plus(addDays, DateTimeUnit.DAY)
             }
-            TaskConstants.REPEAT_SPAN.MONTH -> SimpleDate(fromDate.year, fromDate.month + 1, repeatItem.amount)
+            TaskConstants.REPEAT_SPAN.MONTH -> {
+                fromDate.plus(1, DateTimeUnit.MONTH)
+            }
             // Else we are a specific month repeat so just add a year
-            else -> SimpleDate(fromDate.year + 1, fromDate.month, fromDate.day)
+            else -> fromDate.plus(1, DateTimeUnit.YEAR)
         }
     }
 

@@ -71,14 +71,6 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task): VPanel(spaci
             listTag(ListType.UL, task.notes) {
                 addCssStyle(KanbanStyles.KANBAN_NOTES)
             }
-//            vPanel {
-//                addCssStyle(KanbanStyles.KANBAN_NOTES)
-//                task.notes.forEach { note ->
-//                    li {
-//                        +note
-//                    }
-//                }
-//            }
         }
 
         // Dataview Fields
