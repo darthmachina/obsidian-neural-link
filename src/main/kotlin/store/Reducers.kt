@@ -1,5 +1,6 @@
 package store
 
+import kotlinx.datetime.LocalDate
 import model.StatusTag
 import model.Task
 import model.TaskConstants
@@ -28,24 +29,29 @@ class Reducers {
         position
     }
 
+    private val taskDateComparator = compareBy<Task,LocalDate?>(nullsFirst()) {
+        it.dueOn
+    }
+
     /**
      * Updates the settings, if any update value is null it will reuse the value in the store to allow for partial
      * updates.
      */
     fun updateSettings(store: TaskModel, updateSettings: UpdateSettings): TaskModel {
         console.log("updateSettings()")
+        val newSettings = store.settings.copy(
+            taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
+            columnTags = updateSettings.columnTags ?: store.settings.columnTags
+        )
         // If the columns have changed we need to reprocess the kanbanColumns data
         var newKanbanColumns: MutableMap<String,MutableList<Task>>? = null
         if (updateSettings.columnTags != null) {
-            newKanbanColumns = createKanbanColumns(updateSettings.columnTags!!)
-            insertTasksIntoKanban(newKanbanColumns, store.tasks)
+            newKanbanColumns = createKanbanColumns(newSettings.columnTags)
+            insertTasksIntoKanban(newKanbanColumns, store.tasks, newSettings.columnTags)
         }
 
         val updatedTaskModel = store.copy(
-            settings = store.settings.copy(
-                taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
-                columnTags = updateSettings.columnTags ?: store.settings.columnTags
-            ),
+            settings = newSettings,
             kanbanColumns = newKanbanColumns ?: store.kanbanColumns
         )
         updateSettings.plugin.saveData(updateSettings.settingsService.toJson(updatedTaskModel.settings))
@@ -56,9 +62,8 @@ class Reducers {
      * Called when the vault is initially loaded with a task list, will populate the kanban data
      */
     fun populateKanban(newTaskModel: TaskModel): TaskModel {
-        console.log("vaultLoaded()")
-        val filteredTasks = newTaskModel.tasks.filter { task -> task.tags.any { tag -> tag in newTaskModel.kanbanColumns.keys } }
-        insertTasksIntoKanban(newTaskModel.kanbanColumns, filteredTasks)
+        console.log("populateKanban()")
+        insertTasksIntoKanban(newTaskModel.kanbanColumns, newTaskModel.tasks, newTaskModel.settings.columnTags)
 
         return newTaskModel
     }
@@ -84,21 +89,28 @@ class Reducers {
             }
             // Add the task to the list for the new status
             // If beforeTasksId is set add it at the same position (so pushes beforeTask down), else just add to the end
-            if (updatedKanbanColumns.keys.contains(newStatus)) {
+            if (updatedKanbanColumns.keys.contains(newStatus)) { // TODO Do I need this check here?
+                val sortByDate = store.settings.columnTags.find { it.tag == newStatus }?.dateSort ?: false
                 val beforeTasks = updatedTaskList.filter { it.id == beforeTaskId }
                 val statusTasks = updatedKanbanColumns[newStatus]!!
-                if (beforeTasks.isEmpty() || beforeTasks.size > 1) {
-                    console.log(" - Did not find just one task to place before, adding to bottom")
-                    statusTasks.add(updateTaskOrder(task, statusTasks.size))
+                if (sortByDate) {
+                    // If column is sorted by date we don't care about where it was dropped, just add and resort
+                    statusTasks.add(task)
+                    statusTasks.sortWith(taskDateComparator)
                 } else {
-                    val beforeTaskIndex = statusTasks.indexOf(beforeTasks[0])
-                    if (beforeTaskIndex == -1) {
-                        // Not found, log it and just add to the end of the list
-                        console.log("ERROR: Task $beforeTaskId not found in status $newStatus, adding to end of list")
+                    if (beforeTasks.isEmpty() || beforeTasks.size > 1) {
+                        console.log(" - Did not find just one task to place before, adding to bottom")
                         statusTasks.add(updateTaskOrder(task, statusTasks.size))
                     } else {
-                        insertAndUpdateTaskOrder(task, statusTasks, beforeTaskIndex)
-                        console.log(" - tasks after calling insertAndUpdateTaskOrder : ", statusTasks)
+                        val beforeTaskIndex = statusTasks.indexOf(beforeTasks[0])
+                        if (beforeTaskIndex == -1) {
+                            // Not found, log it and just add to the end of the list
+                            console.log("ERROR: Task $beforeTaskId not found in status $newStatus, adding to end of list")
+                            statusTasks.add(updateTaskOrder(task, statusTasks.size))
+                        } else {
+                            insertAndUpdateTaskOrder(task, statusTasks, beforeTaskIndex)
+                            console.log(" - tasks after calling insertAndUpdateTaskOrder : ", statusTasks)
+                        }
                     }
                 }
                 task.tags.add(newStatus)
@@ -152,7 +164,7 @@ class Reducers {
         clearFileTasksFromModel(newTaskModel, file)
         runFileModifiedListeners(newTaskModel, fileTasks, repeatingTaskService)
         newTaskModel.tasks.addAll(fileTasks)
-        insertTasksIntoKanban(newTaskModel.kanbanColumns, fileTasks)
+        insertTasksIntoKanban(newTaskModel.kanbanColumns, fileTasks, newTaskModel.settings.columnTags)
 
         return newTaskModel
     }
@@ -214,20 +226,34 @@ class Reducers {
      * NOTE: kanbanColumns must contain keys for every status in use already
      * SIDE EFFECT: kanbanColumns is modified in place
      */
-    private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>) {
+    private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>, statusTags: List<StatusTag>) {
         console.log("insertTasksIntoKanban()")
-        tasks.sortedWith(taskComparator).forEach { task ->
-            insertSingleTaskIntoKanban(kanbanColumns, task)
+        // Populate the columns
+        tasks
+            .filter { task -> task.tags.any { tag -> tag in kanbanColumns.keys } }
+            .forEach { task ->
+                val taskStatus = getStatusTagFromTask(task, kanbanColumns.keys)
+                val sortByDate = statusTags.find { it.tag == taskStatus }?.dateSort ?: false
+                insertSingleTaskIntoKanban(kanbanColumns, task, sortByDate)
+            }
+        // Sort each column (by pos or date)
+        statusTags.forEach { tag ->
+            val comparator = if (tag.dateSort) taskDateComparator else taskComparator
+            kanbanColumns[tag.tag]?.sortWith(comparator)
         }
     }
 
-    private fun insertSingleTaskIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, task: Task, position: Int? = null) {
+    private fun insertSingleTaskIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, task: Task, dateSort: Boolean = false, position: Int? = null) {
         console.log("insertSingleTaskIntoKanban()")
         val statusColumn = getStatusTagFromTask(task, kanbanColumns.keys)
         if (statusColumn != null) {
             val statusTasks = kanbanColumns[statusColumn]!!
             statusTasks.add(task)
-            updateTaskOrder(task, position ?: statusTasks.indexOf(task))
+            if (dateSort) {
+                statusTasks.sortWith(taskDateComparator)
+            } else {
+                updateTaskOrder(task, position ?: statusTasks.indexOf(task))
+            }
         }
     }
 

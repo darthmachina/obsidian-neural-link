@@ -15,6 +15,7 @@ data class NeuralLinkPluginSettings(
                 """#kanban/[\w-]+(\s|$)""",
                 listOf(
                     StatusTag("backlog", "Backlog"),
+                    StatusTag("scheduled", "Scheduled", true),
                     StatusTag("inprogress", "In Progress"),
                     StatusTag("completed", "Completed")
                 )
