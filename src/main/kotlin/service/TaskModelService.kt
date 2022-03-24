@@ -108,6 +108,11 @@ class TaskModelService {
 
     suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): MutableList<Task> {
         val taskList = mutableListOf<Task>()
+        if (!file.name.endsWith(".md")) {
+            // If not a Markdown file just return the empty list
+            return taskList
+        }
+
         vault.read(file).then { contents ->
             val fileContents = contents.split('\n')
             val fileListItems = metadataCache.getFileCache(file)?.listItems ?: arrayOf()
