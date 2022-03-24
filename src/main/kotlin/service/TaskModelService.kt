@@ -107,9 +107,19 @@ class TaskModelService {
     }
 
     suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): MutableList<Task> {
+        console.log("readFile()", file.name)
         val taskList = mutableListOf<Task>()
+        // If not a Markdown file just return the empty list
         if (!file.name.endsWith(".md")) {
-            // If not a Markdown file just return the empty list
+            return taskList
+        }
+
+        // Check MetadataCache for incomplete tasks and return the empty list if there are none
+        val incompleteTasks = metadataCache.getFileCache(file)?.listItems?.filter { listItem ->
+            listItem.task == " "
+        } ?: emptyList()
+        if (incompleteTasks.isEmpty()) {
+            console.log(" - Files contains no incomplete tasks, skipping")
             return taskList
         }
 
