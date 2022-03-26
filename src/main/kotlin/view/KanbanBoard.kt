@@ -14,7 +14,7 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
         const val CARD_MIME_TYPE = "text/x-card"
     }
 
-    data class BoardCache(val columns: MutableList<StatusTag>, val tasks: MutableMap<String,MutableList<Task>>)
+    data class BoardCache(var columns: List<StatusTag>, var tasks: MutableMap<StatusTag,List<Task>>)
 
     private var dragoverCardId: String? = null
     private val boardCache = BoardCache(mutableListOf(), mutableMapOf())
@@ -31,9 +31,6 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
 
     private fun storeChanged() {
         console.log("KanbanBoard.storeChanged()")
-        store.state.kanbanColumns.keys.forEach { status ->
-            console.log(" - task list for $status : ", store.state.kanbanColumns[status]!!)
-        }
         if (boardCache.columns != store.state.settings.columnTags) {
             // Columns have been updated, redraw the whole board
             updateCacheColumns(store.state.settings.columnTags)
@@ -48,38 +45,37 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
     }
 
     private fun updateCacheColumns(columns: List<StatusTag>) {
-        console.log("updateCacheColumns(): ", columns)
-        boardCache.columns.clear()
+        console.log("KanbanBoard.updateCacheColumns(): ", columns)
+        boardCache.columns = columns
         boardCache.tasks.clear()
         columnPanels.clear()
-        boardCache.columns += columns
         boardCache.tasks.putAll(store.state.kanbanColumns)
 
         removeAll()
         boardCache.columns.forEach { statusTag ->
             console.log(" - creating column", statusTag)
-            add(createColumn(statusTag, boardCache.tasks[statusTag.tag]!!))
+            add(createColumn(statusTag, boardCache.tasks[statusTag]!!))
         }
     }
 
     private fun checkAndUpdateTasks() {
-        console.log("checkAndUpdateTasks()")
+        console.log("KanbanBoard.checkAndUpdateTasks()")
         store.state.settings.columnTags.forEach { status ->
             console.log(" - Checking column: ", status)
-            val cacheTasks = boardCache.tasks[status.tag]!!
-            val storeTasks = store.state.kanbanColumns[status.tag]!!
+            val cacheTasks = boardCache.tasks[status]!!
+            val storeTasks = store.state.kanbanColumns[status]!!
             if (cacheTasks != storeTasks) {
                 console.log(" - Task difference between cache and store, updating")
-                boardCache.tasks[status.tag] = storeTasks
+                boardCache.tasks[status] = storeTasks
                 val column = columnPanels[status]!!
                 column.removeAllCards()
-                column.addAll(boardCache.tasks[status.tag]!!.map { createCard(it, status.tag) })
+                column.addAll(boardCache.tasks[status]!!.map { createCard(it, status.tag) })
             }
         }
     }
 
-    private fun createColumn(name: StatusTag, cards: MutableList<Task>): VPanel {
-        console.log("createColumn(): ", name)
+    private fun createColumn(name: StatusTag, cards: List<Task>): VPanel {
+        console.log("KanbanBoard.createColumn(): ", name)
         val column = KanbanColumnPanel(name, cards.map { createCard(it, name.tag) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
@@ -92,7 +88,7 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
     }
 
     private fun createCard(task: Task, status: String): KanbanCardPanel {
-        console.log("createCard(): ", task.description)
+        console.log("KanbanBoard.createCard(): ", task.description)
         val card = KanbanCardPanel(store, task, status)
         card.id = task.id
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)

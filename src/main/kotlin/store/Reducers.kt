@@ -12,7 +12,7 @@ val reducerFunctions = Reducers()
 
 val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
-        is VaultLoaded -> reducerFunctions.populateKanban(action.newTaskModel)
+        is VaultLoaded -> reducerFunctions.copyAndPopulateKanban(store, action.tasks)
         is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId)
@@ -24,15 +24,6 @@ val reducer: Reducer<TaskModel> = { store, action ->
 }
 
 class Reducers {
-    private val taskComparator = compareBy<Task,Int?>(nullsLast()) {
-        val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt()
-        position
-    }
-
-    private val taskDateComparator = compareBy<Task,LocalDate?>(nullsFirst()) {
-        it.dueOn
-    }
-
     /**
      * Updates the settings, if any update value is null it will reuse the value in the store to allow for partial
      * updates.
@@ -43,105 +34,79 @@ class Reducers {
             taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
             columnTags = updateSettings.columnTags ?: store.settings.columnTags
         )
-        // If the columns have changed we need to reprocess the kanbanColumns data
-        var newKanbanColumns: MutableMap<String,MutableList<Task>>? = null
-        if (updateSettings.columnTags != null) {
-            newKanbanColumns = createKanbanColumns(newSettings.columnTags)
-            insertTasksIntoKanban(newKanbanColumns, store.tasks, newSettings.columnTags)
+        updateSettings.plugin.saveData(updateSettings.settingsService.toJson(newSettings))
+        return if (updateSettings.columnTags != null) {
+            console.log(" - columns updated, reloading kanban")
+            val clonedTaskList = store.tasks.map { it.deepCopy() }
+            store.copy(
+                settings = newSettings,
+                tasks = clonedTaskList,
+                kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, newSettings.columnTags)
+            )
+        } else {
+            store.copy(
+                settings = newSettings
+            )
         }
-
-        val updatedTaskModel = store.copy(
-            settings = newSettings,
-            kanbanColumns = newKanbanColumns ?: store.kanbanColumns
-        )
-        updateSettings.plugin.saveData(updateSettings.settingsService.toJson(updatedTaskModel.settings))
-        return updatedTaskModel
     }
 
     /**
      * Called when the vault is initially loaded with a task list, will populate the kanban data
      */
-    fun populateKanban(newTaskModel: TaskModel): TaskModel {
-        console.log("populateKanban()")
-        insertTasksIntoKanban(newTaskModel.kanbanColumns, newTaskModel.tasks, newTaskModel.settings.columnTags)
-
-        return newTaskModel
+    fun copyAndPopulateKanban(store: TaskModel, tasks: List<Task>): TaskModel {
+        console.log("Reducers.copyAndPopulateKanban()")
+        return store.copy(tasks = tasks, kanbanColumns = ReducerUtils.createKanbanMap(tasks, store.settings.columnTags))
     }
 
     fun taskStatusChanged(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
-        console.log("taskStatusChanged()")
-        val newTaskModel = copyTasksIntoNewModel(store)
-        val updatedTaskList = newTaskModel.tasks
-        val updatedKanbanColumns = newTaskModel.kanbanColumns
+        console.log("Reducers.taskStatusChanged()")
+        val clonedTaskList = store.tasks.map { it.deepCopy() }
 
         // First, find the current status column
-        val filteredTasks = updatedTaskList.filter { it.id == taskId }
-        if (filteredTasks.isEmpty() || filteredTasks.size > 1) {
-            console.log("ERROR: Did not find just one task for id: $taskId")
+        val movedTask = clonedTaskList.find { it.id == taskId }
+        if (movedTask == null) {
+            console.log("ERROR: Did not find task for id: $taskId")
         } else {
-            val task = filteredTasks[0]
-            // Remove the task from that column
-            updatedKanbanColumns.keys.forEach taskLoop@{ status ->
-                if (updatedKanbanColumns[status]!!.contains(task)) {
-                    removeAndUpdateTaskOrder(task, updatedKanbanColumns[status]!!, status)
-                    return@taskLoop
-                }
-            }
-            // Add the task to the list for the new status
-            // If beforeTasksId is set add it at the same position (so pushes beforeTask down), else just add to the end
-            if (updatedKanbanColumns.keys.contains(newStatus)) { // TODO Do I need this check here?
-                val sortByDate = store.settings.columnTags.find { it.tag == newStatus }?.dateSort ?: false
-                val beforeTasks = updatedTaskList.filter { it.id == beforeTaskId }
-                val statusTasks = updatedKanbanColumns[newStatus]!!
-                if (sortByDate) {
-                    // If column is sorted by date we don't care about where it was dropped, just add and resort
-                    statusTasks.add(task)
-                    statusTasks.sortWith(taskDateComparator)
-                } else {
-                    if (beforeTasks.isEmpty() || beforeTasks.size > 1) {
-                        console.log(" - Did not find just one task to place before, adding to bottom")
-                        statusTasks.add(updateTaskOrder(task, statusTasks.size))
-                    } else {
-                        val beforeTaskIndex = statusTasks.indexOf(beforeTasks[0])
-                        if (beforeTaskIndex == -1) {
-                            // Not found, log it and just add to the end of the list
-                            console.log("ERROR: Task $beforeTaskId not found in status $newStatus, adding to end of list")
-                            statusTasks.add(updateTaskOrder(task, statusTasks.size))
-                        } else {
-                            insertAndUpdateTaskOrder(task, statusTasks, beforeTaskIndex)
-                            console.log(" - tasks after calling insertAndUpdateTaskOrder : ", statusTasks)
+            movedTask.tags.remove(ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)?.tag)
+            movedTask.tags.add(newStatus)
+            if (beforeTaskId == null) {
+                // No before task, add to end of list
+                movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findMaxPosition(clonedTaskList, newStatus).toString()
+            } else {
+                val beforeTaskPos = clonedTaskList.find { it.id == beforeTaskId }!!.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()
+                movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = beforeTaskPos.toString()
+                clonedTaskList
+                    .filter { task -> task.tags.contains(newStatus) }
+                    .sortedBy { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] }
+                    .forEach { task ->
+                        // Moved task already has the right position, increment all pos that are after it
+                        val taskPos = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt() ?: 0
+                        if (beforeTaskPos <= taskPos) {
+                            ReducerUtils.updateTaskOrder(movedTask, taskPos + 1)
                         }
                     }
-                }
-                task.tags.add(newStatus)
             }
         }
-
-        return store.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
+        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
 
     fun taskCompleted(store: TaskModel, taskId: String): TaskModel {
-        console.log("taskCompleted()")
-        val newTaskModel = copyTasksIntoNewModel(store)
-        val task = newTaskModel.tasks.find { task -> task.id == taskId }
+        console.log("Reducers.taskCompleted()")
+        val clonedTaskList = store.tasks.map { it.deepCopy() }
+        val task = clonedTaskList.find { task -> task.id == taskId }
         if (task == null) {
             console.log(" - ERROR: Task not found for id: $taskId")
             return store
         }
-        setModifiedIfNeeded(task)
+        ReducerUtils.setModifiedIfNeeded(task)
         task.completed = true
-        val statusColumn = getStatusTagFromTask(task, newTaskModel.kanbanColumns.keys)
-        if (statusColumn != null) {
-            removeAndUpdateTaskOrder(task, newTaskModel.kanbanColumns[statusColumn]!!, statusColumn)
-        }
-        // task is already in the task list so just return the new model
-        return newTaskModel
+        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
 
     fun markSubtaskCompletion(store: TaskModel, taskId: String, subtaskId: String, complete: Boolean): TaskModel {
-        console.log("subtaskCompleted()")
-        val newTaskModel = copyTasksIntoNewModel(store)
-        val task = newTaskModel.tasks.find { task -> task.id == taskId }
+        console.log("Reducers.subtaskCompleted()")
+        val clonedTaskList = store.tasks.map { it.deepCopy() }
+        val task = clonedTaskList.find { task -> task.id == taskId }
         if (task == null) {
             console.log(" - ERROR: Task not found for id: $taskId")
             return store
@@ -152,219 +117,155 @@ class Reducers {
             return store
         }
 
-        setModifiedIfNeeded(task)
+        ReducerUtils.setModifiedIfNeeded(task)
         subtask.completed = complete
-        // task is already in the task list so just return the new model
-        return newTaskModel
+        return store.copy(tasks = clonedTaskList)
     }
 
     fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
-        console.log("modifyFileTasks()")
-        val newTaskModel = copyTasksIntoNewModel(store)
-        clearFileTasksFromModel(newTaskModel, file)
-        runFileModifiedListeners(newTaskModel, fileTasks, repeatingTaskService)
-        newTaskModel.tasks.addAll(fileTasks)
-        insertTasksIntoKanban(newTaskModel.kanbanColumns, fileTasks, newTaskModel.settings.columnTags)
+        console.log("Reducers.modifyFileTasks()")
+        val clonedTaskList = store.tasks
+            .map { it.deepCopy() }
+            .filter { it.file != file }
+            .plus(fileTasks)
+        ReducerUtils.runFileModifiedListeners(fileTasks, store.settings.columnTags, repeatingTaskService)
 
-        return newTaskModel
+        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
+}
 
-    private fun runFileModifiedListeners(taskModel: TaskModel, tasks: List<Task>, repeatingTaskService: RepeatingTaskService) {
-        console.log("runFileModifiedListeners()")
+class ReducerUtils {
+    companion object {
+        private val taskComparator = compareBy<Task,Int?>(nullsLast()) {
+            val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt()
+            position
+        }
 
-        // Repeating tasks
-        tasks
-            .filter { task ->
-                task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY) &&
-                        task.completed
-            }
-            .forEach { task ->
-                repeatTask(task, repeatingTaskService)
-            }
+        private val taskDateComparator = compareBy<Task,LocalDate?>(nullsFirst()) {
+            it.dueOn
+        }
 
-        // Check for completed tasks with a status tag and remove the tag (might have been completed outside the app)
-        tasks
-            .forEach { task ->
-                val statusTag = getStatusTagFromTask(task, taskModel.kanbanColumns.keys)
-                if (task.completed && statusTag != null) {
-                    setModifiedIfNeeded(task)
-                    task.tags.remove(statusTag)
+        /**
+         * Create a map of StatusTag -> List<Task> for any task that has a StatusTag on it
+         */
+        fun createKanbanMap(tasks: List<Task>, statusTags: List<StatusTag>) : Map<StatusTag,List<Task>> {
+            console.log("Reducers.ReducerUtils.createKanbanMap()")
+            return tasks
+                .filter { task ->
+                    task.tags.any { tag ->
+                        tag in statusTags.map { it.tag }
+                    }
                 }
-            }
-    }
-
-    /**
-     * Repeats the given task if required.
-     *
-     * Sets the task.before field to the repeated task to write the new task before the current one in the file.
-     */
-    private fun repeatTask(task: Task, repeatingTaskService: RepeatingTaskService) {
-        console.log("repeatTask()", task)
-        if (repeatingTaskService.isTaskRepeating(task)) {
-            console.log(" - task is a repeating task, processing")
-            val repeatTask = repeatingTaskService.getNextRepeatingTask(task)
-            setModifiedIfNeeded(task)
-            task.dataviewFields.remove(TaskConstants.TASK_REPEAT_PROPERTY)
-            task.before = repeatTask
-            // TODO Do I actually need to insert the task into the kanban since it will be done when the modified file is loaded again
-//            insertSingleTaskIntoKanban(newTaskModel.kanbanColumns, repeatTask, repeatTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt())
+                .groupBy { task -> getStatusTagFromTask(task, statusTags)!! }
+                .plus(statusTags.minus(getAllStatusTagsOnTasks(tasks, statusTags))
+                .map { statusTag -> Pair(statusTag, emptyList())})
+                .mapValues { entry -> addOrderToListItems(entry.value) }
+                .mapValues { it.value.sortedWith(if (it.key.dateSort) taskDateComparator else taskComparator) }
         }
-    }
 
-    private fun createKanbanColumns(statusTags: List<StatusTag>): MutableMap<String,MutableList<Task>> {
-        console.log("createKanbanColumns()", statusTags)
-        val kanbanColumns = mutableMapOf<String,MutableList<Task>>()
-        statusTags.forEach { statusTag ->
-            kanbanColumns[statusTag.tag] = mutableListOf()
-        }
-        return kanbanColumns
-    }
-
-    /**
-     * Inserts the tasks given into the correct column in kanbanColumns.
-     *
-     * NOTE: kanbanColumns must contain keys for every status in use already
-     * SIDE EFFECT: kanbanColumns is modified in place
-     */
-    private fun insertTasksIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, tasks: List<Task>, statusTags: List<StatusTag>) {
-        console.log("insertTasksIntoKanban()")
-        // Populate the columns
-        tasks
-            .filter { task -> task.tags.any { tag -> tag in kanbanColumns.keys } }
-            .forEach { task ->
-                val taskStatus = getStatusTagFromTask(task, kanbanColumns.keys)
-                val sortByDate = statusTags.find { it.tag == taskStatus }?.dateSort ?: false
-                insertSingleTaskIntoKanban(kanbanColumns, task, sortByDate)
-            }
-        // Sort each column (by pos or date)
-        statusTags.forEach { tag ->
-            val comparator = if (tag.dateSort) taskDateComparator else taskComparator
-            kanbanColumns[tag.tag]?.sortWith(comparator)
-        }
-    }
-
-    private fun insertSingleTaskIntoKanban(kanbanColumns: MutableMap<String,MutableList<Task>>, task: Task, dateSort: Boolean = false, position: Int? = null) {
-        console.log("insertSingleTaskIntoKanban()")
-        val statusColumn = getStatusTagFromTask(task, kanbanColumns.keys)
-        if (statusColumn != null) {
-            val statusTasks = kanbanColumns[statusColumn]!!
-            statusTasks.add(task)
-            if (dateSort) {
-                statusTasks.sortWith(taskDateComparator)
-            } else {
-                updateTaskOrder(task, position ?: statusTasks.indexOf(task))
+        /**
+         * Adds TaskConstants.TASK_ORDER_PROPERTY to each task in the list
+         */
+        private fun addOrderToListItems(tasks: List<Task>) : List<Task> {
+            console.log("Reducers.ReducerUtils.addOrderToListItems()")
+            return tasks.mapIndexed { index, task ->
+                updateTaskOrder(task, index)
             }
         }
-    }
 
-    private fun getStatusTagFromTask(task: Task, kanbanKeys: MutableSet<String>): String? {
-        val statusColumn = task.tags.filter { tag -> tag in kanbanKeys }
-        if (statusColumn.size > 1) {
-            console.log("ERROR: More than one status column is on the task: ", statusColumn)
+        private fun getAllStatusTagsOnTasks(tasks: List<Task>, statusTags: List<StatusTag>) : Set<StatusTag> {
+            console.log("Reducers.ReducerUtils.getAllStatusTagsOnTasks()", tasks, statusTags)
+            return tasks
+                .asSequence()
+                .map { task -> task.tags }
+                .flatten()
+                .distinct()
+                .filter { tag -> tag in statusTags.map{ it.tag } }
+                .map { tag -> statusTags.find { statusTag -> statusTag.tag == tag }!! }
+                .toSet()
+        }
+
+        fun findMaxPosition(tasks: List<Task>, status: String) : Int {
+            return tasks
+                .filter { task -> task.tags.contains(status) }
+                .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
+                .last()
+                .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()
+        }
+
+        fun runFileModifiedListeners(tasks: List<Task>, statusTags: List<StatusTag>, repeatingTaskService: RepeatingTaskService) {
+            console.log("runFileModifiedListeners()")
+
+            // Repeating tasks
+            tasks
+                .filter { task ->
+                    task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY) &&
+                            task.completed
+                }
+                .forEach { task ->
+                    repeatTask(task, repeatingTaskService)
+                }
+
+            // Check for completed tasks with a status tag and remove the tag (might have been completed outside the app)
+            tasks
+                .filter { it.completed && getStatusTagFromTask(it, statusTags) != null}
+                .forEach { task ->
+                    setModifiedIfNeeded(task)
+                    task.tags.remove(getStatusTagFromTask(task, statusTags)!!.tag)
+                }
+        }
+
+        /**
+         * Repeats the given task if required.
+         *
+         * Sets the task.before field to the repeated task to write the new task before the current one in the file.
+         */
+        private fun repeatTask(task: Task, repeatingTaskService: RepeatingTaskService) {
+            console.log("repeatTask()", task)
+            if (repeatingTaskService.isTaskRepeating(task)) {
+//            console.log(" - task is a repeating task, processing")
+                val repeatTask = repeatingTaskService.getNextRepeatingTask(task)
+                setModifiedIfNeeded(task)
+                task.dataviewFields.remove(TaskConstants.TASK_REPEAT_PROPERTY)
+                task.before = repeatTask
+            }
+        }
+
+        fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): StatusTag? {
+            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
+            val statusColumn = kanbanKeys.filter { statusTag -> task.tags.contains(statusTag.tag) }
+            if (statusColumn.size > 1) {
+                console.log("ERROR: More than one status column is on the task: ", statusColumn)
+                return null
+            } else if (statusColumn.size == 1) {
+                return statusColumn[0]
+            }
+//        console.log("ERROR: status tag not found on task: ", task)
             return null
-        } else if (statusColumn.size == 1) {
-            return statusColumn[0]
-        }
-        console.log("ERROR: status tag not found on task: ", task)
-        return null
-    }
-
-    /**
-     * Creates a new TaskModel with updated tasks and kanbanColumns collections containing cloned tasks.
-     */
-    private fun copyTasksIntoNewModel(store: TaskModel): TaskModel {
-        val updatedTaskList = store.tasks.map { it.deepCopy() }.toMutableList()
-        val updatedKanbanColumns = mutableMapOf<String,MutableList<Task>>()
-        store.kanbanColumns.keys.forEach { status ->
-            updatedKanbanColumns[status] = mutableListOf()
-            updatedKanbanColumns[status]!!.addAll(store.kanbanColumns[status]!!.map { statusTask ->
-                // Find the cloned task in the task list to put in the column map
-                updatedTaskList.find { task -> task.id == statusTask.id }!!
-            })
         }
 
-        return store.copy(tasks = updatedTaskList, kanbanColumns = updatedKanbanColumns)
-    }
-
-    /**
-     * Removes all tasks from the store that are from the given file.
-     *
-     * SIDE EFFECT: taskModel.tasks is updated in place
-     */
-    private fun clearFileTasksFromModel(taskModel: TaskModel, file: String) {
-        console.log("clearFileTasksFromModel()")
-        val fileTasks = taskModel.tasks.filter { it.file == file }
-        console.log(" - remove tasks in file from task list:", fileTasks)
-        taskModel.tasks.removeAll(fileTasks)
-        console.log(" - remove tasks in file from kanban columns")
-        taskModel.kanbanColumns.forEach { entry ->
-            entry.value.removeAll { it.file == file }
+        /**
+         * Updates the task order for a task if required (order is null or already set to the given value), saving the
+         * original before making the change.
+         */
+        fun updateTaskOrder(task: Task, position: Int): Task {
+            console.log("updateTaskOrder()", task, position)
+            val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
+//        console.log(" - current task order", taskOrder)
+            if (taskOrder == null || taskOrder.toInt() != position) {
+//            console.log(" - task order needs to be updated : $taskOrder -> $position")
+                setModifiedIfNeeded(task)
+                task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
+            }
+            return task
         }
-    }
 
-    /**
-     * Inserts the given task into the task list at position.
-     *
-     * NOTE: Side effect: tasks is mutated directly
-     */
-    private fun insertAndUpdateTaskOrder(task: Task, tasks: MutableList<Task>, position: Int) {
-        console.log("insertAndUpdateTaskOrder(task, tasks, $position)")
-        // Move Order for each task
-        for (i in position until tasks.size) {
-            val newOrder = tasks[i].dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt() + 1
-            console.log(" - newOrder for Task '${tasks[i].description}' is $newOrder")
-            updateTaskOrder(tasks[i], newOrder)
+        /**
+         * Saves the original task if needed (if it has not already been set for a different modification).
+         */
+        fun setModifiedIfNeeded(task: Task) {
+            console.log("setModifiedIfNeeded()", task)
+            if (task.original == null) task.original = task.deepCopy()
         }
-        // Incoming task gets the position
-        tasks.add(updateTaskOrder(task, position))
-        tasks.sortWith(taskComparator)
-        console.log(" - tasks after sorting : ", tasks)
-    }
-
-    /**
-     * Removes the given task from the task list and updates the order of all tasks below it.
-     *
-     * @param task The task to remove from the task list
-     * @param tasks Task list for a single status assumed to already be sorted by position
-     * @param status The old status of the task
-     */
-    private fun removeAndUpdateTaskOrder(task: Task, tasks: MutableList<Task>, status: String) {
-        console.log("removeAndUpdateTaskOrder()")
-        val taskIndex = tasks.indexOf(task)
-        if (taskIndex == -1) {
-            console.log("ERROR: task not found in task list", task)
-            return
-        }
-        setModifiedIfNeeded(task)
-        tasks.remove(task)
-        task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
-        task.tags.remove(status)
-        for (i in taskIndex until tasks.size) {
-            updateTaskOrder(tasks[i], i)
-        }
-    }
-
-    /**
-     * Updates the task order for a task if required (order is null or already set to the given value), saving the
-     * original before making the change.
-     */
-    private fun updateTaskOrder(task: Task, position: Int): Task {
-        console.log("updateTaskOrder()", task, position)
-        val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
-        console.log(" - current task order", taskOrder)
-        if (taskOrder == null || taskOrder.toInt() != position) {
-            console.log(" - task order needs to be updated : $taskOrder -> $position")
-            setModifiedIfNeeded(task)
-            task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
-        }
-        return task
-    }
-
-    /**
-     * Saves the original task if needed (if it has not already been set for a different modification).
-     */
-    private fun setModifiedIfNeeded(task: Task) {
-        console.log("setModifiedIfNeeded()", task)
-        if (task.original == null) task.original = task.deepCopy()
     }
 }

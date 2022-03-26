@@ -70,7 +70,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun taskModifiedListener() {
-        console.log("taskModifiedListener()")
+        console.log("NeuralLinkPlugin.taskModifiedListener()")
         CoroutineScope(Dispatchers.Main).launch {
             taskModelService.writeModifiedTasks(
                 store.state.tasks,
@@ -80,7 +80,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun loadSettingAndTaskModel() {
-        console.log("loadSettingAndTaskModel()")
+        console.log("NeuralLinkPlugin.loadSettingAndTaskModel()")
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.Default) { loadSettings() } // Load settings first and wait
             taskModelService.loadTasKModelIntoStore(
@@ -96,17 +96,17 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun activateView() {
-        console.log("activateView()")
+        console.log("NeuralLinkPlugin.activateView()")
         this.app.workspace.detachLeavesOfType(KanbanView.VIEW_TYPE)
 
-        console.log("activateView() setting view state")
+        console.log(" - setting view state")
         val viewState = object : ViewState {
             override var type: String = KanbanView.VIEW_TYPE
         }
-        console.log("activateView() getRightLeaf")
+        console.log(" - getRightLeaf")
         this.app.workspace.getRightLeaf(false).setViewState(viewState).then {
             val leaf = this.app.workspace.getLeavesOfType(KanbanView.VIEW_TYPE)
-            console.log("leaf found: [$leaf]")
+            console.log(" - leaf found: [$leaf]")
             if (leaf.isNotEmpty()) {
                 this.app.workspace.revealLeaf(leaf[0])
             }

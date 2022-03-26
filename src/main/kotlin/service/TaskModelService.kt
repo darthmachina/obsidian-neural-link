@@ -41,7 +41,7 @@ class TaskModelService {
 
     fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
         CoroutineScope(Dispatchers.Main).launch {
-            store.dispatch(VaultLoaded(processAllFiles(vault, metadataCache, store.state.copy())))
+            store.dispatch(VaultLoaded(processAllFiles(vault, metadataCache)))
         }
     }
 
@@ -53,35 +53,39 @@ class TaskModelService {
                 .groupBy { it.file }
                 .forEach { entry ->
                     launch {
-                        console.log(" - writing file ${entry.key}")
                         val file = vault.getAbstractFileByPath(entry.key) as TFile
-                        val linesToRemove = mutableListOf<Int>()
                         vault.read(file).then { contents ->
-                            val fileContents = mutableListOf<String>().apply {
-                                addAll(contents.split('\n'))
-                            }
-                            entry.value
-                                .sortedByDescending { it.filePosition }
-                                .forEach { task ->
-                                    console.log(" - Updating task : ${task.description}")
-                                    fileContents[task.filePosition] = task.toMarkdown()
-                                    val indentedCount = indentedCount(task.original!!)
-                                    if (indentedCount > 0) {
-                                        val firstIndent = task.filePosition + 1
-                                        // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
-                                        linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
-                                        console.log(" - linesToRemove now", linesToRemove)
-                                    }
-                                }
-                            linesToRemove.sortedDescending().forEach {
-                                fileContents.removeAt(it)
-                            }
-                            vault.modify(file, fileContents.joinToString("\n"))
-                            // TODO Do I need to unset task.original? Or will that happen when I re-read the file
+                            writeFile(vault, contents, entry.value, file)
                         }
                     }
                 }
         }
+    }
+
+    private fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: TFile) {
+        console.log("writeFile(): ${file.name}")
+        val linesToRemove = mutableListOf<Int>()
+        val fileContents = mutableListOf<String>().apply {
+            addAll(existingContents.split('\n'))
+        }
+        tasks
+            .sortedByDescending { it.filePosition }
+            .forEach { task ->
+                console.log(" - Updating task : ${task.description}")
+                fileContents[task.filePosition] = task.toMarkdown()
+                val indentedCount = indentedCount(task.original!!)
+                if (indentedCount > 0) {
+                    val firstIndent = task.filePosition + 1
+                    // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
+                    linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
+                    console.log(" - linesToRemove now", linesToRemove)
+                }
+            }
+        linesToRemove.sortedDescending().forEach {
+            fileContents.removeAt(it)
+        }
+        vault.modify(file, fileContents.joinToString("\n"))
+        // TODO Do I need to unset task.original? Or will that happen when I re-read the file
     }
 
     /**
@@ -92,27 +96,23 @@ class TaskModelService {
      *
      * @param vault The Obsidian Vault to process
      * @param metadataCache Obsidian cache
-     * @param taskModel The TaskModel to populate
      * @return A filled TaskModel. This is the same instance as the taskModel parameter
      */
-    private suspend fun processAllFiles(vault: Vault, metadataCache: MetadataCache, taskModel: TaskModel): TaskModel
+    private suspend fun processAllFiles(vault: Vault, metadataCache: MetadataCache): List<Task>
     = coroutineScope {
-        vault.getFiles().map { file ->
-            async {
-                taskModel.tasks.addAll(readFile(file, vault, metadataCache))
-            }
-        }.awaitAll()
-
-        taskModel
+        vault.getFiles()
+            .filter { it.name.endsWith(".md") }
+            .map { file ->
+                async {
+                    readFile(file, vault, metadataCache)
+                }
+            }.awaitAll()
+            .flatten()
     }
 
-    suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): MutableList<Task> {
+    suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): List<Task> {
         console.log("readFile()", file.name)
         val taskList = mutableListOf<Task>()
-        // If not a Markdown file just return the empty list
-        if (!file.name.endsWith(".md")) {
-            return taskList
-        }
 
         // Check MetadataCache for incomplete tasks and return the empty list if there are none
         val incompleteTasks = metadataCache.getFileCache(file)?.listItems?.filter { listItem ->
@@ -123,7 +123,9 @@ class TaskModelService {
             return taskList
         }
 
+        console.log( " - about to read file contents")
         vault.read(file).then { contents ->
+            console.log(" - read file, processing")
             val fileContents = contents.split('\n')
             val fileListItems = metadataCache.getFileCache(file)?.listItems ?: arrayOf()
             val tasksForFile = processFile(file.path, fileContents, fileListItems)
@@ -136,7 +138,7 @@ class TaskModelService {
         filename: String,
         fileContents: List<String>,
         listItems: Array<ListItemCache>
-    ): MutableList<Task> {
+    ): List<Task> {
         console.log("processFile()", filename)
         val tasksByLine = mutableMapOf<Int,Task>() // Map of position -> Task
 
@@ -154,8 +156,8 @@ class TaskModelService {
     //                    console.log(" - is a task so add it")
                         // Only care about root items that are tasks
                         val task = createTask(filename, taskLine, lineContents)
-                        console.log(" - created task", task)
-                        console.log(mapToString(task.dataviewFields, "\n   -"))
+//                        console.log(" - created task", task)
+//                        console.log(mapToString(task.dataviewFields, "\n   -"))
                         tasksByLine[listItem.position.start.line.toInt()] = task
                     }
                 } else {
@@ -177,7 +179,7 @@ class TaskModelService {
             }
 
         console.log("processFile() end")
-        return tasksByLine.values.toMutableList()
+        return tasksByLine.values.toList()
     }
 
     private fun createTask(file: String, line: Int, text: String) : Task {
