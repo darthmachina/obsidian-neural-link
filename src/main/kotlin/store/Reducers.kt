@@ -80,7 +80,6 @@ class Reducers {
                 }
 
             movedTask.tags.remove(oldStatus.tag)
-            movedTask.tags.add(newStatus)
             if (beforeTaskId == null) {
                 // No before task, add to end of list
                 movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findMaxPosition(clonedTaskList, newStatus).toString()
@@ -100,6 +99,7 @@ class Reducers {
                         }
                     }
             }
+            movedTask.tags.add(newStatus)
         }
         return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
@@ -210,7 +210,9 @@ class ReducerUtils {
         }
 
         fun findMaxPosition(tasks: List<Task>, status: String) : Int {
-            return tasks
+            return if (tasks.none { task -> task.tags.contains(status) })
+                0
+            else tasks
                 .filter { task -> task.tags.contains(status) }
                 .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
                 .last()
