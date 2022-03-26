@@ -61,12 +61,11 @@ class Reducers {
     fun taskStatusChanged(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
         console.log("Reducers.taskStatusChanged()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
-
-        // First, find the current status column
         val movedTask = clonedTaskList.find { it.id == taskId }
         if (movedTask == null) {
             console.log("ERROR: Did not find task for id: $taskId")
         } else {
+            ReducerUtils.setModifiedIfNeeded(movedTask)
             movedTask.tags.remove(ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)?.tag)
             movedTask.tags.add(newStatus)
             if (beforeTaskId == null) {
