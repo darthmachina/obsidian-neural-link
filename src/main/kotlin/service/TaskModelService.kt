@@ -114,15 +114,6 @@ class TaskModelService {
         console.log("readFile()", file.name)
         val taskList = mutableListOf<Task>()
 
-        // Check MetadataCache for incomplete tasks and return the empty list if there are none
-        val incompleteTasks = metadataCache.getFileCache(file)?.listItems?.filter { listItem ->
-            listItem.task == " "
-        } ?: emptyList()
-        if (incompleteTasks.isEmpty()) {
-            console.log(" - Files contains no incomplete tasks, skipping")
-            return taskList
-        }
-
         console.log( " - about to read file contents")
         vault.read(file).then { contents ->
             console.log(" - read file, processing")
@@ -143,7 +134,6 @@ class TaskModelService {
         val tasksByLine = mutableMapOf<Int,Task>() // Map of position -> Task
 
         listItems
-            .filter { it.task == " " || it.parent.toInt() > 0 } // If incomplete or a subtask, process it
             .forEach { listItem ->
     //            console.log(" - loading listItem", listItem)
                 val taskLine = listItem.position.start.line.toInt()

@@ -220,7 +220,7 @@ class ReducerUtils {
         }
 
         fun runFileModifiedListeners(tasks: List<Task>, statusTags: List<StatusTag>, repeatingTaskService: RepeatingTaskService) {
-            console.log("runFileModifiedListeners()")
+            console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
 
             // Repeating tasks
             tasks
