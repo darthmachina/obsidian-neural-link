@@ -66,14 +66,29 @@ class Reducers {
             console.log("ERROR: Did not find task for id: $taskId")
         } else {
             ReducerUtils.setModifiedIfNeeded(movedTask)
-            movedTask.tags.remove(ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)?.tag)
+            val oldStatus = ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)!!
+            val movedTaskPos = movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()
+            // Update TASK_ORDER_PROPERTY for all tasks lower than movedTask in the old list
+            clonedTaskList
+                .filter { task -> task.tags.contains(oldStatus.tag) }
+                .sortedBy { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] }
+                .forEach { task ->
+                    val taskPos = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()
+                    if ( taskPos > movedTaskPos) {
+                        ReducerUtils.updateTaskOrder(task, taskPos - 1)
+                    }
+                }
+
+            movedTask.tags.remove(oldStatus.tag)
             movedTask.tags.add(newStatus)
             if (beforeTaskId == null) {
                 // No before task, add to end of list
                 movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findMaxPosition(clonedTaskList, newStatus).toString()
             } else {
                 val beforeTaskPos = clonedTaskList.find { it.id == beforeTaskId }!!.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()
+                // movedTask gets the same TASK_ORDER_PROPERTY value as before task
                 movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = beforeTaskPos.toString()
+                // Update TASK_ORDER_PROPERTY for all tasks lower than movedTask in the new list
                 clonedTaskList
                     .filter { task -> task.tags.contains(newStatus) }
                     .sortedBy { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] }
@@ -81,7 +96,7 @@ class Reducers {
                         // Moved task already has the right position, increment all pos that are after it
                         val taskPos = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toInt() ?: 0
                         if (beforeTaskPos <= taskPos) {
-                            ReducerUtils.updateTaskOrder(movedTask, taskPos + 1)
+                            ReducerUtils.updateTaskOrder(task, taskPos + 1)
                         }
                     }
             }
