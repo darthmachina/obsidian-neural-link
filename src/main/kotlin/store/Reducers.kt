@@ -159,22 +159,32 @@ class ReducerUtils {
                 .groupBy { task -> getStatusTagFromTask(task, statusTags)!! }
                 .plus(statusTags.minus(getAllStatusTagsOnTasks(tasks, statusTags))
                 .map { statusTag -> Pair(statusTag, emptyList())})
-                .mapValues { entry -> addOrderToListItems(entry.value) }
                 .mapValues { it.value.sortedWith(if (it.key.dateSort) taskDateComparator else taskComparator) }
+                .mapValues { entry ->
+                    if (!entry.key.dateSort) {
+                        addOrderToListItemsIfNeeded(entry.value)
+                    } else {
+                        entry.value
+                    }
+                }
         }
 
         /**
-         * Adds TaskConstants.TASK_ORDER_PROPERTY to each task in the list
+         * Adds TaskConstants.TASK_ORDER_PROPERTY to each task in the list if it's not already set.
          */
-        private fun addOrderToListItems(tasks: List<Task>) : List<Task> {
-            console.log("Reducers.ReducerUtils.addOrderToListItems()")
+        private fun addOrderToListItemsIfNeeded(tasks: List<Task>) : List<Task> {
+//            console.log("Reducers.ReducerUtils.addOrderToListItems()")
             return tasks.mapIndexed { index, task ->
-                updateTaskOrder(task, index)
+                if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
+                    updateTaskOrder(task, index)
+                } else {
+                    task
+                }
             }
         }
 
         private fun getAllStatusTagsOnTasks(tasks: List<Task>, statusTags: List<StatusTag>) : Set<StatusTag> {
-            console.log("Reducers.ReducerUtils.getAllStatusTagsOnTasks()", tasks, statusTags)
+//            console.log("Reducers.ReducerUtils.getAllStatusTagsOnTasks()", tasks, statusTags)
             return tasks
                 .asSequence()
                 .map { task -> task.tags }
@@ -232,7 +242,7 @@ class ReducerUtils {
         }
 
         fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): StatusTag? {
-            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
+//            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
             val statusColumn = kanbanKeys.filter { statusTag -> task.tags.contains(statusTag.tag) }
             if (statusColumn.size > 1) {
                 console.log("ERROR: More than one status column is on the task: ", statusColumn)
