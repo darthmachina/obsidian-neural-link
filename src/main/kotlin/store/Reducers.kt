@@ -82,7 +82,7 @@ class Reducers {
             movedTask.tags.remove(oldStatus.tag)
             if (beforeTaskId == null) {
                 // No before task, add to end of list
-                movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findMaxPosition(clonedTaskList, newStatus).toString()
+                movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findNextPosition(clonedTaskList, newStatus).toString()
             } else {
                 val beforeTaskPos = clonedTaskList.find { it.id == beforeTaskId }!!.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()
                 // movedTask gets the same TASK_ORDER_PROPERTY value as before task
@@ -209,14 +209,18 @@ class ReducerUtils {
                 .toSet()
         }
 
-        fun findMaxPosition(tasks: List<Task>, status: String) : Int {
+        /**
+         * Finds the next position in a list. If there are no items in the list returns 0, otherwise finds the max
+         * position and returns the next value.
+         */
+        fun findNextPosition(tasks: List<Task>, status: String) : Int {
             return if (tasks.none { task -> task.tags.contains(status) })
                 0
-            else tasks
+            else (tasks
                 .filter { task -> task.tags.contains(status) }
                 .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
                 .last()
-                .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()
+                .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toInt()) + 1
         }
 
         fun runFileModifiedListeners(tasks: List<Task>, statusTags: List<StatusTag>, repeatingTaskService: RepeatingTaskService) {
