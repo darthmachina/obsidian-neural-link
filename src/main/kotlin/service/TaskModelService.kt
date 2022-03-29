@@ -101,7 +101,15 @@ class TaskModelService {
     private suspend fun processAllFiles(vault: Vault, metadataCache: MetadataCache): List<Task>
     = coroutineScope {
         vault.getFiles()
-            .filter { it.name.endsWith(".md") }
+            .filter {
+                it.name.endsWith(".md")
+            }
+            .filter { file ->
+                val listItems = metadataCache.getFileCache(file)?.listItems?.toList() ?: emptyList()
+                listItems.any { listItemCache ->
+                    listItemCache.task != null
+                }
+            }
             .map { file ->
                 async {
                     readFile(file, vault, metadataCache)
