@@ -68,6 +68,7 @@ class TaskModelService {
         val fileContents = mutableListOf<String>().apply {
             addAll(existingContents.split('\n'))
         }
+        var fileModified = false
         tasks
             .sortedByDescending { it.filePosition }
             .forEach { task ->
@@ -80,12 +81,16 @@ class TaskModelService {
                     linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
                     console.log(" - linesToRemove now", linesToRemove)
                 }
+                task.original = null
+                fileModified = true
             }
         linesToRemove.sortedDescending().forEach {
             fileContents.removeAt(it)
         }
-        vault.modify(file, fileContents.joinToString("\n"))
-        // TODO Do I need to unset task.original? Or will that happen when I re-read the file
+
+        if (fileModified) {
+            vault.modify(file, fileContents.joinToString("\n"))
+        }
     }
 
     /**
