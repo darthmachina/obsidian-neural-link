@@ -270,7 +270,7 @@ class TaskModelService {
                 dateSplit[2].toInt(), // Day
                 timeSplit[0].toInt(), // Hour
                 timeSplit[1].toInt(), // Minute
-                timeSplit[2].toInt() // Second
+                if (timeSplit.size == 3) timeSplit[2].toInt() else 0 // Second
             )
         }
     }
