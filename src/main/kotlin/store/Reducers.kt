@@ -265,8 +265,8 @@ class ReducerUtils {
 //            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
             val statusColumn = kanbanKeys.filter { statusTag -> task.tags.contains(statusTag.tag) }
             if (statusColumn.size > 1) {
-                console.log("ERROR: More than one status column is on the task: ", statusColumn)
-                return null
+                console.log("ERROR: More than one status column is on the task, using the first: ", statusColumn)
+                return statusColumn[0]
             } else if (statusColumn.size == 1) {
                 return statusColumn[0]
             }

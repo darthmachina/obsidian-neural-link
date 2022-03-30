@@ -51,7 +51,7 @@ class NeuralLinkPluginSettingsTab(
                 console.log(" - stringList", stringList)
                 val textVersion = stringList.joinToString("\n")
                 console.log(" - textVersion", textVersion)
-                text.setPlaceholder("'tag:display name' separated by newlines")
+                text.setPlaceholder("'tag:display name:dateSort' separated by newlines")
                     .setValue(textVersion)
                     .onChange { value ->
                         val statusList = mutableListOf<StatusTag>()
