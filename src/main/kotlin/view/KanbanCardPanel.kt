@@ -36,7 +36,7 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
                     div {
                         addCssStyle(KanbanStyles.KANBAN_TAG_LIST)
                         filteredTags.forEach { tag ->
-                            span { +"#$tag" }
+                            span { +"#$tag " }
                         }
                     }
                 }
