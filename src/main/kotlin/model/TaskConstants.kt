@@ -40,7 +40,7 @@ object TaskConstants {
 
     const val TASK_PAPER_DATE_FORMAT = """\(([0-9\-T:]*)\)"""
     const val ALL_TAGS_REGEX = """#([a-zA-Z][0-9a-zA-Z-_/]*)"""
-    const val DATAVIEW_REGEX = """\[([a-zA-Z]*):: ([\d\w!: -]*)\]"""
+    const val DATAVIEW_REGEX = """\[([a-zA-Z]*):: ([\d\w!: -.]*)\]"""
     @Suppress("RegExpRedundantEscape")
     const val COMPLETED_REGEX = """- \[[xX]\]"""
 

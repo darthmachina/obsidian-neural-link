@@ -68,7 +68,7 @@ class Reducers {
             ReducerUtils.setModifiedIfNeeded(movedTask)
             val oldStatus = ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)!!
             movedTask.tags.remove(oldStatus.tag)
-            movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId).toString()
+            ReducerUtils.updateTaskOrder(movedTask, ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId))
             movedTask.tags.add(newStatus)
         }
         return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
@@ -103,7 +103,7 @@ class Reducers {
 
         ReducerUtils.setModifiedIfNeeded(task)
         subtask.completed = complete
-        return store.copy(tasks = clonedTaskList)
+        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
 
     fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
@@ -160,7 +160,7 @@ class ReducerUtils {
 //            console.log("Reducers.ReducerUtils.addOrderToListItems()")
             return tasks.mapIndexed { index, task ->
                 if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                    updateTaskOrder(task, index)
+                    updateTaskOrder(task, index.toDouble())
                 } else {
                     task
                 }
@@ -188,7 +188,7 @@ class ReducerUtils {
          *  - If beforeTask is the first in the list just return its position divided by 2
          */
         fun findPosition(tasks: List<Task>, status: String, beforeTaskId: String?) : Double {
-            console.log("findPosition()")
+            console.log("ReducerUtils.findPosition()")
             return if (tasks.none { task -> task.tags.contains(status) }) {
                 console.log(" - list is empty, returning 1.0")
                 1.0
@@ -210,7 +210,7 @@ class ReducerUtils {
                     throw IllegalStateException("beforeTask does not have a position property")
                 }
                 val beforeTaskIndex = sortedTasks.indexOf(beforeTask)
-                var newPosition: Double
+                val newPosition: Double
                 if (beforeTaskIndex == 0) {
                     newPosition = beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() / 2
                 } else {
@@ -280,11 +280,11 @@ class ReducerUtils {
          * Updates the task order for a task if required (order is null or already set to the given value), saving the
          * original before making the change.
          */
-        fun updateTaskOrder(task: Task, position: Int): Task {
-            console.log("updateTaskOrder()", task, position)
+        fun updateTaskOrder(task: Task, position: Double): Task {
+            console.log("ReducerUtils.updateTaskOrder()", task, position)
             val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
 //        console.log(" - current task order", taskOrder)
-            if (taskOrder == null || taskOrder.toInt() != position) {
+            if (taskOrder == null || taskOrder.toDouble() != position) {
 //            console.log(" - task order needs to be updated : $taskOrder -> $position")
                 setModifiedIfNeeded(task)
                 task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
