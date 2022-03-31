@@ -67,38 +67,8 @@ class Reducers {
         } else {
             ReducerUtils.setModifiedIfNeeded(movedTask)
             val oldStatus = ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)!!
-            val movedTaskPos = movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()
-            // Update TASK_ORDER_PROPERTY for all tasks lower than movedTask in the old list
-            clonedTaskList
-                .filter { task -> task.tags.contains(oldStatus.tag) }
-                .sortedBy { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] }
-                .forEach { task ->
-                    val taskPos = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()
-                    if ( taskPos > movedTaskPos) {
-                        ReducerUtils.updateTaskOrder(task, taskPos - 1.0)
-                    }
-                }
-
             movedTask.tags.remove(oldStatus.tag)
-            if (beforeTaskId == null) {
-                // No before task, add to end of list
-                movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findNextPosition(clonedTaskList, newStatus).toString()
-            } else {
-                val beforeTaskPos = clonedTaskList.find { it.id == beforeTaskId }!!.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()
-                // movedTask gets the same TASK_ORDER_PROPERTY value as before task
-                movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = beforeTaskPos.toString()
-                // Update TASK_ORDER_PROPERTY for all tasks lower than movedTask in the new list
-                clonedTaskList
-                    .filter { task -> task.tags.contains(newStatus) }
-                    .sortedBy { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] }
-                    .forEach { task ->
-                        // Moved task already has the right position, increment all pos that are after it
-                        val taskPos = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() ?: 0.0
-                        if (beforeTaskPos <= taskPos) {
-                            ReducerUtils.updateTaskOrder(task, taskPos + 1.0)
-                        }
-                    }
-            }
+            movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId).toString()
             movedTask.tags.add(newStatus)
         }
         return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
@@ -210,37 +180,49 @@ class ReducerUtils {
         }
 
         /**
-         * Finds the next position in a list. If there are no items in the list returns 1 (to leave room above it for
-         * other cards if needed), otherwise finds the max position and returns the next value.
-         */
-        fun findNextPosition(tasks: List<Task>, status: String) : Double {
-            return if (tasks.none { task -> task.tags.contains(status) })
-                1.0
-            else (tasks
-                .filter { task -> task.tags.contains(status) }
-                .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
-                .last()
-                .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) + 1.0
-        }
-
-        /**
          * Finds the position for a task, calculated given the following scenarios:
          *
          * 1. No tasks for the status, returns 1.0 (to leave room before it for other cards)
          * 2. No beforeTaskId given, returns the max position value + 1 to put it at the end
-         * 3. beforeTaskId givem, find that task and the one before it and returns a value in the middle of the two pos values
+         * 3. beforeTaskId given, find that task and the one before it and returns a value in the middle of the two pos values
+         *  - If beforeTask is the first in the list just return its position divided by 2
          */
         fun findPosition(tasks: List<Task>, status: String, beforeTaskId: String?) : Double {
-            return if (tasks.none { task -> task.tags.contains(status) })
+            console.log("findPosition()")
+            return if (tasks.none { task -> task.tags.contains(status) }) {
+                console.log(" - list is empty, returning 1.0")
                 1.0
-            else if (beforeTaskId == null)
+            } else if (beforeTaskId == null) {
+                console.log(" - no beforeTaskId, adding to end of list")
                 (tasks
                     .filter { task -> task.tags.contains(status) }
                     .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
                     .last()
                     .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) + 1.0
-            else
-                1.0
+            } else {
+                console.log(" - beforeTaskId set, finding new position")
+                val sortedTasks = tasks
+                    .filter { task -> task.tags.contains(status) }
+                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
+                val beforeTask = sortedTasks.find { it.id == beforeTaskId }
+                    ?: throw IllegalStateException("beforeTask not found for id $beforeTaskId")
+                if (beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
+                    throw IllegalStateException("beforeTask does not have a position property")
+                }
+                val beforeTaskIndex = sortedTasks.indexOf(beforeTask)
+                var newPosition: Double
+                if (beforeTaskIndex == 0) {
+                    newPosition = beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() / 2
+                } else {
+                    val beforeBeforeTask = sortedTasks[beforeTaskIndex - 1]
+                    if (beforeBeforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
+                        throw IllegalStateException("beforeBeforeTask does not have a position property")
+                    }
+                    newPosition = (beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() +
+                            beforeBeforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) / 2
+                }
+                newPosition
+            }
         }
 
         fun runFileModifiedListeners(tasks: List<Task>, statusTags: List<StatusTag>, repeatingTaskService: RepeatingTaskService) {
