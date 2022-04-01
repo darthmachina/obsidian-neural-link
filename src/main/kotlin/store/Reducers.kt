@@ -160,7 +160,7 @@ class ReducerUtils {
 //            console.log("Reducers.ReducerUtils.addOrderToListItems()")
             return tasks.mapIndexed { index, task ->
                 if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                    updateTaskOrder(task, index.toDouble())
+                    updateTaskOrder(task, index.toDouble() + 1.0)
                 } else {
                     task
                 }
