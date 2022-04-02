@@ -1,11 +1,17 @@
 package service
 
 import NeuralLinkPluginSettings
-import NeuralLinkState
+import Plugin
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import model.TaskModel
+import org.reduxkotlin.Store
+import store.UpdateSettings
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class SettingsService(private val state: NeuralLinkState) {
+class SettingsService(private val store: Store<TaskModel>, private val plugin: Plugin) {
     /**
      * Processes the results of a `loadData()` call.
      *
@@ -17,21 +23,23 @@ class SettingsService(private val state: NeuralLinkState) {
      *
      * @return A fully populated `NeuralLinkPluginSettings` object at the current version.
      */
-    fun loadFromJson(json: Any?): NeuralLinkPluginSettings {
+    fun loadFromJson(json: Any?) {
+        console.log("loadFromJson()")
         // TODO implement example of versioned settings
         if (json == null) {
-            state.settings = NeuralLinkPluginSettings.default()
+            val newSettings = NeuralLinkPluginSettings.default()
+            store.dispatch(UpdateSettings(plugin, this, newSettings.taskRemoveRegex, newSettings.columnTags))
         } else {
-            val loadedSettings = JSON.parse<NeuralLinkPluginSettings>(json as String)
-            console.log("loadedSettings: ", loadedSettings)
-            state.settings = loadedSettings
+            val jsonSettings = Json.decodeFromString<NeuralLinkPluginSettings>(json as String)
+            console.log(" - jsonSettings", jsonSettings)
+            val loadedSettings = jsonSettings
+            console.log(" - loadedSettings: ", loadedSettings)
+            store.dispatch(UpdateSettings(plugin, this, loadedSettings.taskRemoveRegex, loadedSettings.columnTags))
         }
-
-        return state.settings
     }
 
-    fun toJson(): String {
-        val json = JSON.stringify(state.settings)
+    fun toJson(settings: NeuralLinkPluginSettings): String {
+        val json = Json.encodeToString(settings)
         console.log("saveSettings: ", json)
         return json
     }

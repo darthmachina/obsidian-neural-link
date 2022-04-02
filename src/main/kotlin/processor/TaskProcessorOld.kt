@@ -8,7 +8,7 @@ import ModifiedTask
  * TODO Right now only main tasks are passed into the `processTask` method. That will be expanded to include all
  *  indented items in the future.
  */
-interface TaskProcessor {
+interface TaskProcessorOld {
     /**
      * Performs some work on a task and returns the updated task.
      */

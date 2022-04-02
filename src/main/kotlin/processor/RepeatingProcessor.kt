@@ -5,7 +5,7 @@ import NeuralLinkState
 import Task
 import service.TaskService
 
-class RepeatingProcessor(state: NeuralLinkState, private val taskService: TaskService) : TaskProcessor {
+class RepeatingProcessor(state: NeuralLinkState, private val taskService: TaskService) : TaskProcessorOld {
     override fun processTask(task: ModifiedTask): Boolean {
         console.log("RepeatingProcessor, checking", task.original)
         if (taskService.isTaskRepeating(task.original)) {

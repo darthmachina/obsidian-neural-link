@@ -1,14 +1,24 @@
+import kotlinx.serialization.Serializable
+import model.StatusTag
+
 @OptIn(ExperimentalJsExport::class)
 @JsExport
+@Serializable
 data class NeuralLinkPluginSettings(
-    var version: Int,
-    var taskRemoveRegex: String
+    val taskRemoveRegex: String,
+    val columnTags: List<StatusTag>,
+    val version: Int = 2
 ) {
     companion object {
         fun default(): NeuralLinkPluginSettings {
             return NeuralLinkPluginSettings(
-                1,
-                """#kanban/[\w-]+(\s|$)"""
+                """#kanban/[\w-]+(\s|$)""",
+                listOf(
+                    StatusTag("backlog", "Backlog"),
+                    StatusTag("scheduled", "Scheduled", true),
+                    StatusTag("inprogress", "In Progress"),
+                    StatusTag("completed", "Completed")
+                )
             )
         }
     }

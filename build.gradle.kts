@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.darthmachina"
-version = "0.4.5"
+version = "0.5.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -14,18 +14,23 @@ repositories {
 dependencies {
     val kotlinVersion = "1.6.0"
     val kotlinxHtmlVersion = "0.7.3"
+    val kvisionVersion = "5.8.2"
 
     implementation(npm("obsidian", "0.12.17"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-html-js:$kotlinxHtmlVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxHtmlVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.6.0-RC")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+    implementation("org.reduxkotlin:redux-kotlin:0.5.5")
+    implementation("org.reduxkotlin:redux-kotlin-reselect:0.2.10")
+    implementation("app.softwork:kotlinx-uuid-core:0.0.12")
 
-    implementation("io.sunland:kotlin-moment:2.29.1-pre.14-kotlin-1.5.31")
+    implementation("io.kvision:kvision:$kvisionVersion")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }

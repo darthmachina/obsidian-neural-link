@@ -61,7 +61,7 @@ class TaskService {
                 } else {
                     // Is a task, construct task and find the parent task to add to subtasks list
                     val subtask = createTask(lineContents)
-                    console.log("Subtask for task at ${listItem.parent}: ", subtask)
+//                    console.log("Subtask for task at ${listItem.parent}: ", subtask)
                     parentTask.subtasks.add(subtask)
                 }
             }
@@ -126,9 +126,9 @@ class TaskService {
      * 3. Replaces the due date with the next date in the cycle
      */
     fun getNextRepeatingTask(task: Task) : Task {
-        console.log("Before copy", task)
+//        console.log("Before copy", task)
         val repeatTask = task.deepCopy()
-        console.log("After copy", repeatTask)
+//        console.log("After copy", repeatTask)
         repeatTask.due = getNextRepeatDate(task)
         repeatTask.completed = false
         repeatTask.completedDate = null
@@ -180,9 +180,9 @@ class TaskService {
      * Parse out the repeating text into a RepeatItem object
      */
     private fun parseRepeating(repeatText: String) : RepeatItem {
-        console.log("repeatItemRegex: for repeatText", repeatText)
+//        console.log("repeatItemRegex: for repeatText", repeatText)
         val matches = repeatItemRegex.find(repeatText)
-        console.log("matches: ", matches)
+//        console.log("matches: ", matches)
         if (matches?.groupValues == null) {
             return RepeatItem("ERROR", "", false, 0)
         }

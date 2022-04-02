@@ -5,7 +5,7 @@ import NeuralLinkState
 import Task
 import service.TaskService
 
-class RemoveTagsFromTask(private val state: NeuralLinkState, private val taskService: TaskService) : TaskProcessor {
+class RemoveTagsFromTask(private val state: NeuralLinkState, private val taskService: TaskService) : TaskProcessorOld {
     /**
      * Removes any tags matching the user-specified RegEx in settings
      */
