@@ -76,7 +76,7 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
         }
 
         // Dataview Fields
-        val filteredDataviewFields = task.dataviewFields.filter { entry -> entry.key != TaskConstants.COMPLETED_ON_PROPERTY }
+        val filteredDataviewFields = task.dataviewFields.filter { entry -> entry.key != TaskConstants.TASK_ORDER_PROPERTY }
         if (filteredDataviewFields.isNotEmpty()) {
             table {
                 addCssStyle(KanbanStyles.KANBAN_DATAVIEW_TABLE)
