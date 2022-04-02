@@ -3,6 +3,7 @@ package view
 import io.kvision.core.AlignItems
 import io.kvision.html.div
 import io.kvision.panel.VPanel
+import io.kvision.panel.vPanel
 import model.StatusTag
 
 class KanbanColumnPanel(val status: StatusTag, cards: List<KanbanCardPanel>): VPanel(spacing = 10, alignItems = AlignItems.CENTER) {
@@ -11,8 +12,11 @@ class KanbanColumnPanel(val status: StatusTag, cards: List<KanbanCardPanel>): VP
         div {
             +status.displayName
         }
-        cards.forEach { card ->
-            add(card)
+        vPanel(spacing = 10, alignItems = AlignItems.CENTER) {
+            addCssStyle(KanbanStyles.KANBAN_CARD_LIST)
+            cards.forEach { card ->
+                add(card)
+            }
         }
     }
 

@@ -18,6 +18,14 @@ class KanbanStyles {
             height = 95.perc
         }
 
+        val KANBAN_CARD_LIST = Style(".nl-kanban-card-list") {
+            width = 272.px
+            minWidth = 272.px
+            height = 100.perc
+            overflowX = Overflow.HIDDEN
+            overflowY = Overflow.AUTO
+        }
+
         val KANBAN_CARD = Style(".nl-kanban-card") {
             position = Position.RELATIVE
             width = 100.perc
