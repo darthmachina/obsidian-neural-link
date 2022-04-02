@@ -82,8 +82,7 @@ class Reducers {
             console.log(" - ERROR: Task not found for id: $taskId")
             return store
         }
-        ReducerUtils.setModifiedIfNeeded(task)
-        task.completed = true
+        ReducerUtils.completeTask(task, store.settings.columnTags)
         return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
 
@@ -237,10 +236,14 @@ class ReducerUtils {
             // Check for completed tasks with a status tag and remove the tag (might have been completed outside the app)
             tasks
                 .filter { it.completed && getStatusTagFromTask(it, statusTags) != null}
-                .forEach { task ->
-                    setModifiedIfNeeded(task)
-                    task.tags.remove(getStatusTagFromTask(task, statusTags)!!.tag)
-                }
+                .forEach { task -> completeTask(task, statusTags) }
+        }
+
+        fun completeTask(task: Task, columns: Collection<StatusTag>) {
+            setModifiedIfNeeded(task)
+            task.completed = true
+            task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
+            task.tags.removeAll { tag -> tag in columns.map { it.tag } }
         }
 
         /**
