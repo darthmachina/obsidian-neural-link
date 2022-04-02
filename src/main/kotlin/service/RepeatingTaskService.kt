@@ -74,7 +74,7 @@ class RepeatingTaskService {
     private fun parseRepeating(repeatText: String) : RepeatItem {
         console.log("repeatItemRegex: for repeatText", repeatText)
         val matches = TaskConstants.repeatItemRegex.find(repeatText)
-        console.log("matches: ", matches)
+//        console.log("matches: ", matches)
         if (matches?.groupValues == null) {
             return RepeatItem(TaskConstants.REPEAT_SPAN.UNKNOWN, false, 0)
         }

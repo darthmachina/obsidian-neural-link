@@ -36,7 +36,7 @@ class Reducers {
         )
         updateSettings.plugin.saveData(updateSettings.settingsService.toJson(newSettings))
         return if (updateSettings.columnTags != null) {
-            console.log(" - columns updated, reloading kanban")
+//            console.log(" - columns updated, reloading kanban")
             val clonedTaskList = store.tasks.map { it.deepCopy() }
             store.copy(
                 settings = newSettings,
@@ -63,7 +63,7 @@ class Reducers {
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         val movedTask = clonedTaskList.find { it.id == taskId }
         if (movedTask == null) {
-            console.log("ERROR: Did not find task for id: $taskId")
+            console.log(" - ERROR: Did not find task for id: $taskId")
         } else {
             ReducerUtils.setModifiedIfNeeded(movedTask)
             val oldStatus = ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)!!
@@ -190,17 +190,17 @@ class ReducerUtils {
         fun findPosition(tasks: List<Task>, status: String, beforeTaskId: String?) : Double {
             console.log("ReducerUtils.findPosition()")
             return if (tasks.none { task -> task.tags.contains(status) }) {
-                console.log(" - list is empty, returning 1.0")
+//                console.log(" - list is empty, returning 1.0")
                 1.0
             } else if (beforeTaskId == null) {
-                console.log(" - no beforeTaskId, adding to end of list")
+//                console.log(" - no beforeTaskId, adding to end of list")
                 (tasks
                     .filter { task -> task.tags.contains(status) }
                     .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
                     .last()
                     .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) + 1.0
             } else {
-                console.log(" - beforeTaskId set, finding new position")
+//                console.log(" - beforeTaskId set, finding new position")
                 val statusTasks = tasks
                     .filter { task -> task.tags.contains(status) }
                     .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
@@ -263,7 +263,7 @@ class ReducerUtils {
 //            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
             val statusColumn = kanbanKeys.filter { statusTag -> task.tags.contains(statusTag.tag) }
             if (statusColumn.size > 1) {
-                console.log("ERROR: More than one status column is on the task, using the first: ", statusColumn)
+                console.log(" - ERROR: More than one status column is on the task, using the first: ", statusColumn)
                 return statusColumn[0]
             } else if (statusColumn.size == 1) {
                 return statusColumn[0]

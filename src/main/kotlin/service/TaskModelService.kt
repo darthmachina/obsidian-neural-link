@@ -72,14 +72,14 @@ class TaskModelService {
         tasks
             .sortedByDescending { it.filePosition }
             .forEach { task ->
-                console.log(" - Updating task : ${task.description}")
+//                console.log(" - Updating task : ${task.description}")
                 fileContents[task.filePosition] = task.toMarkdown()
                 val indentedCount = indentedCount(task.original!!)
                 if (indentedCount > 0) {
                     val firstIndent = task.filePosition + 1
                     // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
                     linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
-                    console.log(" - linesToRemove now", linesToRemove)
+//                    console.log(" - linesToRemove now", linesToRemove)
                 }
                 task.original = null
                 fileModified = true
@@ -127,9 +127,9 @@ class TaskModelService {
         console.log("readFile()", file.name)
         val taskList = mutableListOf<Task>()
 
-        console.log( " - about to read file contents")
+//        console.log( " - about to read file contents")
         vault.read(file).then { contents ->
-            console.log(" - read file, processing")
+//            console.log(" - read file, processing")
             val fileContents = contents.split('\n')
             val fileListItems = metadataCache.getFileCache(file)?.listItems ?: arrayOf()
             val tasksForFile = processFile(file.path, fileContents, fileListItems)
@@ -181,7 +181,6 @@ class TaskModelService {
                 }
             }
 
-        console.log("processFile() end")
         return tasksByLine.values.toList()
     }
 

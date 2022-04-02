@@ -53,7 +53,7 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
 
         removeAll()
         boardCache.columns.forEach { statusTag ->
-            console.log(" - creating column", statusTag)
+//            console.log(" - creating column", statusTag)
             add(createColumn(statusTag, boardCache.tasks[statusTag]!!))
         }
     }
@@ -61,11 +61,11 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
     private fun checkAndUpdateTasks() {
         console.log("KanbanBoard.checkAndUpdateTasks()")
         store.state.settings.columnTags.forEach { status ->
-            console.log(" - Checking column: ", status)
+//            console.log(" - Checking column: ", status)
             val cacheTasks = boardCache.tasks[status]!!
             val storeTasks = store.state.kanbanColumns[status]!!
             if (cacheTasks != storeTasks) {
-                console.log(" - Task difference between cache and store, updating")
+//                console.log(" - Task difference between cache and store, updating")
                 boardCache.tasks[status] = storeTasks
                 val column = columnPanels[status]!!
                 column.removeAllCards()

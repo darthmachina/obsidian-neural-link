@@ -38,9 +38,6 @@ class KanbanView(leaf: WorkspaceLeaf, val store: Store<TaskModel>) : ItemView(le
             null,
             CoreModule
         )
-
-
-        console.log("onOpen() return")
         // Need a return
         return Promise { _: (Unit) -> Unit, _: (Throwable) -> Unit -> }
     }
