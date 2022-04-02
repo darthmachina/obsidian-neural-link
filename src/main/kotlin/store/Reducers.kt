@@ -13,7 +13,7 @@ val reducerFunctions = Reducers()
 val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
         is VaultLoaded -> reducerFunctions.copyAndPopulateKanban(store, action.tasks)
-        is TaskStatusChanged -> reducerFunctions.taskStatusChanged(store, action.taskId, action.newStatus, action.beforeTask)
+        is TaskMoved -> reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
@@ -58,7 +58,7 @@ class Reducers {
         return store.copy(tasks = tasks, kanbanColumns = ReducerUtils.createKanbanMap(tasks, store.settings.columnTags))
     }
 
-    fun taskStatusChanged(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
+    fun moveCard(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
         console.log("Reducers.taskStatusChanged()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         val movedTask = clonedTaskList.find { it.id == taskId }
@@ -196,32 +196,28 @@ class ReducerUtils {
                 console.log(" - no beforeTaskId, adding to end of list")
                 (tasks
                     .filter { task -> task.tags.contains(status) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
+                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
                     .last()
                     .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) + 1.0
             } else {
                 console.log(" - beforeTaskId set, finding new position")
-                val sortedTasks = tasks
+                val statusTasks = tasks
                     .filter { task -> task.tags.contains(status) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] })
-                val beforeTask = sortedTasks.find { it.id == beforeTaskId }
+                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
+                val beforeTask = statusTasks.find { it.id == beforeTaskId }
                     ?: throw IllegalStateException("beforeTask not found for id $beforeTaskId")
-                if (beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                    throw IllegalStateException("beforeTask does not have a position property")
-                }
-                val beforeTaskIndex = sortedTasks.indexOf(beforeTask)
-                val newPosition: Double
+                val beforeTaskPosition = beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
+                    ?: throw IllegalStateException("beforeTask does not have a position property")
+                val beforeTaskIndex = statusTasks.indexOf(beforeTask)
+                // Returns new position
                 if (beforeTaskIndex == 0) {
-                    newPosition = beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() / 2
+                    beforeTaskPosition / 2
                 } else {
-                    val beforeBeforeTask = sortedTasks[beforeTaskIndex - 1]
-                    if (beforeBeforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                        throw IllegalStateException("beforeBeforeTask does not have a position property")
-                    }
-                    newPosition = (beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() +
-                            beforeBeforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) / 2
+                    val beforeBeforeTask = statusTasks[beforeTaskIndex - 1]
+                    val beforeBeforeTaskPosition = beforeBeforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
+                        ?: throw IllegalStateException("beforeBeforeTask does not have a position property")
+                    (beforeTaskPosition + beforeBeforeTaskPosition) / 2
                 }
-                newPosition
             }
         }
 

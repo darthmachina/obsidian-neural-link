@@ -7,7 +7,7 @@ import model.StatusTag
 import model.Task
 import model.TaskModel
 import org.reduxkotlin.Store
-import store.TaskStatusChanged
+import store.TaskMoved
 
 class KanbanBoard(val store: Store<TaskModel>): HPanel() {
     companion object {
@@ -79,7 +79,7 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
         val column = KanbanColumnPanel(name, cards.map { createCard(it, name.tag) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
-                store.dispatch(TaskStatusChanged(cardId, column.status.tag, dragoverCardId))
+                store.dispatch(TaskMoved(cardId, column.status.tag, dragoverCardId))
             }
         }
         columnPanels[name] = column
