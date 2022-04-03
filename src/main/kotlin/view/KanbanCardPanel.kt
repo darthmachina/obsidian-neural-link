@@ -96,12 +96,11 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
                 filteredDataviewFields.forEach { entry ->
                     tr {
                         td {
-                            width = 25.perc
-                            borderRight = Border(1.px, BorderStyle.DOTTED, Color.name(Col.GRAY))
+                            addCssStyle(KanbanStyles.KANBAN_DATAVIEW_LABEL)
                             +entry.key
                         }
                         td {
-                            wordBreak = WordBreak.BREAKALL
+                            addCssStyle(KanbanStyles.KANBAN_DATAVIEW_VALUE)
                             +entry.value
                         }
                     }

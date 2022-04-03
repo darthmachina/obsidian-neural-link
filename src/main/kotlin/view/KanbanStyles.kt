@@ -74,6 +74,16 @@ class KanbanStyles {
             fontSize = 13.px
         }
 
+        val KANBAN_DATAVIEW_LABEL = Style(".nl-kanban-dataview-label") {
+            width = 25.perc
+        }
+
+        val KANBAN_DATAVIEW_VALUE = Style(".nl-kanban-dataview-value") {
+            borderLeft = Border(1.px, BorderStyle.DOTTED, Color.name(Col.GRAY))
+            paddingLeft = 7.px
+            wordBreak = WordBreak.BREAKALL
+        }
+
         val KANBAN_DUE = Style(".nl-kanban-due") {
             border = Border(1.px, BorderStyle.SOLID, Color.name(Col.GRAY))
             borderRadiusList = listOf(0.px, 0.px, 0.px, 8.px)
