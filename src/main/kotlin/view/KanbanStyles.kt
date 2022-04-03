@@ -47,37 +47,13 @@ class KanbanStyles {
 
         val KANBAN_TAG = Style(".nl-kanban-tag") {
             border = Border(1.px, BorderStyle.SOLID, Color.name(Col.GRAY))
-            borderRadius = 14.px
+            borderRadius = 8.px
             paddingLeft = 8.px
             paddingRight = 8.px
             paddingTop = 2.px
             paddingBottom = 3.px
             textAlign = TextAlign.CENTER
             verticalAlign = VerticalAlign.TEXTBOTTOM
-//span.cm-hashtag.cm-hashtag-begin {
-//    border-top-left-radius: var(--tag-radius);
-//    border-bottom-left-radius: var(--tag-radius);
-//    padding-left: 8px;
-//    border-right: none;
-//    border-left: var(--tag-border-width) solid var(--background-modifier-border);
-//}
-//<style>
-//.cm-s-obsidian span.cm-hashtag {
-//    background-color: var(--tag-bg);
-//    border: var(--tag-border-width) solid var(--background-modifier-border);
-//    color: var(--tag-color);
-//    font-size: var(--font-adaptive-small);
-//    font-family: var(--font-ui);
-//    text-align: center;
-//    text-decoration: none;
-//    margin: 0;
-//    vertical-align: text-bottom;
-//    padding-top: 2px;
-//    border-left: none;
-//    border-right: none;
-//    padding-bottom: 3px;
-//    cursor: text;
-//}
         }
 
         val KANBAN_DESCRIPTION = Style(".nl-kanban-description") {
@@ -99,10 +75,15 @@ class KanbanStyles {
         }
 
         val KANBAN_DUE = Style(".nl-kanban-due") {
+            border = Border(1.px, BorderStyle.SOLID, Color.name(Col.GRAY))
+            borderRadiusList = listOf(0.px, 0.px, 0.px, 8.px)
+            background = Background(color = Color.name(Col.DIMGRAY))
+            paddingLeft = 4.px
+            paddingRight = 5.px
             fontSize = 11.px
             position = Position.ABSOLUTE
             top = (-5).px
-            right = 0.px
+            right = (-5).px
         }
 
         val KANBAN_SOURCE = Style(".nl-kanban-source") {

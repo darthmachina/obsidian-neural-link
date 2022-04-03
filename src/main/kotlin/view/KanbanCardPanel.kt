@@ -9,6 +9,7 @@ import io.kvision.panel.hPanel
 import io.kvision.panel.vPanel
 import io.kvision.utils.perc
 import io.kvision.utils.px
+import kotlinx.datetime.*
 import model.Task
 import model.TaskConstants
 import model.TaskModel
@@ -26,8 +27,17 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
             hPanel {
                 addCssStyle(KanbanStyles.KANBAN_TAGS_DUE_PANEL)
                 if (task.dueOn != null) {
+                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                    val todayDate = LocalDate(today.year, today.monthNumber, today.dayOfMonth)
                     div {
                         addCssStyle(KanbanStyles.KANBAN_DUE)
+                        if (task.dueOn!! < todayDate) {
+                            background = Background(color = Color.name(Col.DARKRED))
+                        } else if (task.dueOn!! == todayDate) {
+                            background = Background(color = Color.name(Col.DARKGREEN))
+                        } else if (task.dueOn!!.until(todayDate, DateTimeUnit.DAY) == -1) {
+                            background = Background(color = Color.name(Col.DARKBLUE))
+                        }
                         +task.dueOn.toString()
                     }
                 }
