@@ -73,4 +73,31 @@ data class Task(
         }
         return beforeMarkdown + markdownElements.joinToString(" ")
     }
+
+    /**
+     * Compares just the relevant data fields for e
+     */
+    override fun equals(other: Any?) : Boolean {
+        return other is Task &&
+                file == other.file &&
+                description == other.description &&
+                dueOn == other.dueOn &&
+                tags == other.tags &&
+                dataviewFields == other.dataviewFields &&
+                completed == other.completed &&
+                subtasks == other.subtasks &&
+                notes == other.notes
+    }
+
+    override fun hashCode(): Int {
+        var result = file.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + (dueOn?.hashCode() ?: 0)
+        result = 31 * result + tags.hashCode()
+        result = 31 * result + dataviewFields.hashCode()
+        result = 31 * result + completed.hashCode()
+        result = 31 * result + subtasks.hashCode()
+        result = 31 * result + notes.hashCode()
+        return result
+    }
 }
