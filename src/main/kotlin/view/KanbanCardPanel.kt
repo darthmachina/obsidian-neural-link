@@ -9,6 +9,7 @@ import io.kvision.panel.hPanel
 import io.kvision.panel.vPanel
 import io.kvision.utils.perc
 import io.kvision.utils.px
+import kotlinx.datetime.*
 import model.Task
 import model.TaskConstants
 import model.TaskModel
@@ -26,8 +27,17 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
             hPanel {
                 addCssStyle(KanbanStyles.KANBAN_TAGS_DUE_PANEL)
                 if (task.dueOn != null) {
+                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                    val todayDate = LocalDate(today.year, today.monthNumber, today.dayOfMonth)
                     div {
                         addCssStyle(KanbanStyles.KANBAN_DUE)
+                        if (task.dueOn!! < todayDate) {
+                            background = Background(color = Color.name(Col.DARKRED))
+                        } else if (task.dueOn!! == todayDate) {
+                            background = Background(color = Color.name(Col.DARKGREEN))
+                        } else if (task.dueOn!!.until(todayDate, DateTimeUnit.DAY) == -1) {
+                            background = Background(color = Color.name(Col.DARKBLUE))
+                        }
                         +task.dueOn.toString()
                     }
                 }
@@ -36,7 +46,10 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
                     div {
                         addCssStyle(KanbanStyles.KANBAN_TAG_LIST)
                         filteredTags.forEach { tag ->
-                            span { +"#$tag " }
+                            span {
+                                addCssStyle(KanbanStyles.KANBAN_TAG)
+                                +"#$tag"
+                            }
                         }
                     }
                 }
@@ -83,12 +96,11 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
                 filteredDataviewFields.forEach { entry ->
                     tr {
                         td {
-                            width = 25.perc
-                            borderRight = Border(1.px, BorderStyle.DOTTED, Color.name(Col.GRAY))
+                            addCssStyle(KanbanStyles.KANBAN_DATAVIEW_LABEL)
                             +entry.key
                         }
                         td {
-                            wordBreak = WordBreak.BREAKALL
+                            addCssStyle(KanbanStyles.KANBAN_DATAVIEW_VALUE)
                             +entry.value
                         }
                     }

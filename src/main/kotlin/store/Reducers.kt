@@ -82,8 +82,7 @@ class Reducers {
             console.log(" - ERROR: Task not found for id: $taskId")
             return store
         }
-        ReducerUtils.setModifiedIfNeeded(task)
-        task.completed = true
+        ReducerUtils.completeTask(task, store.settings.columnTags)
         return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
 
@@ -108,13 +107,18 @@ class Reducers {
 
     fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
         console.log("Reducers.modifyFileTasks()")
-        val clonedTaskList = store.tasks
-            .map { it.deepCopy() }
-            .filter { it.file != file }
-            .plus(fileTasks)
-        ReducerUtils.runFileModifiedListeners(fileTasks, store.settings.columnTags, repeatingTaskService)
+        ReducerUtils.runFileModifiedListeners(fileTasks, store, repeatingTaskService)
+        // Only return a new state if any of the tasks were modified
+        if (fileTasks.any { it.original != null } || ReducerUtils.changedTasks(file, fileTasks, store).isNotEmpty()) {
+            val clonedTaskList = store.tasks
+                .map { it.deepCopy() }
+                .filter { it.file != file }
+                .plus(fileTasks)
 
-        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
+            return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
+        }
+
+        return store
     }
 }
 
@@ -158,10 +162,14 @@ class ReducerUtils {
          */
         private fun addOrderToListItemsIfNeeded(tasks: List<Task>) : List<Task> {
 //            console.log("Reducers.ReducerUtils.addOrderToListItems()")
-            return tasks.mapIndexed { index, task ->
+            var maxPosition = 1.0
+            return tasks
+                .sortedWith(taskComparator)
+                .map { task ->
                 if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                    updateTaskOrder(task, index.toDouble() + 1.0)
+                    updateTaskOrder(task, maxPosition++)
                 } else {
+                    maxPosition = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()
                     task
                 }
             }
@@ -187,7 +195,7 @@ class ReducerUtils {
          * 3. beforeTaskId given, find that task and the one before it and returns a value in the middle of the two pos values
          *  - If beforeTask is the first in the list just return its position divided by 2
          */
-        fun findPosition(tasks: List<Task>, status: String, beforeTaskId: String?) : Double {
+        fun findPosition(tasks: List<Task>, status: String, beforeTaskId: String? = null) : Double {
             console.log("ReducerUtils.findPosition()")
             return if (tasks.none { task -> task.tags.contains(status) }) {
 //                console.log(" - list is empty, returning 1.0")
@@ -221,7 +229,18 @@ class ReducerUtils {
             }
         }
 
-        fun runFileModifiedListeners(tasks: List<Task>, statusTags: List<StatusTag>, repeatingTaskService: RepeatingTaskService) {
+        /**
+         * Returns a list of Tasks from a file that have changed from within the store
+         */
+        fun changedTasks(file: String, fileTasks: List<Task>, store: TaskModel) : List<Task> {
+            // Take the fileTasks list and subtrack any that are equal to what is already in the store
+            val storeFileTasks = store.tasks.filter { it.file == file }
+            if (storeFileTasks.isEmpty()) return emptyList()
+
+            return fileTasks.minus(store.tasks.toSet())
+        }
+
+        fun runFileModifiedListeners(tasks: List<Task>, store: TaskModel, repeatingTaskService: RepeatingTaskService) {
             console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
 
             // Repeating tasks
@@ -230,17 +249,32 @@ class ReducerUtils {
                     task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY) &&
                             task.completed
                 }
-                .forEach { task ->
-                    repeatTask(task, repeatingTaskService)
-                }
+                .forEach { task -> repeatTask(task, repeatingTaskService) }
 
             // Check for completed tasks with a status tag and remove the tag (might have been completed outside the app)
             tasks
-                .filter { it.completed && getStatusTagFromTask(it, statusTags) != null}
+                .filter { it.completed && getStatusTagFromTask(it, store.settings.columnTags) != null}
+                .forEach { task -> completeTask(task, store.settings.columnTags) }
+
+            // Check for tasks with no position
+            tasks
+                .filter { task ->
+                    task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null &&
+                            getStatusTagFromTask(task, store.settings.columnTags) != null
+                }
                 .forEach { task ->
                     setModifiedIfNeeded(task)
-                    task.tags.remove(getStatusTagFromTask(task, statusTags)!!.tag)
+                    task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = findPosition(
+                        store.tasks,
+                        getStatusTagFromTask(task, store.settings.columnTags)!!.tag).toString()
                 }
+        }
+
+        fun completeTask(task: Task, columns: Collection<StatusTag>) {
+            setModifiedIfNeeded(task)
+            task.completed = true
+            task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
+            task.tags.removeAll { tag -> tag in columns.map { it.tag } }
         }
 
         /**
@@ -260,7 +294,7 @@ class ReducerUtils {
         }
 
         fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): StatusTag? {
-//            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
+            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
             val statusColumn = kanbanKeys.filter { statusTag -> task.tags.contains(statusTag.tag) }
             if (statusColumn.size > 1) {
                 console.log(" - ERROR: More than one status column is on the task, using the first: ", statusColumn)
@@ -268,7 +302,7 @@ class ReducerUtils {
             } else if (statusColumn.size == 1) {
                 return statusColumn[0]
             }
-//        console.log("ERROR: status tag not found on task: ", task)
+        console.log("ERROR: status tag not found on task: ", task)
             return null
         }
 

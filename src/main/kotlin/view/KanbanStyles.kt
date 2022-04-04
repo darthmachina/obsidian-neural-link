@@ -18,6 +18,14 @@ class KanbanStyles {
             height = 95.perc
         }
 
+        val KANBAN_CARD_LIST = Style(".nl-kanban-card-list") {
+            width = 272.px
+            minWidth = 272.px
+            height = 100.perc
+            overflowX = Overflow.HIDDEN
+            overflowY = Overflow.AUTO
+        }
+
         val KANBAN_CARD = Style(".nl-kanban-card") {
             position = Position.RELATIVE
             width = 100.perc
@@ -37,6 +45,17 @@ class KanbanStyles {
             fontSize = 13.px
         }
 
+        val KANBAN_TAG = Style(".nl-kanban-tag") {
+            border = Border(1.px, BorderStyle.SOLID, Color.name(Col.GRAY))
+            borderRadius = 8.px
+            paddingLeft = 8.px
+            paddingRight = 8.px
+            paddingTop = 2.px
+            paddingBottom = 3.px
+            textAlign = TextAlign.CENTER
+            verticalAlign = VerticalAlign.TEXTBOTTOM
+        }
+
         val KANBAN_DESCRIPTION = Style(".nl-kanban-description") {
         }
 
@@ -48,10 +67,6 @@ class KanbanStyles {
             marginLeft = 8.px
             marginTop = 0.px
             fontSize = 15.px
-
-//            style("li::marker") {
-//                marginRight = 5.px
-//            }
         }
 
         val KANBAN_DATAVIEW_TABLE = Style(".nl-kanban-dataview-table") {
@@ -59,11 +74,26 @@ class KanbanStyles {
             fontSize = 13.px
         }
 
+        val KANBAN_DATAVIEW_LABEL = Style(".nl-kanban-dataview-label") {
+            width = 25.perc
+        }
+
+        val KANBAN_DATAVIEW_VALUE = Style(".nl-kanban-dataview-value") {
+            borderLeft = Border(1.px, BorderStyle.DOTTED, Color.name(Col.GRAY))
+            paddingLeft = 7.px
+            wordBreak = WordBreak.BREAKALL
+        }
+
         val KANBAN_DUE = Style(".nl-kanban-due") {
+            border = Border(1.px, BorderStyle.SOLID, Color.name(Col.GRAY))
+            borderRadiusList = listOf(0.px, 0.px, 0.px, 8.px)
+            background = Background(color = Color.name(Col.DIMGRAY))
+            paddingLeft = 4.px
+            paddingRight = 5.px
             fontSize = 11.px
             position = Position.ABSOLUTE
             top = (-5).px
-            right = 0.px
+            right = (-5).px
         }
 
         val KANBAN_SOURCE = Style(".nl-kanban-source") {
