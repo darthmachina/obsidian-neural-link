@@ -7,12 +7,14 @@ import io.kvision.panel.vPanel
 import model.StatusTag
 
 class KanbanColumnPanel(val status: StatusTag, cards: List<KanbanCardPanel>): VPanel(spacing = 10, alignItems = AlignItems.CENTER) {
+    private val cardPanel: VPanel
+
     init {
         addCssStyle(KanbanStyles.KANBAN_COLUMN)
         div {
             +status.displayName
         }
-        vPanel(spacing = 10, alignItems = AlignItems.CENTER) {
+        cardPanel = vPanel(spacing = 10, alignItems = AlignItems.CENTER) {
             addCssStyle(KanbanStyles.KANBAN_CARD_LIST)
             cards.forEach { card ->
                 add(card)
@@ -20,15 +22,6 @@ class KanbanColumnPanel(val status: StatusTag, cards: List<KanbanCardPanel>): VP
         }
     }
 
-    /**
-     * The header is at position 0, the cards are at position 1+.
-     * We start at the end of the list and remove until only 1 is left
-     */
-    fun removeAllCards() {
-        if (getChildren().size > 1) {
-            for(i in getChildren().size - 1 downTo 1) {
-                removeAt(i)
-            }
-        }
-    }
+    fun addCards(cards: List<KanbanCardPanel>) = cardPanel.addAll(cards)
+    fun removeAllCards() = cardPanel.removeAll()
 }

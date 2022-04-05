@@ -69,7 +69,7 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
                 boardCache.tasks[status] = storeTasks
                 val column = columnPanels[status]!!
                 column.removeAllCards()
-                column.addAll(boardCache.tasks[status]!!.map { createCard(it, status.tag) })
+                column.addCards(boardCache.tasks[status]!!.map { createCard(it, status.tag) })
             }
         }
     }
