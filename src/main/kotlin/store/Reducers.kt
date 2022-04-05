@@ -259,8 +259,10 @@ class ReducerUtils {
             // Check for tasks with no position
             tasks
                 .filter { task ->
+                    val statusTag = getStatusTagFromTask(task, store.settings.columnTags)
                     task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null &&
-                            getStatusTagFromTask(task, store.settings.columnTags) != null
+                            statusTag != null &&
+                            !statusTag.dateSort
                 }
                 .forEach { task ->
                     setModifiedIfNeeded(task)
@@ -297,12 +299,12 @@ class ReducerUtils {
             console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
             val statusColumn = kanbanKeys.filter { statusTag -> task.tags.contains(statusTag.tag) }
             if (statusColumn.size > 1) {
-                console.log(" - ERROR: More than one status column is on the task, using the first: ", statusColumn)
+                console.log(" - WARN: More than one status column is on the task, using the first: ", statusColumn)
                 return statusColumn[0]
             } else if (statusColumn.size == 1) {
                 return statusColumn[0]
             }
-        console.log("ERROR: status tag not found on task: ", task)
+            // No status tag found
             return null
         }
 
