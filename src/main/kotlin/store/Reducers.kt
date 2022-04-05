@@ -109,7 +109,9 @@ class Reducers {
         console.log("Reducers.modifyFileTasks()")
         ReducerUtils.runFileModifiedListeners(fileTasks, store, repeatingTaskService)
         // Only return a new state if any of the tasks were modified
+        console.log(" - checking to see if the store needs to be updated")
         if (fileTasks.any { it.original != null } || ReducerUtils.changedTasks(file, fileTasks, store).isNotEmpty()) {
+            console.log(" - yes, updating store")
             val clonedTaskList = store.tasks
                 .map { it.deepCopy() }
                 .filter { it.file != file }
@@ -237,7 +239,8 @@ class ReducerUtils {
             val storeFileTasks = store.tasks.filter { it.file == file }
             if (storeFileTasks.isEmpty()) return emptyList()
 
-            return fileTasks.minus(store.tasks.toSet())
+            console.log("ReducerUtils.changedTasks()", fileTasks, storeFileTasks)
+            return fileTasks.minus(storeFileTasks.toSet())
         }
 
         fun runFileModifiedListeners(tasks: List<Task>, store: TaskModel, repeatingTaskService: RepeatingTaskService) {
