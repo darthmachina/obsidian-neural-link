@@ -66,7 +66,8 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     override fun onunload() {
-        console.log("NeuralLinkPlugin onunload()")
+        console.log("NeuralLinkPlugin.onunload()")
+        this.app.workspace.detachLeavesOfType(KanbanView.VIEW_TYPE)
     }
 
     private fun taskModifiedListener() {
