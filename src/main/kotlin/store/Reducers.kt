@@ -15,7 +15,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is VaultLoaded -> reducerFunctions.copyAndPopulateKanban(store, action.tasks)
         is TaskMoved -> reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
-        is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId)
+        is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.repeatingTaskService)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
         is RepeatTask -> store
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
@@ -74,7 +74,7 @@ class Reducers {
         return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
 
-    fun taskCompleted(store: TaskModel, taskId: String): TaskModel {
+    fun taskCompleted(store: TaskModel, taskId: String, repeatingTaskService: RepeatingTaskService): TaskModel {
         console.log("Reducers.taskCompleted()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         val task = clonedTaskList.find { task -> task.id == taskId }
@@ -82,7 +82,7 @@ class Reducers {
             console.log(" - ERROR: Task not found for id: $taskId")
             return store
         }
-        ReducerUtils.completeTask(task, store.settings.columnTags)
+        ReducerUtils.completeTask(task, store.settings.columnTags, repeatingTaskService)
         return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
     }
 
@@ -246,18 +246,15 @@ class ReducerUtils {
         fun runFileModifiedListeners(tasks: List<Task>, store: TaskModel, repeatingTaskService: RepeatingTaskService) {
             console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
 
-            // Repeating tasks
+            // Check for completed tasks with either a status tag or a repeat field (might have been completed outside the app)
+            // remove the status tag and check for any tasks that need repeating
             tasks
                 .filter { task ->
-                    task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY) &&
-                            task.completed
+                    task.completed &&
+                            (getStatusTagFromTask(task, store.settings.columnTags) != null
+                                    || task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY))
                 }
-                .forEach { task -> repeatTask(task, repeatingTaskService) }
-
-            // Check for completed tasks with a status tag and remove the tag (might have been completed outside the app)
-            tasks
-                .filter { it.completed && getStatusTagFromTask(it, store.settings.columnTags) != null}
-                .forEach { task -> completeTask(task, store.settings.columnTags) }
+                .forEach { task -> completeTask(task, store.settings.columnTags, repeatingTaskService) }
 
             // Check for tasks with no position
             tasks
@@ -275,8 +272,9 @@ class ReducerUtils {
                 }
         }
 
-        fun completeTask(task: Task, columns: Collection<StatusTag>) {
+        fun completeTask(task: Task, columns: Collection<StatusTag>, repeatingTaskService: RepeatingTaskService) {
             setModifiedIfNeeded(task)
+            repeatTask(task, repeatingTaskService)
             task.completed = true
             task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
             task.tags.removeAll { tag -> tag in columns.map { it.tag } }

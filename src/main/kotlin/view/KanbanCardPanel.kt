@@ -15,10 +15,16 @@ import model.Task
 import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
+import service.RepeatingTaskService
 import store.SubtaskCompleted
 import store.TaskCompleted
 
-class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val status: String): VPanel(spacing = 5) {
+class KanbanCardPanel(
+    val store: Store<TaskModel>,
+    val task: Task,
+    private val status: String,
+    private val repeatingTaskService: RepeatingTaskService
+): VPanel(spacing = 5) {
     init {
         addCssStyle(KanbanStyles.KANBAN_CARD)
         // Description
@@ -62,7 +68,7 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
             checkBox(task.completed, label = task.description) {
                 inline = true
             }.onClick {
-                store.dispatch(TaskCompleted(task.id))
+                store.dispatch(TaskCompleted(task.id, repeatingTaskService))
             }
         }
 
