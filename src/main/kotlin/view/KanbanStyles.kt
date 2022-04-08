@@ -74,6 +74,11 @@ class KanbanStyles {
             fontSize = 75.perc
         }
 
+        val KANBAN_SUBNOTES = Style(".nl-kanban-subnotes-list") {
+            marginLeft = (-20).px
+            marginTop = 0.px
+        }
+
         val KANBAN_DATAVIEW_TABLE = Style(".nl-kanban-dataview-table") {
             width = 100.perc
             fontSize = 13.px
