@@ -15,7 +15,7 @@ import kotlinx.uuid.UUID
 @Serializable
 data class Task(
     val file: String,
-    val filePosition: Int,
+    override val filePosition: Int,
     var description: String,
     var dueOn: LocalDate?,
     var completedOn: LocalDateTime?,
@@ -23,13 +23,13 @@ data class Task(
     val dataviewFields: MutableMap<String, String>,
     var completed: Boolean,
     val subtasks: MutableList<Task> = mutableListOf(),
-    val notes: MutableList<String> = mutableListOf(),
+    val notes: MutableList<Note> = mutableListOf(),
     var original: Task? = null, // TODO try to automate setting this
     // 'before' is for writing the repeat task
     // TODO Find a better way to model this as I don't like needing to store this on the task itself
     var before: Task? = null,
     val id: String = UUID().toString()
-) {
+) : ListItem() {
     @OptIn(ExperimentalSerializationApi::class)
     fun deepCopy(): Task {
         val bytes = Cbor.encodeToByteArray(this)
@@ -63,7 +63,7 @@ data class Task(
             markdownElements.add("\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() })
         }
         if (notes.size > 0) {
-            markdownElements.add("\n\t" + notes.joinToString("\n\t") { note -> "- $note" })
+            markdownElements.add("\n\t" + notes.joinToString("\n\t") { note -> note.toMarkdown(1) })
         }
 
         // Check for a 'before' task

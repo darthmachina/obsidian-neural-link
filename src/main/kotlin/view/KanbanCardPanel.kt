@@ -10,6 +10,7 @@ import io.kvision.panel.vPanel
 import io.kvision.utils.perc
 import io.kvision.utils.px
 import kotlinx.datetime.*
+import model.Note
 import model.Task
 import model.TaskConstants
 import model.TaskModel
@@ -83,8 +84,35 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
 
         // Notes
         if (task.notes.isNotEmpty()) {
-            listTag(ListType.UL, task.notes) {
+            ul {
                 addCssStyle(KanbanStyles.KANBAN_NOTES)
+                task.notes.forEach { note ->
+                    li {
+                        +note.note
+
+                        if (note.subnotes.isNotEmpty()) {
+                            ul {
+                                addCssStyle(KanbanStyles.KANBAN_SUBNOTES)
+                                note.subnotes.forEach { subnote1 ->
+                                    li {
+                                        +subnote1.note
+
+                                        if (subnote1.subnotes.isNotEmpty()) {
+                                            ul {
+                                                addCssStyle(KanbanStyles.KANBAN_SUBNOTES)
+                                                subnote1.subnotes.forEach { subnote2 ->
+                                                    li {
+                                                        +subnote2.note
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -112,6 +140,25 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
         div {
             addCssStyle(KanbanStyles.KANBAN_SOURCE)
             +task.file.replace(".md", "")
+        }
+    }
+
+    /**
+     * Recursive function that will output an unordered list of notes with all subnotes in a hierarchy. Recursion stops
+     * when the subnotes list is empty.
+     */
+    private fun outputNotes(notes: List<Note>) {
+        ul {
+            addCssStyle(KanbanStyles.KANBAN_NOTES)
+            notes.forEach { note ->
+                li {
+                    +note.note
+
+                    if (note.subnotes.isNotEmpty()) {
+                        outputNotes(note.subnotes)
+                    }
+                }
+            }
         }
     }
 }
