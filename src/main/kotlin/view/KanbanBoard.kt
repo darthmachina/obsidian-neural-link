@@ -7,9 +7,10 @@ import model.StatusTag
 import model.Task
 import model.TaskModel
 import org.reduxkotlin.Store
+import service.RepeatingTaskService
 import store.TaskMoved
 
-class KanbanBoard(val store: Store<TaskModel>): HPanel() {
+class KanbanBoard(val store: Store<TaskModel>, val repeatingTaskService: RepeatingTaskService): HPanel() {
     companion object {
         const val CARD_MIME_TYPE = "text/x-card"
     }
@@ -89,7 +90,7 @@ class KanbanBoard(val store: Store<TaskModel>): HPanel() {
 
     private fun createCard(task: Task, status: String): KanbanCardPanel {
         console.log("KanbanBoard.createCard(): ", task.description)
-        val card = KanbanCardPanel(store, task, status)
+        val card = KanbanCardPanel(store, task, status, repeatingTaskService)
         card.id = task.id
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)
         card.setEventListener<Div> {
