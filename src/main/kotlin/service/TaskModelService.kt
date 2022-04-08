@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import model.ListItem
 import model.Note
 import model.Task
 import model.TaskConstants
@@ -25,8 +26,6 @@ import store.VaultLoaded
  * Service for interacting with a TaskModel. Main use is to process files
  * in the Vault to build up the list of tasks and to process modified/created
  * files to incorporate those changes into the vault.
- *
- * TODO: Create a method to process a modified/created file
  */
 class TaskModelService {
     private val dueDateRegex = Regex("""@${TaskConstants.DUE_ON_PROPERTY}${TaskConstants.TASK_PAPER_DATE_FORMAT}""")
@@ -145,44 +144,51 @@ class TaskModelService {
         listItems: Array<ListItemCache>
     ): List<Task> {
         console.log("processFile()", filename)
-        val tasksByLine = mutableMapOf<Int,Task>() // Map of position -> Task
+        val listItemsByLine = mutableMapOf<Int,ListItem>() // Map of position -> Task
 
         listItems
             .forEach { listItem ->
     //            console.log(" - loading listItem", listItem)
-                val taskLine = listItem.position.start.line.toInt()
-                val lineContents = fileContents[taskLine]
+                val listItemLine = listItem.position.start.line.toInt()
+                val lineContents = fileContents[listItemLine]
                 // If the parent is negative (no parent set), or there is no task seen previously (so parent was not a task)
-                if (listItem.parent.toInt() < 0 || !tasksByLine.contains(listItem.parent.toInt())) {
-    //                console.log(" - is a root level item")
+                if (listItem.parent.toInt() < 0 || !listItemsByLine.contains(listItem.parent.toInt())) {
                     // Root level list item
+                    //                console.log(" - is a root level item")
                     if (listItem.task != null) {
     //                    console.log(" - is a task so add it")
                         // Only care about root items that are tasks
-                        val task = createTask(filename, taskLine, lineContents)
+                        val task = createTask(filename, listItemLine, lineContents)
 //                        console.log(" - created task", task)
 //                        console.log(mapToString(task.dataviewFields, "\n   -"))
-                        tasksByLine[listItem.position.start.line.toInt()] = task
+                        listItemsByLine[listItemLine] = task
                     }
                 } else {
-    //                console.log(" - is an indented item")
-                    val parentTask = tasksByLine[listItem.parent.toInt()]!! // TODO Handle error better
                     // Child list item
+                    //                console.log(" - is an indented item")
+                    val parentListItem = listItemsByLine[listItem.parent.toInt()]!! // TODO Handle error better
                     if (listItem.task == null) {
     //                    console.log(" - is a note")
                         // Is a note, find the parent task and add this line to the notes list
                         // removing the first two characters (the list marker, '- ')
-                        parentTask.notes.add(Note(lineContents.trim().drop(2)))
+                        when (parentListItem) {
+                            is Task -> parentListItem.notes.add(Note(lineContents.trim().drop(2), listItemLine))
+                            is Note -> parentListItem.subnotes.add(Note(lineContents.trim().drop(2), listItemLine))
+                        }
+
                     } else {
     //                    console.log(" - is a subtask")
                         // Is a task, construct task and find the parent task to add to subtasks list
-                        val subtask = createTask(filename, taskLine, lineContents)
-                        parentTask.subtasks.add(subtask)
+                        val subtask = createTask(filename, listItemLine, lineContents)
+                        when (parentListItem) {
+                            is Task -> parentListItem.subtasks.add(subtask)
+                            is Note -> throw IllegalStateException("Cannot add Subtask to Note")
+                        }
                     }
                 }
             }
 
-        return tasksByLine.values.toList()
+        return listItemsByLine.values.toList().filterIsInstance<Task>()
     }
 
     private fun createTask(file: String, line: Int, text: String) : Task {

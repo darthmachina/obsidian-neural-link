@@ -15,7 +15,7 @@ import kotlinx.uuid.UUID
 @Serializable
 data class Task(
     val file: String,
-    val filePosition: Int,
+    override val filePosition: Int,
     var description: String,
     var dueOn: LocalDate?,
     var completedOn: LocalDateTime?,
@@ -29,7 +29,7 @@ data class Task(
     // TODO Find a better way to model this as I don't like needing to store this on the task itself
     var before: Task? = null,
     val id: String = UUID().toString()
-) {
+) : ListItem() {
     @OptIn(ExperimentalSerializationApi::class)
     fun deepCopy(): Task {
         val bytes = Cbor.encodeToByteArray(this)
