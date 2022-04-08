@@ -83,7 +83,7 @@ class KanbanCardPanel(val store: Store<TaskModel>, val task: Task, private val s
 
         // Notes
         if (task.notes.isNotEmpty()) {
-            listTag(ListType.UL, task.notes) {
+            listTag(ListType.UL, task.notes.map { note -> note.note }) {
                 addCssStyle(KanbanStyles.KANBAN_NOTES)
             }
         }

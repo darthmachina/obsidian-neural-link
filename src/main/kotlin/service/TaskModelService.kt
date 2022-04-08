@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import model.Note
 import model.Task
 import model.TaskConstants
 import model.TaskModel
@@ -171,7 +172,7 @@ class TaskModelService {
     //                    console.log(" - is a note")
                         // Is a note, find the parent task and add this line to the notes list
                         // removing the first two characters (the list marker, '- ')
-                        parentTask.notes.add(lineContents.trim().drop(2))
+                        parentTask.notes.add(Note(lineContents.trim().drop(2)))
                     } else {
     //                    console.log(" - is a subtask")
                         // Is a task, construct task and find the parent task to add to subtasks list
