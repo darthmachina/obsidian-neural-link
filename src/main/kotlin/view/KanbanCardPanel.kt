@@ -29,7 +29,10 @@ class KanbanCardPanel(
         addCssStyle(KanbanStyles.KANBAN_CARD)
         // Description
         // Tags & Due
-        val filteredTags = task.tags.filter { tag -> tag != status }
+        val filteredTags = task.tags
+            .filter { tag -> tag != status }
+            .plus(task.subtasks.flatMap { subtask -> subtask.tags })
+            .distinct()
         if (filteredTags.isNotEmpty() || task.dueOn != null) {
             hPanel {
                 addCssStyle(KanbanStyles.KANBAN_TAGS_DUE_PANEL)
