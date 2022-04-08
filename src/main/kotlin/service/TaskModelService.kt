@@ -184,7 +184,10 @@ class TaskModelService {
                         val subtask = createTask(filename, listItemLine, lineContents)
                         when (parentListItem) {
                             is Task -> parentListItem.subtasks.add(subtask)
-                            is Note -> throw IllegalStateException("Cannot add Subtask to Note")
+                            is Note -> {
+                                console.log(" - ERROR: Trying to add Subtask to Note", parentListItem, subtask)
+                                throw IllegalStateException("Cannot add Subtask to Note")
+                            }
                         }
                     }
                 }
