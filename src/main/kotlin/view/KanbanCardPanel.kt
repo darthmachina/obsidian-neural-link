@@ -148,7 +148,7 @@ class KanbanCardPanel(
         // Source
         div {
             addCssStyle(KanbanStyles.KANBAN_SOURCE)
-            +task.file.replace(".md", "")
+            +task.file.dropLast(3)
         }
     }
 

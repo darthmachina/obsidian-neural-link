@@ -19,6 +19,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
         is RepeatTask -> store
         is FilterByTag -> reducerFunctions.filterByTag(store, action.tag)
+        is FilterByFile -> reducerFunctions.filterByFile(store, action.file)
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -130,6 +131,13 @@ class Reducers {
     fun filterByTag(store: TaskModel, tag: String?) : TaskModel {
         return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
             if (tag == null) store.tasks else store.tasks.filter { task -> task.tags.contains(tag) },
+            store.settings.columnTags
+        ))
+    }
+
+    fun filterByFile(store: TaskModel, file: String?) : TaskModel {
+        return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
+            if (file == null) store.tasks else store.tasks.filter { task -> task.file == file },
             store.settings.columnTags
         ))
     }
