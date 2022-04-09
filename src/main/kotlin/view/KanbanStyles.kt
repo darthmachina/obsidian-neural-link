@@ -14,7 +14,7 @@ class KanbanStyles {
 
         val KANBAN_HEADER = Style(".nl-kanban-header") {
             width = 100.perc
-            height = 30.px
+            height = 25.px
             marginRight = 0.px
             marginLeft = auto
         }

@@ -21,12 +21,11 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
         simpleSelectInput(getAllTags(), emptyOption = true) {
             placeholder = "Select a tag"
             width = 150.px
-            background = Background(color = Color.name(Col.BLACK))
             color = Color.name(Col.WHITE)
 
-//            style("select") {
-//                width = 70.perc
-//            }
+            style("select > option") {
+                background = Background(color = Color.name(Col.BLACK))
+            }
 
             var init = true
             subscribe {
