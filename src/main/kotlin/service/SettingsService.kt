@@ -33,13 +33,20 @@ class SettingsService(private val store: Store<TaskModel>, private val plugin: P
             val newSettings = NeuralLinkPluginSettings.default()
             store.dispatch(UpdateSettings(plugin, this, newSettings.taskRemoveRegex, newSettings.columnTags))
         } else {
+            console.log(" - jsonSettings: $json")
             when (Json { ignoreUnknownKeys = true }.decodeFromString<SettingsVersion>(json as String).version) {
-                2 -> {
+                "2" -> {
+                    console.log(" - Version 2 saved, updating settings")
                     val jsonSettings = Json { ignoreUnknownKeys = true }.decodeFromString<NeuralLinkPluginSettings2>(json as String)
                     dispatchUpdates(NeuralLinkPluginSettings.default().copy(
                         taskRemoveRegex = jsonSettings.taskRemoveRegex,
                         columnTags = jsonSettings.columnTags
                     ))
+                }
+                "3" -> {
+                    console.log(" - Version 3, just loading")
+                    val settings = Json { ignoreUnknownKeys = true }.decodeFromString<NeuralLinkPluginSettings>(json as String)
+                    dispatchUpdates(settings)
                 }
             }
         }
@@ -52,6 +59,12 @@ class SettingsService(private val store: Store<TaskModel>, private val plugin: P
     }
 
     private fun dispatchUpdates(settings: NeuralLinkPluginSettings) {
-        store.dispatch(UpdateSettings(plugin, this, settings.taskRemoveRegex, settings.columnTags))
+        store.dispatch(UpdateSettings(
+            plugin,
+            this,
+            settings.taskRemoveRegex,
+            settings.columnTags,
+            settings.tagColors
+        ))
     }
 }
