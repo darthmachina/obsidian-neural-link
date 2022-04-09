@@ -1,6 +1,7 @@
 package view
 
 import io.kvision.core.*
+import io.kvision.utils.auto
 import io.kvision.utils.perc
 import io.kvision.utils.px
 
@@ -9,7 +10,24 @@ class KanbanStyles {
         val ROOT = Style(".nl-root") {
             height = 100.perc
             maxHeight = 100.perc
-            overflow = Overflow.SCROLL
+        }
+
+        val KANBAN_HEADER = Style(".nl-kanban-header") {
+            width = 100.perc
+            height = 25.px
+            marginRight = 0.px
+            marginLeft = auto
+        }
+
+        val SELECT_INPUT = Style(".nl-select-input") {
+            width = 150.px
+            color = Color.name(Col.WHITE)
+        }
+
+        val KANBAN_COLUMNS = Style(".nl-kanban-columns") {
+            height = 100.perc
+            maxHeight = 100.perc
+            width = 100.perc
             overflowX = Overflow.AUTO
             overflowY = Overflow.HIDDEN
         }
@@ -18,7 +36,7 @@ class KanbanStyles {
             width = 272.px
             minWidth = 272.px
             margin = 15.px
-            height = 95.perc
+            maxHeight = 95.perc
             maxHeight = 95.perc
         }
 

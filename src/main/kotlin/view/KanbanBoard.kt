@@ -1,7 +1,7 @@
 package view
 
 import io.kvision.html.Div
-import io.kvision.panel.HPanel
+import io.kvision.panel.DockPanel
 import io.kvision.panel.VPanel
 import model.StatusTag
 import model.Task
@@ -10,7 +10,7 @@ import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import store.TaskMoved
 
-class KanbanBoard(val store: Store<TaskModel>, val repeatingTaskService: RepeatingTaskService): HPanel() {
+class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService: RepeatingTaskService): VPanel() {
     companion object {
         const val CARD_MIME_TYPE = "text/x-card"
     }
@@ -19,10 +19,12 @@ class KanbanBoard(val store: Store<TaskModel>, val repeatingTaskService: Repeati
 
     private var dragoverCardId: String? = null
     private val boardCache = BoardCache(mutableListOf(), mutableMapOf())
-    private val columnPanels = mutableMapOf<StatusTag,KanbanColumnPanel>()
+    private val columnsPanel = KanbanColumnsPanel()
 
     init {
         addCssStyle(KanbanStyles.ROOT)
+        add(KanbanHeader(store))
+        add(columnsPanel)
         // If the columns are different update the board
         if (boardCache.columns != store.state.settings.columnTags) {
             updateCacheColumns(store.state.settings.columnTags)
@@ -49,13 +51,12 @@ class KanbanBoard(val store: Store<TaskModel>, val repeatingTaskService: Repeati
         console.log("KanbanBoard.updateCacheColumns(): ", columns)
         boardCache.columns = columns
         boardCache.tasks.clear()
-        columnPanels.clear()
         boardCache.tasks.putAll(store.state.kanbanColumns)
 
-        removeAll()
+        columnsPanel.removeAll()
         boardCache.columns.forEach { statusTag ->
 //            console.log(" - creating column", statusTag)
-            add(createColumn(statusTag, boardCache.tasks[statusTag]!!))
+            columnsPanel.addColumn(statusTag, createColumn(statusTag, boardCache.tasks[statusTag]!!))
         }
     }
 
@@ -68,14 +69,15 @@ class KanbanBoard(val store: Store<TaskModel>, val repeatingTaskService: Repeati
             if (cacheTasks != storeTasks) {
 //                console.log(" - Task difference between cache and store, updating")
                 boardCache.tasks[status] = storeTasks
-                val column = columnPanels[status]!!
-                column.removeAllCards()
-                column.addCards(boardCache.tasks[status]!!.map { createCard(it, status.tag) })
+                columnsPanel.replaceCards(
+                    status,
+                    boardCache.tasks[status]!!.map { createCard(it, status.tag) }
+                )
             }
         }
     }
 
-    private fun createColumn(name: StatusTag, cards: List<Task>): VPanel {
+    private fun createColumn(name: StatusTag, cards: List<Task>): KanbanColumnPanel {
         console.log("KanbanBoard.createColumn(): ", name)
         val column = KanbanColumnPanel(name, cards.map { createCard(it, name.tag) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
@@ -83,7 +85,6 @@ class KanbanBoard(val store: Store<TaskModel>, val repeatingTaskService: Repeati
                 store.dispatch(TaskMoved(cardId, column.status.tag, dragoverCardId))
             }
         }
-        columnPanels[name] = column
 
         return column
     }
