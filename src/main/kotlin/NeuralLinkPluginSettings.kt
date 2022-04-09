@@ -23,3 +23,13 @@ data class NeuralLinkPluginSettings(
         }
     }
 }
+
+data class NeuralLinkPluginSettings2(
+    val taskRemoveRegex: String,
+    val columnTags: List<StatusTag>,
+    val version: Int = 2
+)
+
+data class SettingsVersion(
+    val version: Int
+)

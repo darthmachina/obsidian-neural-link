@@ -1,7 +1,9 @@
 package service
 
 import NeuralLinkPluginSettings
+import NeuralLinkPluginSettings2
 import Plugin
+import SettingsVersion
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -9,6 +11,7 @@ import model.TaskModel
 import org.reduxkotlin.Store
 import store.UpdateSettings
 
+@Suppress("JSON_FORMAT_REDUNDANT")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 class SettingsService(private val store: Store<TaskModel>, private val plugin: Plugin) {
@@ -30,11 +33,15 @@ class SettingsService(private val store: Store<TaskModel>, private val plugin: P
             val newSettings = NeuralLinkPluginSettings.default()
             store.dispatch(UpdateSettings(plugin, this, newSettings.taskRemoveRegex, newSettings.columnTags))
         } else {
-            val jsonSettings = Json.decodeFromString<NeuralLinkPluginSettings>(json as String)
-            console.log(" - jsonSettings", jsonSettings)
-            val loadedSettings = jsonSettings
-            console.log(" - loadedSettings: ", loadedSettings)
-            store.dispatch(UpdateSettings(plugin, this, loadedSettings.taskRemoveRegex, loadedSettings.columnTags))
+            when (Json { ignoreUnknownKeys = true }.decodeFromString<SettingsVersion>(json as String).version) {
+                2 -> {
+                    val jsonSettings = Json { ignoreUnknownKeys = true }.decodeFromString<NeuralLinkPluginSettings2>(json as String)
+                    dispatchUpdates(NeuralLinkPluginSettings.default().copy(
+                        taskRemoveRegex = jsonSettings.taskRemoveRegex,
+                        columnTags = jsonSettings.columnTags
+                    ))
+                }
+            }
         }
     }
 
@@ -42,5 +49,9 @@ class SettingsService(private val store: Store<TaskModel>, private val plugin: P
         val json = Json.encodeToString(settings)
         console.log("saveSettings: ", json)
         return json
+    }
+
+    private fun dispatchUpdates(settings: NeuralLinkPluginSettings) {
+        store.dispatch(UpdateSettings(plugin, this, settings.taskRemoveRegex, settings.columnTags))
     }
 }
