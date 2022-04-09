@@ -18,6 +18,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.repeatingTaskService)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
         is RepeatTask -> store
+        is FilterByTag -> reducerFunctions.filterByTag(store, action.tag)
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -121,6 +122,16 @@ class Reducers {
         }
 
         return store
+    }
+
+    /**
+     * Filters the task list according to the given tag; a null tag means there should be no filter.
+     */
+    fun filterByTag(store: TaskModel, tag: String?) : TaskModel {
+        return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
+            if (tag == null) store.tasks else store.tasks.filter { task -> task.tags.contains(tag) },
+            store.settings.columnTags
+        ))
     }
 }
 
