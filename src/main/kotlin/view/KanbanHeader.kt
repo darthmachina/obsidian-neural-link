@@ -9,29 +9,25 @@ import io.kvision.html.div
 import io.kvision.panel.HPanel
 import io.kvision.utils.perc
 import io.kvision.utils.px
+import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
+import store.FilterByDataviewValue
 import store.FilterByFile
 import store.FilterByTag
 
 class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify = JustifyContent.END) {
-    enum class FilterType {
-        TAG,
-        FILE
-    }
-
     private var filtering = false
     private val tagSelect: SimpleSelectInput
     private val fileSelect: SimpleSelectInput
+    private val dataviewSelect: SimpleSelectInput
 
     init {
         addCssStyle(KanbanStyles.KANBAN_HEADER)
         div { +"Filters" }
         div { +"Tag: " }
         tagSelect = simpleSelectInput(getAllTags(), emptyOption = true) {
-            width = 150.px
-            color = Color.name(Col.WHITE)
-
+            addCssStyle(KanbanStyles.SELECT_INPUT)
             style("select > option") {
                 background = Background(color = Color.name(Col.BLACK))
             }
@@ -48,9 +44,7 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
         }
         div { +"Page: " }
         fileSelect = simpleSelectInput(getAllFiles(), emptyOption = true) {
-            width = 150.px
-            color = Color.name(Col.WHITE)
-
+            addCssStyle(KanbanStyles.SELECT_INPUT)
             style("select > option") {
                 background = Background(color = Color.name(Col.BLACK))
             }
@@ -65,12 +59,30 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
                 }
             }
         }
+        div { +"Dataview: " }
+        dataviewSelect = simpleSelectInput(getAllDataviewFields(), emptyOption = true) {
+            addCssStyle(KanbanStyles.SELECT_INPUT)
+            style("select > option") {
+                background = Background(color = Color.name(Col.BLACK))
+            }
+
+            var init = true
+            subscribe {
+                console.log("fileSelect.subscribe()", it)
+                if (init) {
+                    init = false
+                } else {
+                    filterByDataviewValue(it)
+                }
+            }
+        }
     }
 
     private fun filterByTag(tag: String?) {
         if (!filtering) {
             filtering = true
             fileSelect.value = null
+            dataviewSelect.value = null
             store.dispatch(FilterByTag(tag))
             filtering = false
         }
@@ -80,7 +92,18 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
         if (!filtering) {
             filtering = true
             tagSelect.value = null
+            dataviewSelect.value = null
             store.dispatch(FilterByFile(file))
+            filtering = false
+        }
+    }
+
+    private fun filterByDataviewValue(value: String?) {
+        if (!filtering) {
+            filtering = true
+            tagSelect.value = null
+            fileSelect.value = null
+            store.dispatch(FilterByDataviewValue(value))
             filtering = false
         }
     }
@@ -114,5 +137,24 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
             .distinct()
             .sorted()
             .map { it to it.dropLast(3) }
+    }
+
+    /**
+     * Returns a simplistic list of all dataview field/value pairs; ignoring the TASK_ORDER_PROPERTY.
+     */
+    private fun getAllDataviewFields() : List<StringPair> {
+        return store.state.tasks
+            .flatMap { task ->
+                task.dataviewFields.entries
+            }
+            .asSequence()
+            .filter { it.key != TaskConstants.TASK_ORDER_PROPERTY }
+            .map { entry ->
+                "${entry.key}::${entry.value}"
+            }
+            .distinct()
+            .sorted()
+            .map { it to it }
+            .toList()
     }
 }

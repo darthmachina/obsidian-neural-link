@@ -16,6 +16,7 @@ data class SubtaskCompleted(val taskId: String, val subtaskId: String, val compl
 data class RepeatTask(val taskId: String, val repeatingTaskService: RepeatingTaskService) : Action
 data class FilterByTag(val tag: String?) : Action
 data class FilterByFile(val file: String?) : Action
+data class FilterByDataviewValue(val value: String?) : Action
 data class UpdateSettings(
     val plugin: Plugin,
     val settingsService: SettingsService,

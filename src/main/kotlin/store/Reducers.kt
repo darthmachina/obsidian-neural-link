@@ -20,6 +20,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is RepeatTask -> store
         is FilterByTag -> reducerFunctions.filterByTag(store, action.tag)
         is FilterByFile -> reducerFunctions.filterByFile(store, action.file)
+        is FilterByDataviewValue -> reducerFunctions.filterByDataviewValue(store, action.value)
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -138,6 +139,16 @@ class Reducers {
     fun filterByFile(store: TaskModel, file: String?) : TaskModel {
         return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
             if (file == null) store.tasks else store.tasks.filter { task -> task.file == file },
+            store.settings.columnTags
+        ))
+    }
+
+    fun filterByDataviewValue(store: TaskModel, value: String?) : TaskModel {
+        return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
+            if (value == null) store.tasks else store.tasks.filter { task ->
+                val dataview = value.split("::")
+                task.dataviewFields.containsKey(dataview[0]) && task.dataviewFields[dataview[0]] == dataview[1]
+            },
             store.settings.columnTags
         ))
     }

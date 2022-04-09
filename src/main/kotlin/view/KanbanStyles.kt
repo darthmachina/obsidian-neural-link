@@ -19,6 +19,11 @@ class KanbanStyles {
             marginLeft = auto
         }
 
+        val SELECT_INPUT = Style(".nl-select-input") {
+            width = 150.px
+            color = Color.name(Col.WHITE)
+        }
+
         val KANBAN_COLUMNS = Style(".nl-kanban-columns") {
             height = 100.perc
             maxHeight = 100.perc
