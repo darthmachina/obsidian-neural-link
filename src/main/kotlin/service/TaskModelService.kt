@@ -179,18 +179,21 @@ class TaskModelService {
                         }
 
                     } else {
-    //                    console.log(" - is a subtask")
+//                        console.log(" - is a subtask")
                         // Is a task, construct task and find the parent task to add to subtasks list
                         val subtask = createTask(filename, listItemLine, lineContents)
                         when (parentListItem) {
                             is Task -> parentListItem.subtasks.add(subtask)
-                            is Note -> throw IllegalStateException("Cannot add Subtask to Note")
+                            is Note -> {
+                                console.log(" - ERROR: Trying to add Subtask to Note", parentListItem, subtask, listItem.parent)
+                                throw IllegalStateException("Cannot add Subtask to Note")
+                            }
                         }
                     }
                 }
             }
 
-        return listItemsByLine.values.toList().filterIsInstance<Task>()
+        return listItemsByLine.values.filterIsInstance<Task>()
     }
 
     private fun createTask(file: String, line: Int, text: String) : Task {
