@@ -68,12 +68,13 @@ class KanbanStyles {
         }
 
         val KANBAN_TAG = Style(".nl-kanban-tag") {
+            height = 25.px
             border = Border(1.px, BorderStyle.SOLID, Color.name(Col.GRAY))
             borderRadius = 8.px
+            paddingTop = (-4).px
+            paddingBottom = 0.px
             paddingLeft = 8.px
             paddingRight = 8.px
-            paddingTop = 2.px
-            paddingBottom = 3.px
             textAlign = TextAlign.CENTER
             verticalAlign = VerticalAlign.TEXTBOTTOM
         }

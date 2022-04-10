@@ -22,11 +22,11 @@ data class NeuralLinkPluginSettings(
                     StatusTag("completed", "Completed")
                 ),
                 mapOf(
-                    "personal" to "2196F3",
-                    "home" to "AB47BC",
-                    "family" to "66BB6A",
-                    "marriage" to "66BB6A",
-                    "work" to "FFA726"
+                    "personal" to "13088C",
+                    "home" to "460A60",
+                    "family" to "8E791C",
+                    "marriage" to "196515",
+                    "work" to "D34807"
                 )
             )
         }

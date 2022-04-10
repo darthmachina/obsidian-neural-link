@@ -53,7 +53,8 @@ class KanbanCardPanel(
                 }
 
                 if (filteredTags.isNotEmpty()) {
-                    div {
+                    hPanel(spacing = 5) {
+                        flexWrap = FlexWrap.WRAP
                         addCssStyle(KanbanStyles.KANBAN_TAG_LIST)
                         filteredTags.forEach { tag ->
                             span {
