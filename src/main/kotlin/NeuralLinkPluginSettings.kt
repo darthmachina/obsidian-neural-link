@@ -5,21 +5,46 @@ import model.StatusTag
 @JsExport
 @Serializable
 data class NeuralLinkPluginSettings(
+    val version: String,
     val taskRemoveRegex: String,
     val columnTags: List<StatusTag>,
-    val version: Int = 2
+    val tagColors: Map<String,String>
 ) {
     companion object {
         fun default(): NeuralLinkPluginSettings {
             return NeuralLinkPluginSettings(
+                "3",
                 """#kanban/[\w-]+(\s|$)""",
                 listOf(
                     StatusTag("backlog", "Backlog"),
                     StatusTag("scheduled", "Scheduled", true),
                     StatusTag("inprogress", "In Progress"),
                     StatusTag("completed", "Completed")
+                ),
+                mapOf(
+                    "personal" to "13088C",
+                    "home" to "460A60",
+                    "family" to "8E791C",
+                    "marriage" to "196515",
+                    "work" to "D34807"
                 )
             )
         }
     }
 }
+
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+@Serializable
+data class NeuralLinkPluginSettings2(
+    val version: String,
+    val taskRemoveRegex: String,
+    val columnTags: List<StatusTag>
+)
+
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+@Serializable
+data class SettingsVersion(
+    val version: String
+)

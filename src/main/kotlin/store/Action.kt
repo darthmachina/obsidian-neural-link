@@ -21,5 +21,6 @@ data class UpdateSettings(
     val plugin: Plugin,
     val settingsService: SettingsService,
     var taskRemoveRegex: String? = null,
-    var columnTags: List<StatusTag>? = null
+    var columnTags: List<StatusTag>? = null,
+    var tagColors: Map<String,String>? = null
 ) : Action

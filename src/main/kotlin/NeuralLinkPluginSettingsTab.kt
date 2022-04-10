@@ -23,6 +23,7 @@ class NeuralLinkPluginSettingsTab(
         containerEl.append.h2 { +"Neural Link Settings." }
         createTaskTextRemovalRegexSetting(containerEl)
         createColumnListSetting(containerEl)
+        createTagColorListSetting(containerEl)
     }
 
     private fun createTaskTextRemovalRegexSetting(containerEl: HTMLElement): Setting {
@@ -64,6 +65,31 @@ class NeuralLinkPluginSettingsTab(
                             ))
                         }
                         store.dispatch(UpdateSettings(plugin, settingsService, columnTags = statusList))
+                    }
+            }
+    }
+
+    private fun createTagColorListSetting(containerEl: HTMLElement): Setting {
+        console.log("createTagColorListSetting()")
+        return Setting(containerEl)
+            .setName("Tag Colors")
+            .setDesc("List of colors to use for certain tags")
+            .addTextArea { text ->
+                val tagColors = store.state.settings.tagColors
+                console.log(" - current tagColors", tagColors)
+                val stringList = tagColors.map { entry -> "${entry.key}:${entry.value}" }
+                console.log(" - stringList", stringList)
+                val textVersion = stringList.joinToString("\n")
+                console.log(" - textVersion", textVersion)
+                text.setPlaceholder("'tag:hex_color' separated by newlines")
+                    .setValue(textVersion)
+                    .onChange { value ->
+                        val tagColors = mutableMapOf<String,String>()
+                        value.split("\n").forEach { tagColor ->
+                            val singleValues = tagColor.split(":")
+                            tagColors[singleValues[0]] = singleValues[1]
+                        }
+                        store.dispatch(UpdateSettings(plugin, settingsService, tagColors = tagColors))
                     }
             }
     }

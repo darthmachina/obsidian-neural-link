@@ -53,11 +53,15 @@ class KanbanCardPanel(
                 }
 
                 if (filteredTags.isNotEmpty()) {
-                    div {
+                    hPanel(spacing = 5) {
+                        flexWrap = FlexWrap.WRAP
                         addCssStyle(KanbanStyles.KANBAN_TAG_LIST)
                         filteredTags.forEach { tag ->
                             span {
                                 addCssStyle(KanbanStyles.KANBAN_TAG)
+                                if (tag in store.state.settings.tagColors.keys) {
+                                    background = Background(color = Color("#" + store.state.settings.tagColors[tag]!!))
+                                }
                                 +"#$tag"
                             }
                         }
