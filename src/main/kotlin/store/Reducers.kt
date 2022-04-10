@@ -1,10 +1,7 @@
 package store
 
 import kotlinx.datetime.LocalDate
-import model.StatusTag
-import model.Task
-import model.TaskConstants
-import model.TaskModel
+import model.*
 import org.reduxkotlin.Reducer
 import service.RepeatingTaskService
 
@@ -44,7 +41,10 @@ class Reducers {
             store.copy(
                 settings = newSettings,
                 tasks = clonedTaskList,
-                kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, newSettings.columnTags)
+                kanbanColumns = ReducerUtils.createKanbanMap(
+                    ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                    newSettings.columnTags
+                )
             )
         } else {
             store.copy(
@@ -58,7 +58,13 @@ class Reducers {
      */
     fun copyAndPopulateKanban(store: TaskModel, tasks: List<Task>): TaskModel {
         console.log("Reducers.copyAndPopulateKanban()")
-        return store.copy(tasks = tasks, kanbanColumns = ReducerUtils.createKanbanMap(tasks, store.settings.columnTags))
+        return store.copy(
+            tasks = tasks,
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(tasks, store.filterType, store.filterValue),
+                store.settings.columnTags
+            )
+        )
     }
 
     fun moveCard(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
@@ -74,7 +80,13 @@ class Reducers {
             ReducerUtils.updateTaskOrder(movedTask, ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId))
             movedTask.tags.add(newStatus)
         }
-        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
+        return store.copy(
+            tasks = clonedTaskList,
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                store.settings.columnTags
+            )
+        )
     }
 
     fun taskCompleted(store: TaskModel, taskId: String, repeatingTaskService: RepeatingTaskService): TaskModel {
@@ -87,7 +99,13 @@ class Reducers {
             return store
         }
         ReducerUtils.completeTask(task, store.settings.columnTags, repeatingTaskService)
-        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
+        return store.copy(
+            tasks = clonedTaskList,
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                store.settings.columnTags
+            )
+        )
     }
 
     fun markSubtaskCompletion(store: TaskModel, taskId: String, subtaskId: String, complete: Boolean): TaskModel {
@@ -107,7 +125,13 @@ class Reducers {
 
         ReducerUtils.setModifiedIfNeeded(task)
         subtask.completed = complete
-        return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
+        return store.copy(
+            tasks = clonedTaskList,
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                store.settings.columnTags
+            )
+        )
     }
 
     fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
@@ -122,7 +146,13 @@ class Reducers {
                 .filter { it.file != file }
                 .plus(fileTasks)
 
-            return store.copy(tasks = clonedTaskList, kanbanColumns = ReducerUtils.createKanbanMap(clonedTaskList, store.settings.columnTags))
+            return store.copy(
+                tasks = clonedTaskList,
+                kanbanColumns = ReducerUtils.createKanbanMap(
+                    ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                    store.settings.columnTags
+                )
+            )
         }
 
         return store
@@ -132,27 +162,42 @@ class Reducers {
      * Filters the task list according to the given tag; a null tag means there should be no filter.
      */
     fun filterByTag(store: TaskModel, tag: String?) : TaskModel {
-        return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
-            if (tag == null) store.tasks else store.tasks.filter { task -> task.tags.contains(tag) },
-            store.settings.columnTags
-        ))
+        val filterType = if (tag == null) FilterType.NONE else FilterType.TAG
+        val filterValue = tag ?: ""
+        return store.copy(
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
+                store.settings.columnTags
+            ),
+            filterType = filterType,
+            filterValue = filterValue
+        )
     }
 
     fun filterByFile(store: TaskModel, file: String?) : TaskModel {
-        return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
-            if (file == null) store.tasks else store.tasks.filter { task -> task.file == file },
-            store.settings.columnTags
-        ))
+        val filterType = if (file == null) FilterType.NONE else FilterType.FILE
+        val filterValue = file ?: ""
+        return store.copy(
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
+                store.settings.columnTags
+            ),
+            filterType = filterType,
+            filterValue = filterValue
+        )
     }
 
     fun filterByDataviewValue(store: TaskModel, value: String?) : TaskModel {
-        return store.copy(kanbanColumns = ReducerUtils.createKanbanMap(
-            if (value == null) store.tasks else store.tasks.filter { task ->
-                val dataview = value.split("::")
-                task.dataviewFields.containsKey(dataview[0]) && task.dataviewFields[dataview[0]] == dataview[1]
-            },
-            store.settings.columnTags
-        ))
+        val filterType = if (value == null) FilterType.NONE else FilterType.DATAVIEW
+        val filterValue = value ?: ""
+        return store.copy(
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
+                store.settings.columnTags
+            ),
+            filterType = filterType,
+            filterValue = filterValue
+        )
     }
 }
 
@@ -165,6 +210,18 @@ class ReducerUtils {
 
         private val taskDateComparator = compareBy<Task,LocalDate?>(nullsFirst()) {
             it.dueOn
+        }
+
+        fun filterTasks(tasks: List<Task>, filterType: FilterType, filterValue: String) : List<Task> {
+            return when (filterType) {
+                FilterType.NONE -> tasks
+                FilterType.TAG -> tasks.filter { task -> task.tags.contains(filterValue) }
+                FilterType.FILE -> tasks.filter { task -> task.file == filterValue }
+                FilterType.DATAVIEW -> tasks.filter { task ->
+                    val dataview = filterValue.split("::")
+                    task.dataviewFields.containsKey(dataview[0]) && task.dataviewFields[dataview[0]] == dataview[1]
+                }
+            }
         }
 
         /**
