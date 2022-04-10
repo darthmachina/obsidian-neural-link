@@ -11,5 +11,14 @@ import NeuralLinkPluginSettings
 data class TaskModel(
     val settings: NeuralLinkPluginSettings,
     val tasks: List<Task>,
-    val kanbanColumns: Map<StatusTag,List<Task>>
+    val kanbanColumns: Map<StatusTag,List<Task>>,
+    val filterType: FilterType,
+    val filterValue: String
 )
+
+enum class FilterType {
+    NONE,
+    TAG,
+    FILE,
+    DATAVIEW
+}
