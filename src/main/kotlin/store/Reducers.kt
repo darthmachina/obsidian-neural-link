@@ -80,6 +80,7 @@ class Reducers {
     fun taskCompleted(store: TaskModel, taskId: String, repeatingTaskService: RepeatingTaskService): TaskModel {
         console.log("Reducers.taskCompleted()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
+        console.log(" - store and cloned list", store, clonedTaskList)
         val task = clonedTaskList.find { task -> task.id == taskId }
         if (task == null) {
             console.log(" - ERROR: Task not found for id: $taskId")
@@ -92,6 +93,7 @@ class Reducers {
     fun markSubtaskCompletion(store: TaskModel, taskId: String, subtaskId: String, complete: Boolean): TaskModel {
         console.log("Reducers.subtaskCompleted()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
+        console.log(" - store and cloned list", store, clonedTaskList)
         val task = clonedTaskList.find { task -> task.id == taskId }
         if (task == null) {
             console.log(" - ERROR: Task not found for id: $taskId")
