@@ -150,9 +150,18 @@ class KanbanCardPanel(
         }
 
         // Source
-        div {
-            addCssStyle(KanbanStyles.KANBAN_SOURCE)
-            +task.file.dropLast(3)
+        hPanel {
+            div {
+                addCssStyle(KanbanStyles.KANBAN_BUTTONS)
+                button("S") {
+                    padding = 1.px
+                    size = ButtonSize.SMALL
+                }
+            }
+            div {
+                addCssStyle(KanbanStyles.KANBAN_SOURCE)
+                +task.file.dropLast(3)
+            }
         }
     }
 

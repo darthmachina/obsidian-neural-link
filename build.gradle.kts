@@ -31,6 +31,9 @@ dependencies {
     implementation("app.softwork:kotlinx-uuid-core:0.0.12")
 
     implementation("io.kvision:kvision:$kvisionVersion")
+    implementation("io.kvision:kvision-fontawesome:$kvisionVersion")
+    implementation("io.kvision:kvision-react:$kvisionVersion")
+    implementation(npm("sweetalert2", "11.4.8"))
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }

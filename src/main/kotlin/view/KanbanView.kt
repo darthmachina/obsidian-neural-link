@@ -37,7 +37,8 @@ class KanbanView(leaf: WorkspaceLeaf, val store: Store<TaskModel>, val repeating
         startApplication(
             ::KanbanApp,
             null,
-            CoreModule
+            CoreModule,
+            FontAwesomeModule
         )
         // Need a return
         return Promise { _: (Unit) -> Unit, _: (Throwable) -> Unit -> }
