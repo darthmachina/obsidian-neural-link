@@ -3,11 +3,9 @@ package view
 import io.kvision.core.*
 import io.kvision.form.check.checkBox
 import io.kvision.html.*
-import io.kvision.panel.GridPanel
 import io.kvision.panel.VPanel
 import io.kvision.panel.hPanel
 import io.kvision.panel.vPanel
-import io.kvision.utils.perc
 import io.kvision.utils.px
 import kotlinx.datetime.*
 import model.Note
@@ -156,6 +154,15 @@ class KanbanCardPanel(
                 button("S") {
                     padding = 1.px
                     size = ButtonSize.SMALL
+                }.onClick {
+                    Swal.fire(
+                        "Move Card",
+                        text = "What is the new status?",
+                        icon = "question",
+                        input = "select",
+                        inputOptions = mapOf("test" to "Test"),
+                        showCancelButton = true
+                    )
                 }
             }
             div {
