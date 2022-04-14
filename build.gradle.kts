@@ -13,8 +13,8 @@ repositories {
 
 dependencies {
     val kotlinVersion = "1.6.0"
-    val kotlinxHtmlVersion = "0.7.3"
-    val kvisionVersion = "5.8.2"
+    val kotlinxHtmlVersion = "0.7.5"
+    val kvisionVersion = "5.8.3"
 
     implementation(npm("obsidian", "0.12.17"))
 
@@ -33,7 +33,6 @@ dependencies {
     implementation("io.kvision:kvision:$kvisionVersion")
     implementation("io.kvision:kvision-fontawesome:$kvisionVersion")
     implementation("io.kvision:kvision-react:$kvisionVersion")
-    implementation(npm("sweetalert2", "11.4.8"))
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }
