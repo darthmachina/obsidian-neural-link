@@ -135,8 +135,13 @@ class KanbanStyles {
         val KANBAN_BUTTONS = Style(".nl-kanban-buttons") {
             fontSize = 11.px
             position = Position.ABSOLUTE
-            left = 1.px
+            left = 5.px
             bottom = (-2).px
+        }
+
+        val KANBAN_BUTTON = Style(".nl-kanban-button") {
+            padding = 1.px
+            marginRight = 4.px
         }
 
         val DRAG_OVER_CARD = Style(".nl-kanban-card-dragover") {

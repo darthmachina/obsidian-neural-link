@@ -42,11 +42,25 @@ class DialogStyles {
         val DIALOG_CONTENT = Style(".nl-dialog-content") {
             textAlign = TextAlign.LEFT
             paddingLeft = 20.px
+            paddingRight = 20.px
             width = 100.perc
+
+            style("select") {
+                width = 100.perc
+                height = 25.px
+                colorName = Col.WHITE
+            }
         }
 
         val DIALOG_CONFIRM = Style("nl-dialog-confirm") {
             height = 30.px
+            marginTop = 15.px
+
+            style("button") {
+                marginLeft = auto
+                marginRight = 20.px
+                marginBottom = 10.px
+            }
         }
 
         val DIALOG_CLOSE = Style(".nl-dialog-close") {

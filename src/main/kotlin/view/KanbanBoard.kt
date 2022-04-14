@@ -71,7 +71,7 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
                 boardCache.tasks[status] = storeTasks
                 columnsPanel.replaceCards(
                     status,
-                    boardCache.tasks[status]!!.map { createCard(it, status.tag) }
+                    boardCache.tasks[status]!!.map { createCard(it, status) }
                 )
             }
         }
@@ -79,7 +79,7 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
 
     private fun createColumn(name: StatusTag, cards: List<Task>): KanbanColumnPanel {
         console.log("KanbanBoard.createColumn(): ", name)
-        val column = KanbanColumnPanel(name, cards.map { createCard(it, name.tag) })
+        val column = KanbanColumnPanel(name, cards.map { createCard(it, name) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
                 store.dispatch(TaskMoved(cardId, column.status.tag, dragoverCardId))
@@ -89,7 +89,7 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
         return column
     }
 
-    private fun createCard(task: Task, status: String): KanbanCardPanel {
+    private fun createCard(task: Task, status: StatusTag): KanbanCardPanel {
         console.log("KanbanBoard.createCard(): ", task.description)
         val card = KanbanCardPanel(store, task, status, repeatingTaskService)
         card.id = task.id
