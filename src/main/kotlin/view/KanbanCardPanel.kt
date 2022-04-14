@@ -155,14 +155,7 @@ class KanbanCardPanel(
                     padding = 1.px
                     size = ButtonSize.SMALL
                 }.onClick {
-                    Swal.fire(
-                        "Move Card",
-                        text = "What is the new status?",
-                        icon = "question",
-                        input = "select",
-                        inputOptions = mapOf("test" to "Test"),
-                        showCancelButton = true
-                    )
+                    showDialog()
                 }
             }
             div {
@@ -170,6 +163,21 @@ class KanbanCardPanel(
                 +task.file.dropLast(3)
             }
         }
+    }
+
+    private fun showDialog() {
+        console.log("showDialog()")
+        val dialog = Dialog("Test Title", "Text")
+        dialog.setCallback { result ->
+            console.log("Dialog callback()", result)
+            if (result.accept) {
+                console.log(" - saving result")
+            }
+            dialog.hide()
+            remove(dialog)
+        }
+        add(dialog)
+        dialog.show(true)
     }
 
     /**
