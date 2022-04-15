@@ -152,13 +152,13 @@ class KanbanCardPanel(
         hPanel {
             div {
                 addCssStyle(KanbanStyles.KANBAN_BUTTONS)
-                button("S", icon = "fas fa-asterisk") {
+                button("", icon = "fas fa-arrows-left-right") {
                     addCssStyle(KanbanStyles.KANBAN_BUTTON)
                     size = ButtonSize.SMALL
                 }.onClick {
                     chooseNewStatus()
                 }
-                button("^") {
+                button("", icon = "fas fa-angles-up") {
                     addCssStyle(KanbanStyles.KANBAN_BUTTON)
                     size = ButtonSize.SMALL
                 }.onClick {
