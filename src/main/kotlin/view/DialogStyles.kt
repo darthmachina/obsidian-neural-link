@@ -7,7 +7,7 @@ import io.kvision.utils.px
 
 class DialogStyles {
     companion object {
-        val DIALOG = Style(".nl-modal") {
+        val DIALOG = Style(".nl-dialog") {
             display = Display.BLOCK
             position = Position.FIXED
             zIndex = 1
@@ -20,7 +20,7 @@ class DialogStyles {
             cursor = Cursor.DEFAULT
         }
 
-        val DIALOG_BOX = Style(".nl-modal-content") {
+        val DIALOG_BOX = Style(".nl-dialog-box") {
             background = Background(color = Color.name(Col.BLACK))
             colorName = Col.WHITE
             margin = auto
@@ -43,6 +43,7 @@ class DialogStyles {
             textAlign = TextAlign.LEFT
             paddingLeft = 20.px
             paddingRight = 20.px
+            marginBottom = 15.px
             width = 100.perc
 
             style("select") {
@@ -52,14 +53,13 @@ class DialogStyles {
             }
         }
 
-        val DIALOG_CONFIRM = Style("nl-dialog-confirm") {
+        val DIALOG_CONFIRM = Style(".nl-dialog-confirm") {
             height = 30.px
-            marginTop = 15.px
+            marginLeft = auto
+            marginRight = 5.px
+            marginBottom = 5.px
 
             style("button") {
-                marginLeft = auto
-                marginRight = 20.px
-                marginBottom = 10.px
             }
         }
 
