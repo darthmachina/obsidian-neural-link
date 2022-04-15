@@ -69,6 +69,10 @@ class KanbanCardPanel(
             checkBox(task.completed, label = task.description) {
                 inline = true
             }.onClick {
+                if (task.subtasks.filter { !it.completed }.isNotEmpty()) {
+                    // Incomplete subtasks exist, ask what to do
+
+                }
                 store.dispatch(TaskCompleted(task.id, repeatingTaskService))
             }
         }
@@ -168,7 +172,7 @@ class KanbanCardPanel(
     }
 
     private fun chooseNewStatus() {
-        console.log("showDialog()")
+        console.log("chooseNewStatus()")
         val statusSelect = DialogInput.SELECT.apply {
             model = store.state.settings.columnTags.map { it.tag to it.displayName }
             current = status.tag
@@ -186,6 +190,30 @@ class KanbanCardPanel(
             }
             dialog.hide()
             remove(dialog)
+        }
+        add(dialog)
+        dialog.show(true)
+    }
+
+    private fun askAboutIncompleteSubtasks() {
+        console.log("askAboutIncompleteSubtasks()")
+        val subtaskChoice = DialogInput.SELECT.apply {
+            model = listOf("nothing" to "Nothing", "complete" to "Complete", "delete" to "Delete")
+            current = "nothing"
+        }
+        val dialog = Dialog(
+            "Incomplete Subtasks",
+            "What should be done with the incomplete subtasks?",
+            input = subtaskChoice
+        )
+        dialog.setCallback { result ->
+            if (result.accept) {
+                when(result.result) {
+                    "nothing" -> console.log("nothing")
+                    "complete" -> console.log("complete")
+                    "delete" -> console.log("delete")
+                }
+            }
         }
         add(dialog)
         dialog.show(true)
