@@ -1,6 +1,8 @@
 package view
 
 import io.kvision.core.*
+import io.kvision.form.check.checkBox
+import io.kvision.form.check.checkBoxInput
 import io.kvision.form.select.SimpleSelect
 import io.kvision.form.select.SimpleSelectInput
 import io.kvision.form.select.simpleSelect
@@ -15,6 +17,7 @@ import org.reduxkotlin.Store
 import store.FilterByDataviewValue
 import store.FilterByFile
 import store.FilterByTag
+import store.FilterFutureDate
 
 class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify = JustifyContent.END) {
     private var filtering = false
@@ -25,6 +28,14 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
     init {
         addCssStyle(KanbanStyles.KANBAN_HEADER)
         div { +"Filters" }
+        div {
+            checkBox(label = "!Future") {
+                inline = true
+                minWidth = 60.px
+            }.onClick {
+                store.dispatch(FilterFutureDate(this.value))
+            }
+        }
         div { +"Tag: " }
         tagSelect = simpleSelectInput(getAllTags(), emptyOption = true) {
             addCssStyle(KanbanStyles.SELECT_INPUT)

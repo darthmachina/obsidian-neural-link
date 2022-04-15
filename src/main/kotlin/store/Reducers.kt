@@ -1,6 +1,9 @@
 package store
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import model.*
 import org.reduxkotlin.Reducer
 import service.RepeatingTaskService
@@ -19,6 +22,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is FilterByTag -> reducerFunctions.filterByTag(store, action.tag)
         is FilterByFile -> reducerFunctions.filterByFile(store, action.file)
         is FilterByDataviewValue -> reducerFunctions.filterByDataviewValue(store, action.value)
+        is FilterFutureDate -> reducerFunctions.filterFutureDate(store, action.filter)
         is UpdateSettings -> reducerFunctions.updateSettings(store, action)
         else -> store
     }
@@ -229,6 +233,17 @@ class Reducers {
             filterValue = filterValue
         )
     }
+
+    fun filterFutureDate(store: TaskModel, filter: Boolean) : TaskModel {
+        return store.copy(
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(store.tasks, FilterType.CURRENT_DATE, filter.toString()),
+                store.settings.columnTags
+            ),
+            filterType = FilterType.CURRENT_DATE,
+            filterValue = filter.toString()
+        )
+    }
 }
 
 class ReducerUtils {
@@ -250,6 +265,18 @@ class ReducerUtils {
                 FilterType.DATAVIEW -> tasks.filter { task ->
                     val dataview = filterValue.split("::")
                     task.dataviewFields.containsKey(dataview[0]) && task.dataviewFields[dataview[0]] == dataview[1]
+                }
+                FilterType.CURRENT_DATE -> {
+                    val currentDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) // TODO Is TimeZone here going to affect anything?
+                    val currentDate = LocalDate(currentDateTime.year, currentDateTime.month, currentDateTime.dayOfMonth)
+                    console.log("Filtering using $currentDate")
+                    tasks.filter {
+                        if (filterValue.toBoolean()) {
+                            if (it.dueOn == null) true else it.dueOn!! <= currentDate
+                        } else {
+                            true
+                        }
+                    }
                 }
             }
         }

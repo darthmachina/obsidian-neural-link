@@ -20,5 +20,6 @@ enum class FilterType {
     NONE,
     TAG,
     FILE,
-    DATAVIEW
+    DATAVIEW,
+    CURRENT_DATE
 }
