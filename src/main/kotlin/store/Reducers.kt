@@ -11,6 +11,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
         is VaultLoaded -> reducerFunctions.copyAndPopulateKanban(store, action.tasks)
         is TaskMoved -> reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask)
+        is MoveToTop -> reducerFunctions.moveToTop(store, action.taskd)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.repeatingTaskService)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
@@ -80,6 +81,30 @@ class Reducers {
             ReducerUtils.updateTaskOrder(movedTask, ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId))
             movedTask.tags.add(newStatus)
         }
+        return store.copy(
+            tasks = clonedTaskList,
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                store.settings.columnTags
+            )
+        )
+    }
+
+    fun moveToTop(store: TaskModel, taskId: String) : TaskModel {
+        val clonedTaskList = store.tasks.map { it.deepCopy() }
+        val movedTask = clonedTaskList.find { it.id == taskId }
+        if (movedTask == null) {
+            console.log(" - ERROR: Did not find task for id: $taskId")
+            return store
+        }
+
+        val newPosition = clonedTaskList
+            .filter { task -> task.tags.contains(ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)?.tag) }
+            .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
+            .first()
+            .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() / 2
+        ReducerUtils.setModifiedIfNeeded(movedTask)
+        movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = newPosition.toString()
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(

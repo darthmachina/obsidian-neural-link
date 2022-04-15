@@ -9,7 +9,8 @@ import service.SettingsService
 interface Action
 
 data class VaultLoaded(val tasks: List<Task>) : Action
-data class TaskMoved(val taskId: String, val newStatus: String, val beforeTask: String?) : Action
+data class TaskMoved(val taskId: String, val newStatus: String, val beforeTask: String? = null) : Action
+data class MoveToTop(val taskd: String) : Action
 data class ModifyFileTasks(val file: String, val fileTasks: List<Task>, val repeatingTaskService: RepeatingTaskService) : Action
 data class TaskCompleted(val taskId: String, val repeatingTaskService: RepeatingTaskService) : Action
 data class SubtaskCompleted(val taskId: String, val subtaskId: String, val complete: Boolean) : Action

@@ -3,26 +3,20 @@ package view
 import io.kvision.core.*
 import io.kvision.form.check.checkBox
 import io.kvision.html.*
-import io.kvision.panel.GridPanel
 import io.kvision.panel.VPanel
 import io.kvision.panel.hPanel
 import io.kvision.panel.vPanel
-import io.kvision.utils.perc
 import io.kvision.utils.px
 import kotlinx.datetime.*
-import model.Note
-import model.Task
-import model.TaskConstants
-import model.TaskModel
+import model.*
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
-import store.SubtaskCompleted
-import store.TaskCompleted
+import store.*
 
 class KanbanCardPanel(
     val store: Store<TaskModel>,
     val task: Task,
-    private val status: String,
+    private val status: StatusTag,
     private val repeatingTaskService: RepeatingTaskService
 ): VPanel(spacing = 5) {
     init {
@@ -30,7 +24,7 @@ class KanbanCardPanel(
         // Description
         // Tags & Due
         val filteredTags = task.tags
-            .filter { tag -> tag != status }
+            .filter { tag -> tag != status.tag }
             .plus(task.subtasks.flatMap { subtask -> subtask.tags })
             .distinct()
         if (filteredTags.isNotEmpty() || task.dueOn != null) {
@@ -150,10 +144,51 @@ class KanbanCardPanel(
         }
 
         // Source
-        div {
-            addCssStyle(KanbanStyles.KANBAN_SOURCE)
-            +task.file.dropLast(3)
+        hPanel {
+            div {
+                addCssStyle(KanbanStyles.KANBAN_BUTTONS)
+                button("S") {
+                    addCssStyle(KanbanStyles.KANBAN_BUTTON)
+                    size = ButtonSize.SMALL
+                }.onClick {
+                    chooseNewStatus()
+                }
+                button("^") {
+                    addCssStyle(KanbanStyles.KANBAN_BUTTON)
+                    size = ButtonSize.SMALL
+                }.onClick {
+                    store.dispatch(MoveToTop(task.id))
+                }
+            }
+            div {
+                addCssStyle(KanbanStyles.KANBAN_SOURCE)
+                +task.file.dropLast(3)
+            }
         }
+    }
+
+    private fun chooseNewStatus() {
+        console.log("showDialog()")
+        val statusSelect = DialogInput.SELECT.apply {
+            model = store.state.settings.columnTags.map { it.tag to it.displayName }
+            current = status.tag
+        }
+        val dialog = Dialog(
+            "Change Status",
+            "Choose the new status for this card",
+            input = statusSelect
+        )
+        dialog.setCallback { result ->
+            console.log("Dialog callback()", result)
+            if (result.accept && (result.result as String) != status.tag) {
+                console.log(" - saving result: ", result.result)
+                store.dispatch(TaskMoved(task.id, result.result))
+            }
+            dialog.hide()
+            remove(dialog)
+        }
+        add(dialog)
+        dialog.show(true)
     }
 
     /**
