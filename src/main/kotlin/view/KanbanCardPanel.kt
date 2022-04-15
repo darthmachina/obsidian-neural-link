@@ -69,11 +69,12 @@ class KanbanCardPanel(
             checkBox(task.completed, label = task.description) {
                 inline = true
             }.onClick {
-                if (task.subtasks.filter { !it.completed }.isNotEmpty()) {
-                    // Incomplete subtasks exist, ask what to do
-
+                if (task.subtasks.any { !it.completed }) {
+                    // Incomplete subtasks exist, ask what to do. Dialog completes the task is requested.
+                    askAboutIncompleteSubtasks(task)
+                } else {
+                    store.dispatch(TaskCompleted(task.id, repeatingTaskService))
                 }
-                store.dispatch(TaskCompleted(task.id, repeatingTaskService))
             }
         }
 
@@ -195,25 +196,34 @@ class KanbanCardPanel(
         dialog.show(true)
     }
 
-    private fun askAboutIncompleteSubtasks() {
+    private fun askAboutIncompleteSubtasks(task: Task) {
         console.log("askAboutIncompleteSubtasks()")
-        val subtaskChoice = DialogInput.SELECT.apply {
-            model = listOf("nothing" to "Nothing", "complete" to "Complete", "delete" to "Delete")
+        val subtaskChoices = DialogInput.SELECT.apply {
+            model = listOf(
+                "nothing" to "Do nothing",
+                "complete" to "Complete them all",
+                "delete" to "Delete incomplete subtasks"
+            )
             current = "nothing"
         }
         val dialog = Dialog(
             "Incomplete Subtasks",
             "What should be done with the incomplete subtasks?",
-            input = subtaskChoice
+            input = subtaskChoices
         )
         dialog.setCallback { result ->
+//            store.dispatch(TaskCompleted(task.id, repeatingTaskService))
             if (result.accept) {
-                when(result.result) {
-                    "nothing" -> console.log("nothing")
-                    "complete" -> console.log("complete")
-                    "delete" -> console.log("delete")
+                val subtaskChoice = when(result.result) {
+                    "nothing" -> IncompleteSubtaskChoice.NOTHING
+                    "complete" -> IncompleteSubtaskChoice.COMPLETE
+                    "delete" -> IncompleteSubtaskChoice.DELETE
+                    else -> throw IllegalStateException("Subtask Choice result is not handled: ${result.result}")
                 }
+                store.dispatch(TaskCompleted(task.id, repeatingTaskService, subtaskChoice))
             }
+            dialog.hide()
+            remove(dialog)
         }
         add(dialog)
         dialog.show(true)

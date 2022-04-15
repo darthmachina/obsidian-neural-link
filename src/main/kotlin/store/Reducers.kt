@@ -13,7 +13,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is TaskMoved -> reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask)
         is MoveToTop -> reducerFunctions.moveToTop(store, action.taskd)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
-        is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.repeatingTaskService)
+        is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.subtaskChoice, action.repeatingTaskService)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
         is RepeatTask -> store
         is FilterByTag -> reducerFunctions.filterByTag(store, action.tag)
@@ -114,7 +114,12 @@ class Reducers {
         )
     }
 
-    fun taskCompleted(store: TaskModel, taskId: String, repeatingTaskService: RepeatingTaskService): TaskModel {
+    fun taskCompleted(
+        store: TaskModel,
+        taskId: String,
+        subtaskChoice: IncompleteSubtaskChoice,
+        repeatingTaskService: RepeatingTaskService
+    ): TaskModel {
         console.log("Reducers.taskCompleted()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         console.log(" - store and cloned list", store, clonedTaskList)
@@ -123,7 +128,7 @@ class Reducers {
             console.log(" - ERROR: Task not found for id: $taskId")
             return store
         }
-        ReducerUtils.completeTask(task, store.settings.columnTags, repeatingTaskService)
+        ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags, repeatingTaskService)
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
@@ -361,14 +366,15 @@ class ReducerUtils {
             console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
 
             // Check for completed tasks with either a status tag or a repeat field (might have been completed outside the app)
-            // remove the status tag and check for any tasks that need repeating
+            // remove the status tag and check for any tasks that need repeating. Do nothing with subtasks as we are outside
+            // the app.
             tasks
                 .filter { task ->
                     task.completed &&
                             (getStatusTagFromTask(task, store.settings.columnTags) != null
                                     || task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY))
                 }
-                .forEach { task -> completeTask(task, store.settings.columnTags, repeatingTaskService) }
+                .forEach { task -> completeTask(task, IncompleteSubtaskChoice.NOTHING, store.settings.columnTags, repeatingTaskService) }
 
             // Check for tasks with no position
             tasks
@@ -386,10 +392,21 @@ class ReducerUtils {
                 }
         }
 
-        fun completeTask(task: Task, columns: Collection<StatusTag>, repeatingTaskService: RepeatingTaskService) {
+        fun completeTask(
+            task: Task,
+            subtaskChoice: IncompleteSubtaskChoice,
+            columns: Collection<StatusTag>,
+            repeatingTaskService: RepeatingTaskService
+        ) {
             setModifiedIfNeeded(task)
             repeatTask(task, repeatingTaskService)
             task.completed = true
+
+            if (subtaskChoice == IncompleteSubtaskChoice.DELETE) {
+                task.subtasks.removeAll { !it.completed }
+            } else if (subtaskChoice == IncompleteSubtaskChoice.COMPLETE) {
+                task.subtasks.filter { !it.completed }.forEach { subtask -> subtask.completed = true }
+            }
             task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
             task.tags.removeAll { tag -> tag in columns.map { it.tag } }
         }
