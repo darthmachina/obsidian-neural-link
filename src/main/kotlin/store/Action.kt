@@ -28,6 +28,7 @@ data class RepeatTask(val taskId: String, val repeatingTaskService: RepeatingTas
 data class FilterByTag(val tag: String?) : Action
 data class FilterByFile(val file: String?) : Action
 data class FilterByDataviewValue(val value: String?) : Action
+data class FilterFutureDate(val filter: Boolean) : Action
 data class UpdateSettings(
     val plugin: Plugin,
     val settingsService: SettingsService,
