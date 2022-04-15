@@ -148,11 +148,11 @@ class KanbanCardPanel(
             }
         }
 
-        // Source
+        // Source & Buttons
         hPanel {
             div {
                 addCssStyle(KanbanStyles.KANBAN_BUTTONS)
-                button("S") {
+                button("S", icon = "fas fa-asterisk") {
                     addCssStyle(KanbanStyles.KANBAN_BUTTON)
                     size = ButtonSize.SMALL
                 }.onClick {
