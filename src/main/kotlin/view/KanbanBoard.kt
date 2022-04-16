@@ -1,7 +1,7 @@
 package view
 
+import WorkspaceLeaf
 import io.kvision.html.Div
-import io.kvision.panel.DockPanel
 import io.kvision.panel.VPanel
 import model.StatusTag
 import model.Task
@@ -10,7 +10,11 @@ import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import store.TaskMoved
 
-class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService: RepeatingTaskService): VPanel() {
+class KanbanBoard(
+    val leaf: WorkspaceLeaf,
+    val store: Store<TaskModel>,
+    private val repeatingTaskService: RepeatingTaskService
+): VPanel() {
     companion object {
         const val CARD_MIME_TYPE = "text/x-card"
     }
@@ -27,7 +31,7 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
         add(columnsPanel)
         // If the columns are different update the board
         if (boardCache.columns != store.state.settings.columnTags) {
-            updateCacheColumns(store.state.settings.columnTags)
+            updateCacheColumns(store.state.settings.columnTags, leaf)
         }
         store.subscribe(::storeChanged)
     }
@@ -36,7 +40,7 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
         console.log("KanbanBoard.storeChanged()")
         if (boardCache.columns != store.state.settings.columnTags) {
             // Columns have been updated, redraw the whole board
-            updateCacheColumns(store.state.settings.columnTags)
+            updateCacheColumns(store.state.settings.columnTags, leaf)
         } else {
             // If columns match, just check task list
             // Check each column for whether the cache matches the store
@@ -47,7 +51,7 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
         }
     }
 
-    private fun updateCacheColumns(columns: List<StatusTag>) {
+    private fun updateCacheColumns(columns: List<StatusTag>, leaf: WorkspaceLeaf) {
         console.log("KanbanBoard.updateCacheColumns(): ", columns)
         boardCache.columns = columns
         boardCache.tasks.clear()
@@ -56,7 +60,7 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
         columnsPanel.removeAll()
         boardCache.columns.forEach { statusTag ->
 //            console.log(" - creating column", statusTag)
-            columnsPanel.addColumn(statusTag, createColumn(statusTag, boardCache.tasks[statusTag]!!))
+            columnsPanel.addColumn(statusTag, createColumn(statusTag, boardCache.tasks[statusTag]!!, leaf))
         }
     }
 
@@ -71,15 +75,15 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
                 boardCache.tasks[status] = storeTasks
                 columnsPanel.replaceCards(
                     status,
-                    boardCache.tasks[status]!!.map { createCard(it, status) }
+                    boardCache.tasks[status]!!.map { createCard(it, status, leaf) }
                 )
             }
         }
     }
 
-    private fun createColumn(name: StatusTag, cards: List<Task>): KanbanColumnPanel {
+    private fun createColumn(name: StatusTag, cards: List<Task>, leaf: WorkspaceLeaf): KanbanColumnPanel {
         console.log("KanbanBoard.createColumn(): ", name)
-        val column = KanbanColumnPanel(name, cards.map { createCard(it, name) })
+        val column = KanbanColumnPanel(name, cards.map { createCard(it, name, leaf) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
                 store.dispatch(TaskMoved(cardId, column.status.tag, dragoverCardId))
@@ -89,9 +93,9 @@ class KanbanBoard(val store: Store<TaskModel>, private val repeatingTaskService:
         return column
     }
 
-    private fun createCard(task: Task, status: StatusTag): KanbanCardPanel {
+    private fun createCard(task: Task, status: StatusTag, leaf: WorkspaceLeaf): KanbanCardPanel {
         console.log("KanbanBoard.createCard(): ", task.description)
-        val card = KanbanCardPanel(store, task, status, repeatingTaskService)
+        val card = KanbanCardPanel(leaf, store, task, status, repeatingTaskService)
         card.id = task.id
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)
         card.setEventListener<Div> {

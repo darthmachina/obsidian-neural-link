@@ -1,8 +1,12 @@
 package view
 
+import MarkdownView
+import View
+import WorkspaceLeaf
 import io.kvision.core.*
 import io.kvision.form.check.checkBox
 import io.kvision.html.*
+import io.kvision.panel.HPanel
 import io.kvision.panel.VPanel
 import io.kvision.panel.hPanel
 import io.kvision.panel.vPanel
@@ -14,6 +18,7 @@ import service.RepeatingTaskService
 import store.*
 
 class KanbanCardPanel(
+    leaf: WorkspaceLeaf,
     val store: Store<TaskModel>,
     val task: Task,
     private val status: StatusTag,
@@ -28,40 +33,7 @@ class KanbanCardPanel(
             .plus(task.subtasks.flatMap { subtask -> subtask.tags })
             .distinct()
         if (filteredTags.isNotEmpty() || task.dueOn != null) {
-            hPanel {
-                addCssStyle(KanbanStyles.KANBAN_TAGS_DUE_PANEL)
-                if (task.dueOn != null) {
-                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                    val todayDate = LocalDate(today.year, today.monthNumber, today.dayOfMonth)
-                    div {
-                        addCssStyle(KanbanStyles.KANBAN_DUE)
-                        if (task.dueOn!! < todayDate) {
-                            background = Background(color = Color.name(Col.DARKRED))
-                        } else if (task.dueOn!! == todayDate) {
-                            background = Background(color = Color.name(Col.DARKGREEN))
-                        } else if (task.dueOn!!.until(todayDate, DateTimeUnit.DAY) == -1) {
-                            background = Background(color = Color.name(Col.DARKBLUE))
-                        }
-                        +task.dueOn.toString()
-                    }
-                }
-
-                if (filteredTags.isNotEmpty()) {
-                    hPanel(spacing = 5) {
-                        flexWrap = FlexWrap.WRAP
-                        addCssStyle(KanbanStyles.KANBAN_TAG_LIST)
-                        filteredTags.forEach { tag ->
-                            span {
-                                addCssStyle(KanbanStyles.KANBAN_TAG)
-                                if (tag in store.state.settings.tagColors.keys) {
-                                    background = Background(color = Color("#" + store.state.settings.tagColors[tag]!!))
-                                }
-                                +"#$tag"
-                            }
-                        }
-                    }
-                }
-            }
+            add(createTagsAndDuePanel(filteredTags))
         }
 
         div {
@@ -80,18 +52,7 @@ class KanbanCardPanel(
 
         // Subtasks
         if (task.subtasks.isNotEmpty()) {
-            vPanel {
-                addCssStyle(KanbanStyles.KANBAN_SUBTASKS)
-                task.subtasks.forEach { subtask ->
-                    div {
-                        checkBox(subtask.completed, label = subtask.description) {
-                            inline = true
-                        }.onClick {
-                            store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))
-                        }
-                    }
-                }
-            }
+            add(createSubtaskPanel())
         }
 
         // Notes
@@ -131,25 +92,84 @@ class KanbanCardPanel(
         // Dataview Fields
         val filteredDataviewFields = task.dataviewFields.filter { entry -> entry.key != TaskConstants.TASK_ORDER_PROPERTY }
         if (filteredDataviewFields.isNotEmpty()) {
-            table {
-                addCssStyle(KanbanStyles.KANBAN_DATAVIEW_TABLE)
-                filteredDataviewFields.forEach { entry ->
-                    tr {
-                        td {
-                            addCssStyle(KanbanStyles.KANBAN_DATAVIEW_LABEL)
-                            +entry.key
-                        }
-                        td {
-                            addCssStyle(KanbanStyles.KANBAN_DATAVIEW_VALUE)
-                            +entry.value
+            add(createDataviewPanel(filteredDataviewFields))
+        }
+
+        // Source & Buttons
+        add(createFooterPanel(leaf))
+    }
+
+    private fun createTagsAndDuePanel(filteredTags: List<String>) : HPanel {
+        return hPanel {
+            addCssStyle(KanbanStyles.KANBAN_TAGS_DUE_PANEL)
+            if (task.dueOn != null) {
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                val todayDate = LocalDate(today.year, today.monthNumber, today.dayOfMonth)
+                div {
+                    addCssStyle(KanbanStyles.KANBAN_DUE)
+                    if (task.dueOn!! < todayDate) {
+                        background = Background(color = Color.name(Col.DARKRED))
+                    } else if (task.dueOn!! == todayDate) {
+                        background = Background(color = Color.name(Col.DARKGREEN))
+                    } else if (task.dueOn!!.until(todayDate, DateTimeUnit.DAY) == -1) {
+                        background = Background(color = Color.name(Col.DARKBLUE))
+                    }
+                    +task.dueOn.toString()
+                }
+            }
+
+            if (filteredTags.isNotEmpty()) {
+                hPanel(spacing = 5) {
+                    flexWrap = FlexWrap.WRAP
+                    addCssStyle(KanbanStyles.KANBAN_TAG_LIST)
+                    filteredTags.forEach { tag ->
+                        span {
+                            addCssStyle(KanbanStyles.KANBAN_TAG)
+                            if (tag in store.state.settings.tagColors.keys) {
+                                background = Background(color = Color("#" + store.state.settings.tagColors[tag]!!))
+                            }
+                            +"#$tag"
                         }
                     }
                 }
             }
         }
+    }
+    private fun createSubtaskPanel() : VPanel {
+        return vPanel {
+            addCssStyle(KanbanStyles.KANBAN_SUBTASKS)
+            task.subtasks.forEach { subtask ->
+                div {
+                    checkBox(subtask.completed, label = subtask.description) {
+                        inline = true
+                    }.onClick {
+                        store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))
+                    }
+                }
+            }
+        }
+    }
 
-        // Source & Buttons
-        hPanel {
+    private fun createDataviewPanel(filteredDataviewFields: Map<String,String>) : Table {
+        return table {
+            addCssStyle(KanbanStyles.KANBAN_DATAVIEW_TABLE)
+            filteredDataviewFields.forEach { entry ->
+                tr {
+                    td {
+                        addCssStyle(KanbanStyles.KANBAN_DATAVIEW_LABEL)
+                        +entry.key
+                    }
+                    td {
+                        addCssStyle(KanbanStyles.KANBAN_DATAVIEW_VALUE)
+                        +entry.value
+                    }
+                }
+            }
+        }
+    }
+
+    private fun createFooterPanel(leaf: WorkspaceLeaf) : HPanel {
+        return hPanel {
             div {
                 addCssStyle(KanbanStyles.KANBAN_BUTTONS)
                 button("", icon = "fas fa-arrows-left-right") {
@@ -167,7 +187,16 @@ class KanbanCardPanel(
             }
             div {
                 addCssStyle(KanbanStyles.KANBAN_SOURCE)
-                +task.file.dropLast(3)
+                button(text = task.file.dropLast(3)) {
+                    size = ButtonSize.SMALL
+                    padding = 1.px
+                    paddingBottom = 0.px
+                    marginBottom = 4.px
+                    marginRight = (-3).px
+                }.onClick {
+                    console.log("going to source file")
+                    openSourceFile(task, leaf)
+                }
             }
         }
     }
@@ -229,22 +258,28 @@ class KanbanCardPanel(
         dialog.show(true)
     }
 
-    /**
-     * Recursive function that will output an unordered list of notes with all subnotes in a hierarchy. Recursion stops
-     * when the subnotes list is empty.
-     */
-    private fun outputNotes(notes: List<Note>) {
-        ul {
-            addCssStyle(KanbanStyles.KANBAN_NOTES)
-            notes.forEach { note ->
-                li {
-                    +note.note
+    private fun openSourceFile(task: Task, leaf: WorkspaceLeaf) {
+        console.log("openSourceFile()")
+        val filePath = leaf.view.app.metadataCache.getFirstLinkpathDest(task.file, "")
+        if (filePath == null) {
+            console.log(" - ERROR: file path not found: ${task.file}")
+            return
+        }
 
-                    if (note.subnotes.isNotEmpty()) {
-                        outputNotes(note.subnotes)
-                    }
-                }
+        val leavesWithFileAlreadyOpen = mutableListOf<WorkspaceLeaf>()
+        leaf.view.app.workspace.iterateAllLeaves { workspaceLeaf ->
+            if (workspaceLeaf.view is MarkdownView && (workspaceLeaf.view as MarkdownView).file.path == task.file) {
+                leavesWithFileAlreadyOpen.add(workspaceLeaf)
             }
+        }
+
+        if (leavesWithFileAlreadyOpen.isNotEmpty()) {
+            leaf.view.app.workspace.setActiveLeaf(leavesWithFileAlreadyOpen[0])
+            leavesWithFileAlreadyOpen[0].setEphemeralState(object { val line = task.filePosition - 1 })
+        } else {
+            val splitLeaf = leaf.view.app.workspace.splitActiveLeaf()
+            splitLeaf.openFile(filePath)
+            splitLeaf.setEphemeralState(object { val line = task.filePosition - 1 })
         }
     }
 }
