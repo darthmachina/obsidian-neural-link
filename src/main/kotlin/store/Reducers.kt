@@ -172,24 +172,18 @@ class Reducers {
         console.log("Reducers.modifyFileTasks()")
         ReducerUtils.runFileModifiedListeners(fileTasks, store, repeatingTaskService)
         // Only return a new state if any of the tasks were modified
-        console.log(" - checking to see if the store needs to be updated")
-        if (fileTasks.any { it.original != null } || ReducerUtils.changedTasks(file, fileTasks, store).isNotEmpty()) {
-            console.log(" - yes, updating store")
-            val clonedTaskList = store.tasks
-                .map { it.deepCopy() }
-                .filter { it.file != file }
-                .plus(fileTasks)
+        val clonedTaskList = store.tasks
+            .map { it.deepCopy() }
+            .filter { it.file != file }
+            .plus(fileTasks)
 
-            return store.copy(
-                tasks = clonedTaskList,
-                kanbanColumns = ReducerUtils.createKanbanMap(
-                    ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
-                    store.settings.columnTags
-                )
+        return store.copy(
+            tasks = clonedTaskList,
+            kanbanColumns = ReducerUtils.createKanbanMap(
+                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                store.settings.columnTags
             )
-        }
-
-        return store
+        )
     }
 
     /**
@@ -455,7 +449,7 @@ class ReducerUtils {
         }
 
         fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): StatusTag? {
-            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
+//            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
             val statusColumn = kanbanKeys.filter { statusTag -> task.tags.contains(statusTag.tag) }
             if (statusColumn.size > 1) {
                 console.log(" - WARN: More than one status column is on the task, using the first: ", statusColumn)
