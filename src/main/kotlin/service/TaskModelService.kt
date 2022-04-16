@@ -27,7 +27,7 @@ import store.VaultLoaded
  * in the Vault to build up the list of tasks and to process modified/created
  * files to incorporate those changes into the vault.
  */
-class TaskModelService {
+class TaskModelService(val store: Store<TaskModel>) {
     private val dueDateRegex = Regex("""@${TaskConstants.DUE_ON_PROPERTY}${TaskConstants.TASK_PAPER_DATE_FORMAT}""")
     private val completedDateRegex = Regex("""@${TaskConstants.COMPLETED_ON_PROPERTY}${TaskConstants.TASK_PAPER_DATE_FORMAT}""")
     @Suppress("RegExpRedundantEscape")
@@ -132,7 +132,17 @@ class TaskModelService {
 //            console.log(" - read file, processing")
             val fileContents = contents.split('\n')
             val fileListItems = metadataCache.getFileCache(file)?.listItems ?: arrayOf()
-            val tasksForFile = processFile(file.path, fileContents, fileListItems)
+            // Process the file and then filter according to these rules:
+            // - not completed
+            // - contains a repeat Dataview field
+            // - contains a status tag
+            // Rules for completed tasks are so they are processed by any modification listeners for tasks modified
+            // outside the plugin itself.
+            val tasksForFile = processFile(file.path, fileContents, fileListItems).filter { task ->
+                !task.completed ||
+                        task.dataviewFields.containsKey(TaskConstants.TASK_REPEAT_PROPERTY) ||
+                        task.tags.any { tag -> tag in store.state.settings.columnTags.map { it.tag } }
+            }
             taskList.addAll(tasksForFile)
         }.await()
         return taskList
