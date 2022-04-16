@@ -14,7 +14,11 @@ import kotlin.js.Promise
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-class KanbanView(leaf: WorkspaceLeaf, val store: Store<TaskModel>, val repeatingTaskService: RepeatingTaskService) : ItemView(leaf) {
+class KanbanView(
+    leaf: WorkspaceLeaf,
+    val store: Store<TaskModel>,
+    val repeatingTaskService: RepeatingTaskService
+) : ItemView(leaf) {
     companion object {
         const val VIEW_TYPE = "NEURAL-LINK-KANBAN-VIEW"
     }
@@ -48,7 +52,7 @@ class KanbanView(leaf: WorkspaceLeaf, val store: Store<TaskModel>, val repeating
         override fun start() {
             root(contentEl) {
                 addCssStyle(KanbanStyles.ROOT)
-                add(KanbanBoard(store, repeatingTaskService))
+                add(KanbanBoard(leaf, store, repeatingTaskService))
             }
         }
     }
