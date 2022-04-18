@@ -17,6 +17,7 @@ class KanbanStyles {
             height = 25.px
             marginRight = 0.px
             marginLeft = auto
+            marginTop = 5.px
         }
 
         val SELECT_INPUT = Style(".nl-select-input") {

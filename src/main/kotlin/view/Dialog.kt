@@ -23,7 +23,8 @@ enum class DialogIcon {
 
 enum class DialogInput(var model: Any, var current: Any) {
     NONE(Unit, Unit),
-    SELECT(listOf<StringPair>(), "" to "")
+    SELECT(listOf<StringPair>(), "" to ""),
+    CUSTOM(Unit, Unit)
 }
 
 class Dialog(
@@ -73,6 +74,10 @@ class Dialog(
                             DialogInput.NONE -> null
                             DialogInput.SELECT -> {
                                 (formComponent as SimpleSelectInput).value
+                            }
+                            DialogInput.CUSTOM -> {
+                                console.log("custom dialog content")
+                                null
                             }
                         }
                         callback.invoke(DialogResult(
