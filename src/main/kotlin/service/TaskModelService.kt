@@ -14,11 +14,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import model.ListItem
-import model.Note
-import model.Task
-import model.TaskConstants
+import neurallink.core.model.ListItem
+import neurallink.core.model.Note
+import neurallink.core.model.Task
+import neurallink.core.model.TaskConstants
 import model.TaskModel
+import neurallink.core.service.toMarkdown
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
@@ -154,7 +155,7 @@ class TaskModelService(val store: Store<TaskModel>) {
         listItems: Array<ListItemCache>
     ): List<Task> {
         console.log("processFile()", filename)
-        val listItemsByLine = mutableMapOf<Int,ListItem>() // Map of position -> Task
+        val listItemsByLine = mutableMapOf<Int, ListItem>() // Map of position -> Task
 
         listItems
             .forEach { listItem ->

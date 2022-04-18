@@ -2,7 +2,7 @@ package store
 
 import Plugin
 import model.StatusTag
-import model.Task
+import neurallink.core.model.Task
 import service.RepeatingTaskService
 import service.SettingsService
 

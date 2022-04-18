@@ -2,16 +2,12 @@ package view
 
 import io.kvision.core.*
 import io.kvision.form.check.checkBox
-import io.kvision.form.check.checkBoxInput
-import io.kvision.form.select.SimpleSelect
 import io.kvision.form.select.SimpleSelectInput
-import io.kvision.form.select.simpleSelect
 import io.kvision.form.select.simpleSelectInput
 import io.kvision.html.div
 import io.kvision.panel.HPanel
-import io.kvision.utils.perc
 import io.kvision.utils.px
-import model.TaskConstants
+import neurallink.core.model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
 import store.FilterByDataviewValue

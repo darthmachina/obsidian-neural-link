@@ -1,7 +1,6 @@
 package view
 
 import MarkdownView
-import View
 import WorkspaceLeaf
 import io.kvision.core.*
 import io.kvision.form.check.checkBox
@@ -13,6 +12,8 @@ import io.kvision.panel.vPanel
 import io.kvision.utils.px
 import kotlinx.datetime.*
 import model.*
+import neurallink.core.model.Task
+import neurallink.core.model.TaskConstants
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import store.*

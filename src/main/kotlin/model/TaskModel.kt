@@ -1,6 +1,7 @@
 package model
 
 import NeuralLinkPluginSettings
+import neurallink.core.model.Task
 
 /**
  * Right now this just holds a full list of all the Tasks in the Vault.

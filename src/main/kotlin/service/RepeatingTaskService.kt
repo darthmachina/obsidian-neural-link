@@ -7,8 +7,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import model.RepeatItem
-import model.Task
-import model.TaskConstants
+import neurallink.core.model.Task
+import neurallink.core.model.TaskConstants
+import neurallink.core.service.deepCopy
 
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)

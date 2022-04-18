@@ -5,6 +5,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import model.*
+import neurallink.core.model.Task
+import neurallink.core.model.TaskConstants
+import neurallink.core.service.deepCopy
 import org.reduxkotlin.Reducer
 import service.RepeatingTaskService
 
@@ -74,13 +77,27 @@ class Reducers {
 
     fun moveCard(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
         console.log("Reducers.taskStatusChanged()")
-        val clonedTaskList = store.tasks.map { it.deepCopy() }
+        val clonedTaskList = store.tasks.map { task ->
+            if (task.id == taskId) {
+                // Change status tags
+                val oldStatus = ReducerUtils.getStatusTagFromTask(task, store.settings.columnTags)!!
+                val newTags = task.tags.filter { it != oldStatus.tag }.union(listOf(newStatus))
+
+                // Update task order
+                val newDataviewFields = task.dataviewFields.toMutableMap()
+                newDataviewFields
+
+                val original = task.deepCopy()
+                task.deepCopy().copy(original = original, tags = newTags)
+            } else {
+                task.deepCopy()
+            }
+        }
         val movedTask = clonedTaskList.find { it.id == taskId }
         if (movedTask == null) {
             console.log(" - ERROR: Did not find task for id: $taskId")
         } else {
             ReducerUtils.setModifiedIfNeeded(movedTask)
-            val oldStatus = ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)!!
             movedTask.tags.remove(oldStatus.tag)
             ReducerUtils.updateTaskOrder(movedTask, ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId))
             movedTask.tags.add(newStatus)
@@ -144,21 +161,22 @@ class Reducers {
 
     fun markSubtaskCompletion(store: TaskModel, taskId: String, subtaskId: String, complete: Boolean): TaskModel {
         console.log("Reducers.subtaskCompleted()")
-        val clonedTaskList = store.tasks.map { it.deepCopy() }
-        console.log(" - store and cloned list", store, clonedTaskList)
-        val task = clonedTaskList.find { task -> task.id == taskId }
-        if (task == null) {
-            console.log(" - ERROR: Task not found for id: $taskId")
-            return store
-        }
-        val subtask = task.subtasks.find { subtask -> subtask.id == subtaskId }
-        if (subtask == null) {
-            console.log(" - ERROR: Subtask not found in Task $taskId for subtask id $subtaskId")
-            return store
+        val clonedTaskList = store.tasks.map { task ->
+            if (task.id == taskId) {
+                val newSubtasks = task.subtasks.map { subtask ->
+                    if (subtask.id == subtaskId) {
+                        subtask.copy(completed = complete)
+                    } else {
+                        subtask
+                    }
+                }
+                val original = task.deepCopy()
+                task.deepCopy().copy(original = original, subtasks = newSubtasks)
+            } else {
+                task.deepCopy()
+            }
         }
 
-        ReducerUtils.setModifiedIfNeeded(task)
-        subtask.completed = complete
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
@@ -468,9 +486,7 @@ class ReducerUtils {
         fun updateTaskOrder(task: Task, position: Double): Task {
             console.log("ReducerUtils.updateTaskOrder()", task, position)
             val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
-//        console.log(" - current task order", taskOrder)
             if (taskOrder == null || taskOrder.toDouble() != position) {
-//            console.log(" - task order needs to be updated : $taskOrder -> $position")
                 setModifiedIfNeeded(task)
                 task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
             }

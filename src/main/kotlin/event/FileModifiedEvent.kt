@@ -1,22 +1,15 @@
 package event
 
-import ModifiedTask
 import NeuralLinkPlugin
-import NeuralLinkState
 import TFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
-import processor.RepeatingProcessor
-import processor.RemoveTagsFromTask
 import service.RepeatingTaskService
 import service.TaskModelService
-import service.TaskService
 import store.ModifyFileTasks
-import store.RepeatTask
 
 /**
  * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this

@@ -4,7 +4,7 @@ import WorkspaceLeaf
 import io.kvision.html.Div
 import io.kvision.panel.VPanel
 import model.StatusTag
-import model.Task
+import neurallink.core.model.Task
 import model.TaskModel
 import org.reduxkotlin.Store
 import service.RepeatingTaskService

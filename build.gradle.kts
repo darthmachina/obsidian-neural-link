@@ -15,6 +15,7 @@ dependencies {
     val kotlinVersion = "1.6.0"
     val kotlinxHtmlVersion = "0.7.5"
     val kvisionVersion = "5.8.3"
+    val arrowVersion = "1.0.1"
 
     implementation(npm("obsidian", "0.12.17"))
 
@@ -32,7 +33,11 @@ dependencies {
 
     implementation("io.kvision:kvision:$kvisionVersion")
     implementation("io.kvision:kvision-fontawesome:$kvisionVersion")
-    implementation("io.kvision:kvision-react:$kvisionVersion")
+
+    implementation(platform("io.arrow-kt:arrow-stack:$arrowVersion"))
+
+    implementation("io.arrow-kt:arrow-core")
+    implementation("io.arrow-kt:arrow-fx-coroutines")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }

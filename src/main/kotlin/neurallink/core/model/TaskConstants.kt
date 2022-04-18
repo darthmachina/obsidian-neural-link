@@ -1,4 +1,4 @@
-package model
+package neurallink.core.model
 
 object TaskConstants {
     const val DUE_ON_PROPERTY = "due"

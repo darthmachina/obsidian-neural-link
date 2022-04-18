@@ -1,5 +1,7 @@
 package model
 
+import neurallink.core.model.TaskConstants
+
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
 @JsExport
