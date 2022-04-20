@@ -142,13 +142,16 @@ class Reducers {
         repeatingTaskService: RepeatingTaskService
     ): TaskModel {
         console.log("Reducers.taskCompleted()")
-        val clonedTaskList = store.tasks.map { it.deepCopy() }
-        console.log(" - store and cloned list", store, clonedTaskList)
-        val task = clonedTaskList.find { task -> task.id == taskId }
-        if (task == null) {
-            console.log(" - ERROR: Task not found for id: $taskId")
-            return store
+        val clonedTaskList = store.tasks.map { task ->
+            if (task.id == taskId) {
+                val original = task.deepCopy()
+                task.deepCopy().copy(original = original, subtasks = newSubtasks)
+            } else {
+                task
+            }
         }
+
+        console.log(" - store and cloned list", store, clonedTaskList)
         ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags, repeatingTaskService)
         return store.copy(
             tasks = clonedTaskList,
@@ -173,7 +176,7 @@ class Reducers {
                 val original = task.deepCopy()
                 task.deepCopy().copy(original = original, subtasks = newSubtasks)
             } else {
-                task.deepCopy()
+                task
             }
         }
 

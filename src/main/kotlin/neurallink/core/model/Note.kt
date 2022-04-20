@@ -8,5 +8,5 @@ import kotlinx.serialization.Serializable
 data class Note(
     val note: String,
     override val filePosition: Int,
-    val subnotes: MutableList<Note> = mutableListOf()
+    val subnotes: List<Note> = listOf()
 ) : ListItem()

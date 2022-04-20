@@ -1,9 +1,5 @@
 package neurallink.core.service
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.cbor.Cbor
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
 import neurallink.core.model.Note
 import neurallink.core.model.Task
 
@@ -12,7 +8,7 @@ fun Task.toMarkdown(): String {
 
     markdownElements.add(if (this.completed) "- [x]" else "- [ ]")
     markdownElements.add(this.description)
-    if (this.tags.size > 0) {
+    if (this.tags.isNotEmpty()) {
         markdownElements.add(this.tags.joinToString(" ") { tag -> "#$tag" })
     }
     if (this.dataviewFields.isNotEmpty()) {
@@ -24,10 +20,10 @@ fun Task.toMarkdown(): String {
     if (this.completedOn != null) {
         markdownElements.add("@completed(${this.completedOn})")
     }
-    if (this.subtasks.size > 0) {
+    if (this.subtasks.isNotEmpty()) {
         markdownElements.add("\n\t" + this.subtasks.joinToString("\n\t") { it.toMarkdown() })
     }
-    if (this.notes.size > 0) {
+    if (this.notes.isNotEmpty()) {
         markdownElements.add("\n\t" + this.notes.joinToString("\n\t") { note -> note.toMarkdown(1) })
     }
 
@@ -51,12 +47,4 @@ fun Note.toMarkdown(level: Int) : String {
     return markdown;
 }
 
-/**
- * Extension function to deepCopy a Task.
- */
-@OptIn(ExperimentalSerializationApi::class)
-fun Task.deepCopy(): Task {
-    val bytes = Cbor.encodeToByteArray(this)
-    return Cbor.decodeFromByteArray(bytes)
-}
 
