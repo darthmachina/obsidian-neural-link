@@ -1,9 +1,8 @@
 package neurallink.core.store
 
 import Plugin
-import model.StatusTag
+import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
-import service.RepeatingTaskService
 import service.SettingsService
 
 interface Action

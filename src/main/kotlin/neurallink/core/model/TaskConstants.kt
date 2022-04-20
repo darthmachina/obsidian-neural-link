@@ -1,10 +1,10 @@
 package neurallink.core.model
 
 object TaskConstants {
-    const val DUE_ON_PROPERTY = "due"
-    const val COMPLETED_ON_PROPERTY = "completed"
-    const val TASK_ORDER_PROPERTY = "pos"
-    const val TASK_REPEAT_PROPERTY = "repeat"
+    val DUE_ON_PROPERTY = DataviewField("due")
+    val COMPLETED_ON_PROPERTY = DataviewField("completed")
+    val TASK_ORDER_PROPERTY = DataviewField("pos")
+    val TASK_REPEAT_PROPERTY = DataviewField("repeat")
 
     enum class REPEAT_SPAN(val tag: String) {
         DAILY("daily"),

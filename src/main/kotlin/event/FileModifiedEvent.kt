@@ -7,7 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import model.TaskModel
 import org.reduxkotlin.Store
-import service.RepeatingTaskService
 import service.TaskModelService
 import neurallink.core.store.ModifyFileTasks
 

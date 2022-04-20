@@ -5,7 +5,6 @@ import model.TaskModel
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
-import service.RepeatingTaskService
 import service.SettingsService
 import service.TaskModelService
 import neurallink.core.store.reducer

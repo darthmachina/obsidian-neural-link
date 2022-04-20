@@ -12,11 +12,11 @@ import io.kvision.panel.vPanel
 import io.kvision.utils.px
 import kotlinx.datetime.*
 import model.*
+import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 import neurallink.core.model.TaskConstants
 import neurallink.core.store.*
 import org.reduxkotlin.Store
-import service.RepeatingTaskService
 
 class KanbanCardPanel(
     leaf: WorkspaceLeaf,

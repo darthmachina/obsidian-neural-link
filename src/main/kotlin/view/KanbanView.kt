@@ -3,12 +3,9 @@ package view
 import ItemView
 import WorkspaceLeaf
 import io.kvision.*
-import io.kvision.html.div
 import io.kvision.panel.root
 import model.TaskModel
 import org.reduxkotlin.Store
-import service.RepeatingTaskService
-import service.TaskModelService
 import kotlin.js.Promise
 
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")

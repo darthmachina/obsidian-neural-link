@@ -1,7 +1,5 @@
 package neurallink.core.model
 
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 import kotlinx.uuid.UUID
 
@@ -10,21 +8,21 @@ import kotlinx.uuid.UUID
 @JsExport
 @Serializable
 data class Task(
-    val file: String,
-    override val filePosition: Int,
-    val description: String,
-    val dueOn: LocalDate?,
-    val completedOn: LocalDateTime?,
-    val tags: Set<String>,
-    val dataviewFields: Map<String, String>,
+    val file: TaskFile,
+    override val filePosition: FilePosition,
+    val description: Description,
+    val dueOn: DueOn?,
+    val completedOn: CompletedOn?,
+    val tags: Set<Tag>,
+    val dataviewFields: DataviewMap,
     val completed: Boolean,
-    val subtasks: List<Task> = mutableListOf(),
-    val notes: List<Note> = mutableListOf(),
+    val subtasks: List<Task> = listOf(),
+    val notes: List<Note> = listOf(),
     val original: Task? = null, // TODO try to automate setting this
     // 'before' is for writing the repeat task
     // TODO Find a better way to model this as I don't like needing to store this on the task itself
     val before: Task? = null,
-    val id: String = UUID().toString()
+    val id: TaskId = TaskId(UUID())
 ) : ListItem() {
     /**
      * Compares just the relevant data fields for e

@@ -38,6 +38,7 @@ dependencies {
 
     implementation("io.arrow-kt:arrow-core")
     implementation("io.arrow-kt:arrow-fx-coroutines")
+    implementation("io.arrow-kt:arrow-optics")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
 }

@@ -1,5 +1,5 @@
 import kotlinx.serialization.Serializable
-import model.StatusTag
+import neurallink.core.model.StatusTag
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport

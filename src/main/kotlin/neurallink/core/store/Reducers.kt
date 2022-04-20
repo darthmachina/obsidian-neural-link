@@ -5,11 +5,18 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import model.*
+import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 import neurallink.core.model.TaskConstants
+import neurallink.core.service.addTag
+import neurallink.core.service.filterTags
+import neurallink.core.service.getOriginal
 import neurallink.core.store.*
+import neurallink.view.filterTasksByStatusTag
+import neurallink.view.findStatusTag
+import neurallink.view.firstTaskPosition
+import neurallink.view.setTaskOrder
 import org.reduxkotlin.Reducer
-import service.RepeatingTaskService
 
 val reducerFunctions = Reducers()
 
@@ -79,17 +86,17 @@ class Reducers {
         console.log("Reducers.taskStatusChanged()")
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
-                val original = task.original ?: task.deepCopy()
                 // Change status tags
                 val oldStatus = ReducerUtils.getStatusTagFromTask(task, store.settings.columnTags)!!
-                val newTags = task.tags
-                    .filter { it != oldStatus.tag }
-                    .union(listOf(newStatus))
-
-                // Update task order
-                val newDataviewFields = setTaskOrder(task.dataviewFields, findPosition(store.tasks, newStatus, beforeTaskId))
-
-                task.copy(original = original, tags = newTags, dataviewFields = newDataviewFields)
+                task.copy(
+                    original = getOriginal(task),
+                    tags = filterTags(task.tags) {
+                        it != oldStatus.tag
+                    }.apply {
+                        addTag(this, newStatus)
+                    },
+                    dataviewFields = setTaskOrder(task.dataviewFields, findPosition(store.tasks, newStatus, beforeTaskId))
+                )
             } else {
                 task
             }
@@ -104,6 +111,23 @@ class Reducers {
     }
 
     fun moveToTop(store: TaskModel, taskId: String) : TaskModel {
+        val clonedTaskList = store.tasks.map { task ->
+            if (task.id == taskId) {
+                task.copy(
+                    dataviewFields = setTaskOrder(
+                        task.dataviewFields,
+                        firstTaskPosition(
+                            filterTasksByStatusTag(
+                                store.tasks,
+                                findStatusTag(task.tags, store.settings.columnTags)
+                            )
+                        )
+                    )
+                )
+            } else {
+                task
+            }
+
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         val movedTask = clonedTaskList.find { it.id == taskId }
         if (movedTask == null) {

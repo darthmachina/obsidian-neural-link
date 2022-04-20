@@ -7,7 +7,7 @@ fun Task.toMarkdown(): String {
     val markdownElements = mutableListOf<String>()
 
     markdownElements.add(if (this.completed) "- [x]" else "- [ ]")
-    markdownElements.add(this.description)
+    markdownElements.add(this.description.value)
     if (this.tags.isNotEmpty()) {
         markdownElements.add(this.tags.joinToString(" ") { tag -> "#$tag" })
     }

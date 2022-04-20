@@ -1,6 +1,7 @@
 package model
 
 import NeuralLinkPluginSettings
+import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 
 /**
