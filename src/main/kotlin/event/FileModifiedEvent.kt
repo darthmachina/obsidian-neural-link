@@ -9,7 +9,7 @@ import model.TaskModel
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import service.TaskModelService
-import store.ModifyFileTasks
+import neurallink.core.store.ModifyFileTasks
 
 /**
  * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this

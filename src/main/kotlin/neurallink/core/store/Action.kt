@@ -1,4 +1,4 @@
-package store
+package neurallink.core.store
 
 import Plugin
 import model.StatusTag
@@ -17,7 +17,8 @@ enum class IncompleteSubtaskChoice {
 data class VaultLoaded(val tasks: List<Task>) : Action
 data class TaskMoved(val taskId: String, val newStatus: String, val beforeTask: String? = null) : Action
 data class MoveToTop(val taskd: String) : Action
-data class ModifyFileTasks(val file: String, val fileTasks: List<Task>, val repeatingTaskService: RepeatingTaskService) : Action
+data class ModifyFileTasks(val file: String, val fileTasks: List<Task>, val repeatingTaskService: RepeatingTaskService) :
+    Action
 data class TaskCompleted(
     val taskId: String,
     val repeatingTaskService: RepeatingTaskService,

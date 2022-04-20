@@ -5,7 +5,7 @@ import model.TaskModel
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
 import service.SettingsService
-import store.UpdateSettings
+import neurallink.core.store.UpdateSettings
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport

@@ -21,7 +21,7 @@ import neurallink.core.model.TaskConstants
 import model.TaskModel
 import neurallink.core.service.toMarkdown
 import org.reduxkotlin.Store
-import store.VaultLoaded
+import neurallink.core.store.VaultLoaded
 
 /**
  * Service for interacting with a TaskModel. Main use is to process files

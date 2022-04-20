@@ -9,7 +9,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import model.TaskModel
 import org.reduxkotlin.Store
-import store.UpdateSettings
+import neurallink.core.store.UpdateSettings
 
 @Suppress("JSON_FORMAT_REDUNDANT")
 @OptIn(ExperimentalJsExport::class)
@@ -59,12 +59,14 @@ class SettingsService(private val store: Store<TaskModel>, private val plugin: P
     }
 
     private fun dispatchUpdates(settings: NeuralLinkPluginSettings) {
-        store.dispatch(UpdateSettings(
+        store.dispatch(
+            UpdateSettings(
             plugin,
             this,
             settings.taskRemoveRegex,
             settings.columnTags,
             settings.tagColors
-        ))
+        )
+        )
     }
 }

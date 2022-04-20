@@ -8,7 +8,7 @@ import neurallink.core.model.Task
 import model.TaskModel
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
-import store.TaskMoved
+import neurallink.core.store.TaskMoved
 
 class KanbanBoard(
     val leaf: WorkspaceLeaf,

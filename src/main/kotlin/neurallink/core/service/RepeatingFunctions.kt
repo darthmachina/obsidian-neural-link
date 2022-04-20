@@ -9,6 +9,9 @@ import neurallink.core.model.TaskConstants
 
 fun isTaskRepeating(task: Task) = task.dataviewFields.containsKey("repeat") && task.dueOn != null
 
+/**
+ * Repeats the given task if required.
+ */
 fun repeatTask(task: Task) : Option<Task> {
     if (!isTaskRepeating(task)) {
         return none()

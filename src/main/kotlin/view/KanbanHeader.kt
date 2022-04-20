@@ -10,10 +10,10 @@ import io.kvision.utils.px
 import neurallink.core.model.TaskConstants
 import model.TaskModel
 import org.reduxkotlin.Store
-import store.FilterByDataviewValue
-import store.FilterByFile
-import store.FilterByTag
-import store.FilterFutureDate
+import neurallink.core.store.FilterByDataviewValue
+import neurallink.core.store.FilterByFile
+import neurallink.core.store.FilterByTag
+import neurallink.core.store.FilterFutureDate
 
 class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify = JustifyContent.END) {
     private var filtering = false

@@ -1,4 +1,4 @@
-package store
+package neurallink.core.store
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -7,7 +7,7 @@ import kotlinx.datetime.toLocalDateTime
 import model.*
 import neurallink.core.model.Task
 import neurallink.core.model.TaskConstants
-import neurallink.core.service.deepCopy
+import neurallink.core.store.*
 import org.reduxkotlin.Reducer
 import service.RepeatingTaskService
 
@@ -79,28 +79,20 @@ class Reducers {
         console.log("Reducers.taskStatusChanged()")
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
+                val original = task.original ?: task.deepCopy()
                 // Change status tags
                 val oldStatus = ReducerUtils.getStatusTagFromTask(task, store.settings.columnTags)!!
-                val newTags = task.tags.filter { it != oldStatus.tag }.union(listOf(newStatus))
+                val newTags = task.tags
+                    .filter { it != oldStatus.tag }
+                    .union(listOf(newStatus))
 
                 // Update task order
-                val newDataviewFields = task.dataviewFields.toMutableMap()
-                newDataviewFields
+                val newDataviewFields = setTaskOrder(task.dataviewFields, findPosition(store.tasks, newStatus, beforeTaskId))
 
-                val original = task.deepCopy()
-                task.deepCopy().copy(original = original, tags = newTags)
+                task.copy(original = original, tags = newTags, dataviewFields = newDataviewFields)
             } else {
-                task.deepCopy()
+                task
             }
-        }
-        val movedTask = clonedTaskList.find { it.id == taskId }
-        if (movedTask == null) {
-            console.log(" - ERROR: Did not find task for id: $taskId")
-        } else {
-            ReducerUtils.setModifiedIfNeeded(movedTask)
-            movedTask.tags.remove(oldStatus.tag)
-            ReducerUtils.updateTaskOrder(movedTask, ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId))
-            movedTask.tags.add(newStatus)
         }
         return store.copy(
             tasks = clonedTaskList,
@@ -120,7 +112,11 @@ class Reducers {
         }
 
         val newPosition = clonedTaskList
-            .filter { task -> task.tags.contains(ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)?.tag) }
+            .filter { task -> task.tags.contains(
+                ReducerUtils.getStatusTagFromTask(
+                    movedTask,
+                    store.settings.columnTags
+                )?.tag) }
             .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
             .first()
             .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() / 2
@@ -351,48 +347,6 @@ class ReducerUtils {
         }
 
         /**
-         * Finds the position for a task, calculated given the following scenarios:
-         *
-         * 1. No tasks for the status, returns 1.0 (to leave room before it for other cards)
-         * 2. No beforeTaskId given, returns the max position value + 1 to put it at the end
-         * 3. beforeTaskId given, find that task and the one before it and returns a value in the middle of the two pos values
-         *  - If beforeTask is the first in the list just return its position divided by 2
-         */
-        fun findPosition(tasks: List<Task>, status: String, beforeTaskId: String? = null) : Double {
-            console.log("ReducerUtils.findPosition()")
-            return if (tasks.none { task -> task.tags.contains(status) }) {
-//                console.log(" - list is empty, returning 1.0")
-                1.0
-            } else if (beforeTaskId == null) {
-//                console.log(" - no beforeTaskId, adding to end of list")
-                (tasks
-                    .filter { task -> task.tags.contains(status) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
-                    .last()
-                    .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) + 1.0
-            } else {
-//                console.log(" - beforeTaskId set, finding new position")
-                val statusTasks = tasks
-                    .filter { task -> task.tags.contains(status) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
-                val beforeTask = statusTasks.find { it.id == beforeTaskId }
-                    ?: throw IllegalStateException("beforeTask not found for id $beforeTaskId")
-                val beforeTaskPosition = beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
-                    ?: throw IllegalStateException("beforeTask does not have a position property")
-                val beforeTaskIndex = statusTasks.indexOf(beforeTask)
-                // Returns new position
-                if (beforeTaskIndex == 0) {
-                    beforeTaskPosition / 2
-                } else {
-                    val beforeBeforeTask = statusTasks[beforeTaskIndex - 1]
-                    val beforeBeforeTaskPosition = beforeBeforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
-                        ?: throw IllegalStateException("beforeBeforeTask does not have a position property")
-                    (beforeTaskPosition + beforeBeforeTaskPosition) / 2
-                }
-            }
-        }
-
-        /**
          * Returns a list of Tasks from a file that have changed from within the store
          */
         fun changedTasks(file: String, fileTasks: List<Task>, store: TaskModel) : List<Task> {
@@ -432,41 +386,6 @@ class ReducerUtils {
                         store.tasks,
                         getStatusTagFromTask(task, store.settings.columnTags)!!.tag).toString()
                 }
-        }
-
-        fun completeTask(
-            task: Task,
-            subtaskChoice: IncompleteSubtaskChoice,
-            columns: Collection<StatusTag>,
-            repeatingTaskService: RepeatingTaskService
-        ) {
-            setModifiedIfNeeded(task)
-            repeatTask(task, repeatingTaskService)
-            task.completed = true
-
-            if (subtaskChoice == IncompleteSubtaskChoice.DELETE) {
-                task.subtasks.removeAll { !it.completed }
-            } else if (subtaskChoice == IncompleteSubtaskChoice.COMPLETE) {
-                task.subtasks.filter { !it.completed }.forEach { subtask -> subtask.completed = true }
-            }
-            task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
-            task.tags.removeAll { tag -> tag in columns.map { it.tag } }
-        }
-
-        /**
-         * Repeats the given task if required.
-         *
-         * Sets the task.before field to the repeated task to write the new task before the current one in the file.
-         */
-        private fun repeatTask(task: Task, repeatingTaskService: RepeatingTaskService) {
-            console.log("repeatTask()", task)
-            if (repeatingTaskService.isTaskRepeating(task)) {
-//            console.log(" - task is a repeating task, processing")
-                val repeatTask = repeatingTaskService.getNextRepeatingTask(task)
-                setModifiedIfNeeded(task)
-                task.dataviewFields.remove(TaskConstants.TASK_REPEAT_PROPERTY)
-                task.before = repeatTask
-            }
         }
 
         fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): StatusTag? {

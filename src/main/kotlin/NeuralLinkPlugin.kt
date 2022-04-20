@@ -8,7 +8,7 @@ import org.reduxkotlin.middleware
 import service.RepeatingTaskService
 import service.SettingsService
 import service.TaskModelService
-import store.reducer
+import neurallink.core.store.reducer
 import view.KanbanView
 
 @OptIn(ExperimentalJsExport::class)

@@ -14,9 +14,9 @@ import kotlinx.datetime.*
 import model.*
 import neurallink.core.model.Task
 import neurallink.core.model.TaskConstants
+import neurallink.core.store.*
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
-import store.*
 
 class KanbanCardPanel(
     leaf: WorkspaceLeaf,
