@@ -1,11 +1,19 @@
 package view
 
 import MarkdownView
-import View
 import WorkspaceLeaf
 import io.kvision.core.*
 import io.kvision.form.check.checkBox
-import io.kvision.html.*
+import io.kvision.html.ButtonSize
+import io.kvision.html.Table
+import io.kvision.html.button
+import io.kvision.html.div
+import io.kvision.html.li
+import io.kvision.html.span
+import io.kvision.html.table
+import io.kvision.html.td
+import io.kvision.html.tr
+import io.kvision.html.ul
 import io.kvision.panel.HPanel
 import io.kvision.panel.VPanel
 import io.kvision.panel.hPanel
@@ -13,6 +21,10 @@ import io.kvision.panel.vPanel
 import io.kvision.utils.px
 import kotlinx.datetime.*
 import model.*
+import neurallink.core.model.StatusTag
+import neurallink.core.model.Tag
+import neurallink.core.model.Task
+import neurallink.core.model.TaskConstants
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import store.*
@@ -38,7 +50,7 @@ class KanbanCardPanel(
 
         div {
             addCssStyle(KanbanStyles.KANBAN_DESCRIPTION)
-            checkBox(task.completed, label = task.description) {
+            checkBox(task.completed, label = task.description.value) {
                 inline = true
             }.onClick {
                 if (task.subtasks.any { !it.completed }) {
@@ -99,7 +111,7 @@ class KanbanCardPanel(
         add(createFooterPanel(leaf))
     }
 
-    private fun createTagsAndDuePanel(filteredTags: List<String>) : HPanel {
+    private fun createTagsAndDuePanel(filteredTags: List<Tag>) : HPanel {
         return hPanel {
             addCssStyle(KanbanStyles.KANBAN_TAGS_DUE_PANEL)
             if (task.dueOn != null) {
@@ -140,7 +152,7 @@ class KanbanCardPanel(
             addCssStyle(KanbanStyles.KANBAN_SUBTASKS)
             task.subtasks.forEach { subtask ->
                 div {
-                    checkBox(subtask.completed, label = subtask.description) {
+                    checkBox(subtask.completed, label = subtask.description.value) {
                         inline = true
                     }.onClick {
                         store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))
@@ -187,7 +199,7 @@ class KanbanCardPanel(
             }
             div {
                 addCssStyle(KanbanStyles.KANBAN_SOURCE)
-                button(text = task.file.dropLast(3)) {
+                button(text = task.file.value.dropLast(3)) {
                     size = ButtonSize.SMALL
                     padding = 1.px
                     paddingBottom = 0.px
@@ -214,9 +226,9 @@ class KanbanCardPanel(
         )
         dialog.setCallback { result ->
             console.log("Dialog callback()", result)
-            if (result.accept && (result.result as String) != status.tag) {
+            if (result.accept && (result.result as String) != status.tag.value) {
                 console.log(" - saving result: ", result.result)
-                store.dispatch(TaskMoved(task.id, result.result))
+                store.dispatch(TaskMoved(task.id, Tag(result.result)))
             }
             dialog.hide()
             remove(dialog)
@@ -268,18 +280,18 @@ class KanbanCardPanel(
 
         val leavesWithFileAlreadyOpen = mutableListOf<WorkspaceLeaf>()
         leaf.view.app.workspace.iterateAllLeaves { workspaceLeaf ->
-            if (workspaceLeaf.view is MarkdownView && (workspaceLeaf.view as MarkdownView).file.path == task.file) {
+            if (workspaceLeaf.view is MarkdownView && (workspaceLeaf.view as MarkdownView).file.path == task.file.value) {
                 leavesWithFileAlreadyOpen.add(workspaceLeaf)
             }
         }
 
         if (leavesWithFileAlreadyOpen.isNotEmpty()) {
             leaf.view.app.workspace.setActiveLeaf(leavesWithFileAlreadyOpen[0])
-            leavesWithFileAlreadyOpen[0].setEphemeralState(object { val line = task.filePosition - 1 })
+            leavesWithFileAlreadyOpen[0].setEphemeralState(object { val line = task.filePosition.value - 1 })
         } else {
             val splitLeaf = leaf.view.app.workspace.splitActiveLeaf()
             splitLeaf.openFile(filePath)
-            splitLeaf.setEphemeralState(object { val line = task.filePosition - 1 })
+            splitLeaf.setEphemeralState(object { val line = task.filePosition.value - 1 })
         }
     }
 }

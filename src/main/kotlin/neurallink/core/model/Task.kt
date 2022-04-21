@@ -14,13 +14,13 @@ import kotlinx.uuid.UUID
 @JsExport
 @Serializable
 data class Task(
-    val file: String,
-    override val filePosition: Int,
-    var description: String,
+    val file: TaskFile,
+    override val filePosition: FilePosition,
+    var description: Description,
     var dueOn: LocalDate?,
     var completedOn: LocalDateTime?,
-    val tags: MutableSet<String>,
-    val dataviewFields: MutableMap<String, String>,
+    val tags: MutableSet<Tag>,
+    val dataviewFields: DataviewMap,
     var completed: Boolean,
     val subtasks: MutableList<Task> = mutableListOf(),
     val notes: MutableList<Note> = mutableListOf(),
@@ -28,7 +28,7 @@ data class Task(
     // 'before' is for writing the repeat task
     // TODO Find a better way to model this as I don't like needing to store this on the task itself
     var before: Task? = null,
-    val id: String = UUID().toString()
+    val id: TaskId = TaskId(UUID())
 ) : ListItem() {
     @OptIn(ExperimentalSerializationApi::class)
     fun deepCopy(): Task {
@@ -46,7 +46,7 @@ data class Task(
         val markdownElements = mutableListOf<String>()
 
         markdownElements.add(if (completed) "- [x]" else "- [ ]")
-        markdownElements.add(description)
+        markdownElements.add(description.toString())
         if (tags.size > 0) {
             markdownElements.add(tags.joinToString(" ") { tag -> "#$tag" })
         }

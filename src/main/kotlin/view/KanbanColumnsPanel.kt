@@ -2,7 +2,7 @@ package view
 
 import io.kvision.panel.FlexPanel
 import io.kvision.panel.HPanel
-import model.StatusTag
+import neurallink.core.model.StatusTag
 
 class KanbanColumnsPanel : HPanel() {
     private val columnPanels = mutableMapOf<StatusTag,KanbanColumnPanel>()

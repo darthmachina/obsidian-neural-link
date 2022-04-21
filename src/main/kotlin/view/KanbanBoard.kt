@@ -3,9 +3,11 @@ package view
 import WorkspaceLeaf
 import io.kvision.html.Div
 import io.kvision.panel.VPanel
-import model.StatusTag
-import model.Task
+import kotlinx.uuid.UUID
+import neurallink.core.model.StatusTag
+import neurallink.core.model.Task
 import model.TaskModel
+import neurallink.core.model.TaskId
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import store.TaskMoved
@@ -86,7 +88,7 @@ class KanbanBoard(
         val column = KanbanColumnPanel(name, cards.map { createCard(it, name, leaf) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
-                store.dispatch(TaskMoved(cardId, column.status.tag, dragoverCardId))
+                store.dispatch(TaskMoved(TaskId(UUID(cardId)), column.status, if (dragoverCardId == null) null else TaskId(UUID(dragoverCardId!!))))
             }
         }
 
@@ -96,7 +98,7 @@ class KanbanBoard(
     private fun createCard(task: Task, status: StatusTag, leaf: WorkspaceLeaf): KanbanCardPanel {
         console.log("KanbanBoard.createCard(): ", task.description)
         val card = KanbanCardPanel(leaf, store, task, status, repeatingTaskService)
-        card.id = task.id
+        card.id = task.id.toString()
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)
         card.setEventListener<Div> {
             dragover = {

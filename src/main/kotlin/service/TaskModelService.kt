@@ -14,11 +14,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import model.ListItem
-import model.Note
-import model.Task
-import model.TaskConstants
+import neurallink.core.model.ListItem
+import neurallink.core.model.Note
+import neurallink.core.model.Task
+import neurallink.core.model.TaskConstants
 import model.TaskModel
+import neurallink.core.model.DataviewField
+import neurallink.core.model.DataviewValue
+import neurallink.core.model.Description
+import neurallink.core.model.FilePosition
+import neurallink.core.model.Tag
+import neurallink.core.model.TaskFile
+import neurallink.core.model.toDataviewMap
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
@@ -53,7 +60,7 @@ class TaskModelService(val store: Store<TaskModel>) {
                 .groupBy { it.file }
                 .forEach { entry ->
                     launch {
-                        val file = vault.getAbstractFileByPath(entry.key) as TFile
+                        val file = vault.getAbstractFileByPath(entry.key.value) as TFile
                         vault.read(file).then { contents ->
                             writeFile(vault, contents, entry.value, file)
                         }
@@ -70,13 +77,13 @@ class TaskModelService(val store: Store<TaskModel>) {
         }
         var fileModified = false
         tasks
-            .sortedByDescending { it.filePosition }
+            .sortedByDescending { it.filePosition.value }
             .forEach { task ->
 //                console.log(" - Updating task : ${task.description}")
-                fileContents[task.filePosition] = task.toMarkdown()
+                fileContents[task.filePosition.value] = task.toMarkdown()
                 val indentedCount = indentedCount(task.original!!)
                 if (indentedCount > 0) {
-                    val firstIndent = task.filePosition + 1
+                    val firstIndent = task.filePosition.value + 1
                     // Use 'until' as we don't include the last element (indentedCount includes the firstIndent line)
                     linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
 //                    console.log(" - linesToRemove now", linesToRemove)
@@ -140,7 +147,7 @@ class TaskModelService(val store: Store<TaskModel>) {
             // outside the plugin itself.
             val tasksForFile = processFile(file.path, fileContents, fileListItems).filter { task ->
                 !task.completed ||
-                        task.dataviewFields.containsKey(TaskConstants.TASK_REPEAT_PROPERTY) ||
+                        task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) ||
                         task.tags.any { tag -> tag in store.state.settings.columnTags.map { it.tag } }
             }
             taskList.addAll(tasksForFile)
@@ -154,7 +161,7 @@ class TaskModelService(val store: Store<TaskModel>) {
         listItems: Array<ListItemCache>
     ): List<Task> {
         console.log("processFile()", filename)
-        val listItemsByLine = mutableMapOf<Int,ListItem>() // Map of position -> Task
+        val listItemsByLine = mutableMapOf<Int, ListItem>() // Map of position -> Task
 
         listItems
             .forEach { listItem ->
@@ -181,7 +188,7 @@ class TaskModelService(val store: Store<TaskModel>) {
 //                        console.log(" - is a note, parent:", parentListItem)
                         // Is a note, find the parent task and add this line to the notes list
                         // removing the first two characters (the list marker, '- ')
-                        val note = Note(lineContents.trim().drop(2), listItemLine)
+                        val note = Note(lineContents.trim().drop(2), FilePosition(listItemLine))
                         listItemsByLine[listItemLine] = note
                         when (parentListItem) {
                             is Task -> parentListItem.notes.add(note)
@@ -212,13 +219,12 @@ class TaskModelService(val store: Store<TaskModel>) {
         val completedDate = getCompletedDateFromTask(text)
 
         // Pull out all tags
-        val tagMatches = allTagsRegex.findAll(text).map { it.groupValues[1] }.toMutableSet()
+        val tagMatches = allTagsRegex.findAll(text).map { Tag(it.groupValues[1]) }.toMutableSet()
 
         // Pull out all Dataview fields
-        val dataviewMatches = mutableMapOf<String,String>()
-        dataviewRegex.findAll(text).associateTo(dataviewMatches) {
-            it.groupValues[1] to it.groupValues[2]
-        }
+        val dataviewMatches = dataviewRegex.findAll(text).associate {
+            DataviewField(it.groupValues[1]) to DataviewValue(it.groupValues[2])
+        }.toDataviewMap()
 
         val completed = completedRegex.containsMatchIn(text)
 
@@ -233,9 +239,9 @@ class TaskModelService(val store: Store<TaskModel>) {
             .replace("""\s+""".toRegex(), " ")
             .replace("""- \[[Xx ]\] """.toRegex(), "")
         return Task(
-            file,
-            line,
-            stripped,
+            TaskFile(file),
+            FilePosition(line),
+            Description(stripped),
             due,
             completedDate,
             tagMatches,

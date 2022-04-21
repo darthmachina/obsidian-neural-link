@@ -5,6 +5,15 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import model.*
+import neurallink.core.model.DataviewField
+import neurallink.core.model.DataviewPair
+import neurallink.core.model.DataviewValue
+import neurallink.core.model.StatusTag
+import neurallink.core.model.Tag
+import neurallink.core.model.Task
+import neurallink.core.model.TaskConstants
+import neurallink.core.model.TaskFile
+import neurallink.core.model.TaskId
 import org.reduxkotlin.Reducer
 import service.RepeatingTaskService
 
@@ -47,7 +56,7 @@ class Reducers {
                 settings = newSettings,
                 tasks = clonedTaskList,
                 kanbanColumns = ReducerUtils.createKanbanMap(
-                    ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                    ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
                     newSettings.columnTags
                 )
             )
@@ -66,13 +75,13 @@ class Reducers {
         return store.copy(
             tasks = tasks,
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(tasks, store.filterType, store.filterValue),
+                ReducerUtils.filterTasks(tasks, store.filterValue),
                 store.settings.columnTags
             )
         )
     }
 
-    fun moveCard(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
+    fun moveCard(store: TaskModel, taskId: TaskId, newStatus: StatusTag, beforeTaskId: TaskId?): TaskModel {
         console.log("Reducers.taskStatusChanged()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         val movedTask = clonedTaskList.find { it.id == taskId }
@@ -83,18 +92,18 @@ class Reducers {
             val oldStatus = ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)!!
             movedTask.tags.remove(oldStatus.tag)
             ReducerUtils.updateTaskOrder(movedTask, ReducerUtils.findPosition(clonedTaskList, newStatus, beforeTaskId))
-            movedTask.tags.add(newStatus)
+            movedTask.tags.add(newStatus.tag)
         }
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
     }
 
-    fun moveToTop(store: TaskModel, taskId: String) : TaskModel {
+    fun moveToTop(store: TaskModel, taskId: TaskId) : TaskModel {
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         val movedTask = clonedTaskList.find { it.id == taskId }
         if (movedTask == null) {
@@ -104,15 +113,15 @@ class Reducers {
 
         val newPosition = clonedTaskList
             .filter { task -> task.tags.contains(ReducerUtils.getStatusTagFromTask(movedTask, store.settings.columnTags)?.tag) }
-            .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
+            .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() })
             .first()
-            .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() / 2
+            .dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() / 2
         ReducerUtils.setModifiedIfNeeded(movedTask)
-        movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = newPosition.toString()
+        movedTask.dataviewFields[DataviewField(TaskConstants.TASK_ORDER_PROPERTY)] = DataviewValue(newPosition)
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -120,7 +129,7 @@ class Reducers {
 
     fun taskCompleted(
         store: TaskModel,
-        taskId: String,
+        taskId: TaskId,
         subtaskChoice: IncompleteSubtaskChoice,
         repeatingTaskService: RepeatingTaskService
     ): TaskModel {
@@ -136,13 +145,13 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
     }
 
-    fun markSubtaskCompletion(store: TaskModel, taskId: String, subtaskId: String, complete: Boolean): TaskModel {
+    fun markSubtaskCompletion(store: TaskModel, taskId: TaskId, subtaskId: TaskId, complete: Boolean): TaskModel {
         console.log("Reducers.subtaskCompleted()")
         val clonedTaskList = store.tasks.map { it.deepCopy() }
         console.log(" - store and cloned list", store, clonedTaskList)
@@ -162,13 +171,13 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
     }
 
-    fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
+    fun modifyFileTasks(store: TaskModel, file: TaskFile, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
         console.log("Reducers.modifyFileTasks()")
         ReducerUtils.runFileModifiedListeners(fileTasks, store, repeatingTaskService)
         // Only return a new state if any of the tasks were modified
@@ -180,7 +189,7 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -190,52 +199,47 @@ class Reducers {
      * Filters the task list according to the given tag; a null tag means there should be no filter.
      */
     fun filterByTag(store: TaskModel, tag: String?) : TaskModel {
-        val filterType = if (tag == null) FilterType.NONE else FilterType.TAG
-        val filterValue = tag ?: ""
+        val filterValue = TagFilterValue(Tag(tag ?: ""))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
+                ReducerUtils.filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
-            filterType = filterType,
             filterValue = filterValue
         )
     }
 
     fun filterByFile(store: TaskModel, file: String?) : TaskModel {
-        val filterType = if (file == null) FilterType.NONE else FilterType.FILE
-        val filterValue = file ?: ""
+        val filterValue = FileFilterValue(TaskFile(file ?: ""))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
+                ReducerUtils.filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
-            filterType = filterType,
             filterValue = filterValue
         )
     }
 
     fun filterByDataviewValue(store: TaskModel, value: String?) : TaskModel {
-        val filterType = if (value == null) FilterType.NONE else FilterType.DATAVIEW
-        val filterValue = value ?: ""
+        val dataview = value?.split("::") ?: throw IllegalStateException("Filter value is not a valid dataview field '$value'")
+        val filterValue = DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
+                ReducerUtils.filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
-            filterType = filterType,
             filterValue = filterValue
         )
     }
 
     fun filterFutureDate(store: TaskModel, filter: Boolean) : TaskModel {
+        val filterValue = FutureDateFilterValue(filter)
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, FilterType.CURRENT_DATE, filter.toString()),
+                ReducerUtils.filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
-            filterType = FilterType.CURRENT_DATE,
-            filterValue = filter.toString()
+            filterValue = filterValue
         )
     }
 }
@@ -243,7 +247,7 @@ class Reducers {
 class ReducerUtils {
     companion object {
         private val taskComparator = compareBy<Task,Double?>(nullsLast()) {
-            val position = it.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
+            val position = it.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
             position
         }
 
@@ -251,21 +255,18 @@ class ReducerUtils {
             it.dueOn
         }
 
-        fun filterTasks(tasks: List<Task>, filterType: FilterType, filterValue: String) : List<Task> {
-            return when (filterType) {
-                FilterType.NONE -> tasks
-                FilterType.TAG -> tasks.filter { task -> task.tags.contains(filterValue) }
-                FilterType.FILE -> tasks.filter { task -> task.file == filterValue }
-                FilterType.DATAVIEW -> tasks.filter { task ->
-                    val dataview = filterValue.split("::")
-                    task.dataviewFields.containsKey(dataview[0]) && task.dataviewFields[dataview[0]] == dataview[1]
-                }
-                FilterType.CURRENT_DATE -> {
+        fun filterTasks(tasks: List<Task>, filterValue: FilterValue<out Any>) : List<Task> {
+            return when (filterValue) {
+                is NoneFilterValue -> tasks
+                is TagFilterValue -> tasks.filter { task -> task.tags.contains(filterValue.filterValue) }
+                is FileFilterValue -> tasks.filter { task -> task.file == filterValue.filterValue }
+                is DataviewFilterValue -> tasks.filter { task -> task.dataviewFields.containsKey(filterValue.filterValue.value.first) }
+                is FutureDateFilterValue -> {
                     val currentDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) // TODO Is TimeZone here going to affect anything?
                     val currentDate = LocalDate(currentDateTime.year, currentDateTime.month, currentDateTime.dayOfMonth)
                     console.log("Filtering using $currentDate")
                     tasks.filter {
-                        if (filterValue.toBoolean()) {
+                        if (filterValue.filterValue) {
                             if (it.dueOn == null) true else it.dueOn!! <= currentDate
                         } else {
                             true
@@ -308,12 +309,12 @@ class ReducerUtils {
             return tasks
                 .sortedWith(taskComparator)
                 .map { task ->
-                if (task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null) {
-                    updateTaskOrder(task, maxPosition++)
-                } else {
-                    maxPosition = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()
-                    task
-                }
+                    if (task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY))) {
+                        updateTaskOrder(task, maxPosition++)
+                    } else {
+                        maxPosition = task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
+                        task
+                    }
             }
         }
 
@@ -337,35 +338,33 @@ class ReducerUtils {
          * 3. beforeTaskId given, find that task and the one before it and returns a value in the middle of the two pos values
          *  - If beforeTask is the first in the list just return its position divided by 2
          */
-        fun findPosition(tasks: List<Task>, status: String, beforeTaskId: String? = null) : Double {
+        fun findPosition(tasks: List<Task>, status: StatusTag, beforeTaskId: TaskId? = null) : Double {
             console.log("ReducerUtils.findPosition()")
-            return if (tasks.none { task -> task.tags.contains(status) }) {
+            return if (tasks.none { task -> task.tags.contains(status.tag) }) {
 //                console.log(" - list is empty, returning 1.0")
                 1.0
             } else if (beforeTaskId == null) {
 //                console.log(" - no beforeTaskId, adding to end of list")
                 (tasks
-                    .filter { task -> task.tags.contains(status) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
+                    .filter { task -> task.tags.contains(status.tag) }
+                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() })
                     .last()
-                    .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble()) + 1.0
+                    .dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()) + 1.0
             } else {
 //                console.log(" - beforeTaskId set, finding new position")
                 val statusTasks = tasks
-                    .filter { task -> task.tags.contains(status) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
+                    .filter { task -> task.tags.contains(status.tag) }
+                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() })
                 val beforeTask = statusTasks.find { it.id == beforeTaskId }
                     ?: throw IllegalStateException("beforeTask not found for id $beforeTaskId")
-                val beforeTaskPosition = beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
-                    ?: throw IllegalStateException("beforeTask does not have a position property")
+                val beforeTaskPosition = beforeTask.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
                 val beforeTaskIndex = statusTasks.indexOf(beforeTask)
                 // Returns new position
                 if (beforeTaskIndex == 0) {
                     beforeTaskPosition / 2
                 } else {
                     val beforeBeforeTask = statusTasks[beforeTaskIndex - 1]
-                    val beforeBeforeTaskPosition = beforeBeforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
-                        ?: throw IllegalStateException("beforeBeforeTask does not have a position property")
+                    val beforeBeforeTaskPosition = beforeBeforeTask.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
                     (beforeTaskPosition + beforeBeforeTaskPosition) / 2
                 }
             }
@@ -376,7 +375,7 @@ class ReducerUtils {
          */
         fun changedTasks(file: String, fileTasks: List<Task>, store: TaskModel) : List<Task> {
             // Take the fileTasks list and subtrack any that are equal to what is already in the store
-            val storeFileTasks = store.tasks.filter { it.file == file }
+            val storeFileTasks = store.tasks.filter { it.file.value == file }
             if (storeFileTasks.isEmpty()) return emptyList()
 
             console.log("ReducerUtils.changedTasks()", fileTasks, storeFileTasks)
@@ -393,7 +392,7 @@ class ReducerUtils {
                 .filter { task ->
                     task.completed &&
                             (getStatusTagFromTask(task, store.settings.columnTags) != null
-                                    || task.dataviewFields.keys.contains(TaskConstants.TASK_REPEAT_PROPERTY))
+                                    || task.dataviewFields.keys.contains(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)))
                 }
                 .forEach { task -> completeTask(task, IncompleteSubtaskChoice.NOTHING, store.settings.columnTags, repeatingTaskService) }
 
@@ -401,15 +400,15 @@ class ReducerUtils {
             tasks
                 .filter { task ->
                     val statusTag = getStatusTagFromTask(task, store.settings.columnTags)
-                    task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] == null &&
+                    task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)) &&
                             statusTag != null &&
                             !statusTag.dateSort
                 }
                 .forEach { task ->
                     setModifiedIfNeeded(task)
-                    task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = findPosition(
+                    task.dataviewFields[DataviewField(TaskConstants.TASK_ORDER_PROPERTY)] = DataviewValue(findPosition(
                         store.tasks,
-                        getStatusTagFromTask(task, store.settings.columnTags)!!.tag).toString()
+                        getStatusTagFromTask(task, store.settings.columnTags)!!))
                 }
         }
 
@@ -428,7 +427,7 @@ class ReducerUtils {
             } else if (subtaskChoice == IncompleteSubtaskChoice.COMPLETE) {
                 task.subtasks.filter { !it.completed }.forEach { subtask -> subtask.completed = true }
             }
-            task.dataviewFields.remove(TaskConstants.TASK_ORDER_PROPERTY)
+            task.dataviewFields.remove(DataviewField(TaskConstants.TASK_ORDER_PROPERTY))
             task.tags.removeAll { tag -> tag in columns.map { it.tag } }
         }
 
@@ -443,7 +442,7 @@ class ReducerUtils {
 //            console.log(" - task is a repeating task, processing")
                 val repeatTask = repeatingTaskService.getNextRepeatingTask(task)
                 setModifiedIfNeeded(task)
-                task.dataviewFields.remove(TaskConstants.TASK_REPEAT_PROPERTY)
+                task.dataviewFields.remove(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY))
                 task.before = repeatTask
             }
         }
@@ -467,12 +466,12 @@ class ReducerUtils {
          */
         fun updateTaskOrder(task: Task, position: Double): Task {
             console.log("ReducerUtils.updateTaskOrder()", task, position)
-            val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
+            val taskOrder = task.dataviewFields[DataviewField(TaskConstants.TASK_ORDER_PROPERTY)]
 //        console.log(" - current task order", taskOrder)
-            if (taskOrder == null || taskOrder.toDouble() != position) {
+            if (taskOrder == null || taskOrder.asDouble() != position) {
 //            console.log(" - task order needs to be updated : $taskOrder -> $position")
                 setModifiedIfNeeded(task)
-                task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
+                task.dataviewFields[DataviewField(TaskConstants.TASK_ORDER_PROPERTY)] = DataviewValue(position)
             }
             return task
         }

@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Note(
     val note: String,
-    override val filePosition: Int,
+    override val filePosition: FilePosition,
     val subnotes: MutableList<Note> = mutableListOf()
 ) : ListItem() {
     fun toMarkdown(level: Int) : String {

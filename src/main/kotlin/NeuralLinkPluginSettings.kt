@@ -1,5 +1,6 @@
 import kotlinx.serialization.Serializable
-import model.StatusTag
+import neurallink.core.model.StatusTag
+import neurallink.core.model.Tag
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
@@ -8,7 +9,7 @@ data class NeuralLinkPluginSettings(
     val version: String,
     val taskRemoveRegex: String,
     val columnTags: List<StatusTag>,
-    val tagColors: Map<String,String>
+    val tagColors: Map<Tag,String>
 ) {
     companion object {
         fun default(): NeuralLinkPluginSettings {
@@ -22,11 +23,11 @@ data class NeuralLinkPluginSettings(
                     StatusTag("completed", "Completed")
                 ),
                 mapOf(
-                    "personal" to "13088C",
-                    "home" to "460A60",
-                    "family" to "8E791C",
-                    "marriage" to "196515",
-                    "work" to "D34807"
+                    Tag("personal") to "13088C",
+                    Tag("home") to "460A60",
+                    Tag("family") to "8E791C",
+                    Tag("marriage") to "196515",
+                    Tag("work") to "D34807"
                 )
             )
         }

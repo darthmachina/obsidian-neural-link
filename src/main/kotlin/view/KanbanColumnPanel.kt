@@ -4,7 +4,7 @@ import io.kvision.core.AlignItems
 import io.kvision.html.div
 import io.kvision.panel.VPanel
 import io.kvision.panel.vPanel
-import model.StatusTag
+import neurallink.core.model.StatusTag
 
 class KanbanColumnPanel(val status: StatusTag, cards: List<KanbanCardPanel>): VPanel(spacing = 10, alignItems = AlignItems.CENTER) {
     private val cardPanel: VPanel
