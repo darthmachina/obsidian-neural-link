@@ -55,10 +55,10 @@ fun completedTaskSubtasks(subtasks: List<Task>, choice: IncompleteSubtaskChoice)
 }
 
 // Find functions
-fun List<Task>.findById(id: TaskId) : Either<String,Task> {
+fun List<Task>.findById(id: TaskId) : Either<Problem,Task> {
     val task = this.find { it.id == id }
     return if (task == null) {
-        Either.Left("Task not found with ID $id")
+        Either.Left(TaskNotFoundProblem(id))
     } else {
         Either.Right(task)
     }

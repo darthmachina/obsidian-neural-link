@@ -1,5 +1,6 @@
 package neurallink.core.store
 
+import arrow.core.getOrElse
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -19,7 +20,7 @@ val reducer: Reducer<TaskModel> = { store, action ->
     when (action) {
         is VaultLoaded -> reducerFunctions.copyAndPopulateKanban(store, action.tasks)
         is TaskMoved -> reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask)
-        is MoveToTop -> reducerFunctions.moveToTop(store, action.taskd)
+        is MoveToTop -> reducerFunctions.moveToTop(store, action.taskId)
         is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
         is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.subtaskChoice, action.repeatingTaskService)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
@@ -103,16 +104,18 @@ class Reducers {
         )
     }
 
-    fun moveToTop(store: TaskModel, taskId: String) : TaskModel {
+    fun moveToTop(store: TaskModel, taskId: TaskId) : TaskModel {
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
+                val original = getOriginal(task)
                 task.copy(
+                    original = original,
                     dataviewFields = setTaskOrder(
                         task.dataviewFields,
                         firstTaskPosition(
-                            filterTasksByStatusTag(
-                                store.tasks,
+                            store.tasks.filterTasksByStatusTag(
                                 findStatusTag(task.tags, store.settings.columnTags)
+                                    .getOrElse { StatusTag(Tag(""), "") } // TODO Handle an error here
                             )
                         )
                     )
@@ -120,25 +123,8 @@ class Reducers {
             } else {
                 task
             }
-
-        val clonedTaskList = store.tasks.map { it.deepCopy() }
-        val movedTask = clonedTaskList.find { it.id == taskId }
-        if (movedTask == null) {
-            console.log(" - ERROR: Did not find task for id: $taskId")
-            return store
         }
 
-        val newPosition = clonedTaskList
-            .filter { task -> task.tags.contains(
-                ReducerUtils.getStatusTagFromTask(
-                    movedTask,
-                    store.settings.columnTags
-                )?.tag) }
-            .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble() })
-            .first()
-            .dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]!!.toDouble() / 2
-        ReducerUtils.setModifiedIfNeeded(movedTask)
-        movedTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = newPosition.toString()
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
@@ -150,9 +136,8 @@ class Reducers {
 
     fun taskCompleted(
         store: TaskModel,
-        taskId: String,
-        subtaskChoice: IncompleteSubtaskChoice,
-        repeatingTaskService: RepeatingTaskService
+        taskId: TaskId,
+        subtaskChoice: IncompleteSubtaskChoice
     ): TaskModel {
         console.log("Reducers.taskCompleted()")
         val clonedTaskList = store.tasks.map { task ->
@@ -165,7 +150,7 @@ class Reducers {
         }
 
         console.log(" - store and cloned list", store, clonedTaskList)
-        ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags, repeatingTaskService)
+        ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags)
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
@@ -175,7 +160,7 @@ class Reducers {
         )
     }
 
-    fun markSubtaskCompletion(store: TaskModel, taskId: String, subtaskId: String, complete: Boolean): TaskModel {
+    fun markSubtaskCompletion(store: TaskModel, taskId: TaskId, subtaskId: TaskId, complete: Boolean): TaskModel {
         console.log("Reducers.subtaskCompleted()")
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
@@ -202,9 +187,9 @@ class Reducers {
         )
     }
 
-    fun modifyFileTasks(store: TaskModel, file: String, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
+    fun modifyFileTasks(store: TaskModel, file: TaskFile, fileTasks: List<Task>): TaskModel {
         console.log("Reducers.modifyFileTasks()")
-        ReducerUtils.runFileModifiedListeners(fileTasks, store, repeatingTaskService)
+        ReducerUtils.runFileModifiedListeners(fileTasks, store)
         // Only return a new state if any of the tasks were modified
         val clonedTaskList = store.tasks
             .map { it.deepCopy() }
@@ -223,9 +208,9 @@ class Reducers {
     /**
      * Filters the task list according to the given tag; a null tag means there should be no filter.
      */
-    fun filterByTag(store: TaskModel, tag: String?) : TaskModel {
+    fun filterByTag(store: TaskModel, tag: Tag?) : TaskModel {
         val filterType = if (tag == null) FilterType.NONE else FilterType.TAG
-        val filterValue = tag ?: ""
+        val filterValue = TagFilterValue(tag ?: Tag(""))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
                 ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
@@ -236,9 +221,9 @@ class Reducers {
         )
     }
 
-    fun filterByFile(store: TaskModel, file: String?) : TaskModel {
+    fun filterByFile(store: TaskModel, file: TaskFile?) : TaskModel {
         val filterType = if (file == null) FilterType.NONE else FilterType.FILE
-        val filterValue = file ?: ""
+        val filterValue = FileFilterValue(file ?: TaskFile(""))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
                 ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
@@ -249,9 +234,9 @@ class Reducers {
         )
     }
 
-    fun filterByDataviewValue(store: TaskModel, value: String?) : TaskModel {
+    fun filterByDataviewValue(store: TaskModel, value: DataviewPair?) : TaskModel {
         val filterType = if (value == null) FilterType.NONE else FilterType.DATAVIEW
-        val filterValue = value ?: ""
+        val filterValue = DataviewFilterValue(value ?: DataviewPair(DataviewField("") to DataviewValue("")))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
                 ReducerUtils.filterTasks(store.tasks, filterType, filterValue),
@@ -263,13 +248,14 @@ class Reducers {
     }
 
     fun filterFutureDate(store: TaskModel, filter: Boolean) : TaskModel {
+        val filterValue = FutureDateFilterValue(filter)
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, FilterType.CURRENT_DATE, filter.toString()),
+                ReducerUtils.filterTasks(store.tasks, FilterType.CURRENT_DATE, filterValue),
                 store.settings.columnTags
             ),
             filterType = FilterType.CURRENT_DATE,
-            filterValue = filter.toString()
+            filterValue = filterValue
         )
     }
 }
@@ -282,25 +268,25 @@ class ReducerUtils {
         }
 
         private val taskDateComparator = compareBy<Task,LocalDate?>(nullsFirst()) {
-            it.dueOn
+            it.dueOn?.value
         }
 
-        fun filterTasks(tasks: List<Task>, filterType: FilterType, filterValue: String) : List<Task> {
+        fun filterTasks(tasks: List<Task>, filterType: FilterType, filterValue: FilterValue<out Any>) : List<Task> {
             return when (filterType) {
                 FilterType.NONE -> tasks
-                FilterType.TAG -> tasks.filter { task -> task.tags.contains(filterValue) }
-                FilterType.FILE -> tasks.filter { task -> task.file == filterValue }
+                FilterType.TAG -> tasks.filter { task -> task.tags.contains(filterValue.filterValue) }
+                FilterType.FILE -> tasks.filter { task -> task.file == filterValue.filterValue }
                 FilterType.DATAVIEW -> tasks.filter { task ->
                     val dataview = filterValue.split("::")
-                    task.dataviewFields.containsKey(dataview[0]) && task.dataviewFields[dataview[0]] == dataview[1]
+                    task.dataviewFields.containsKey(DataviewField(dataview[0])) && task.dataviewFields.valueForField(dataview[0]) == dataview[1]
                 }
                 FilterType.CURRENT_DATE -> {
                     val currentDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) // TODO Is TimeZone here going to affect anything?
                     val currentDate = LocalDate(currentDateTime.year, currentDateTime.month, currentDateTime.dayOfMonth)
                     console.log("Filtering using $currentDate")
                     tasks.filter {
-                        if (filterValue.toBoolean()) {
-                            if (it.dueOn == null) true else it.dueOn!! <= currentDate
+                        if (filterValue.filterValue) {
+                            if (it.dueOn == null) true else it.dueOn.value <= currentDate
                         } else {
                             true
                         }
@@ -368,14 +354,14 @@ class ReducerUtils {
          */
         fun changedTasks(file: String, fileTasks: List<Task>, store: TaskModel) : List<Task> {
             // Take the fileTasks list and subtrack any that are equal to what is already in the store
-            val storeFileTasks = store.tasks.filter { it.file == file }
+            val storeFileTasks = store.tasks.filter { it.file == TaskFile(file) }
             if (storeFileTasks.isEmpty()) return emptyList()
 
             console.log("ReducerUtils.changedTasks()", fileTasks, storeFileTasks)
             return fileTasks.minus(storeFileTasks.toSet())
         }
 
-        fun runFileModifiedListeners(tasks: List<Task>, store: TaskModel, repeatingTaskService: RepeatingTaskService) {
+        fun runFileModifiedListeners(tasks: List<Task>, store: TaskModel) {
             console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
 
             // Check for completed tasks with either a status tag or a repeat field (might have been completed outside the app)
@@ -427,7 +413,7 @@ class ReducerUtils {
             val taskOrder = task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]
             if (taskOrder == null || taskOrder.toDouble() != position) {
                 setModifiedIfNeeded(task)
-                task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position.toString()
+                task.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY] = position
             }
             return task
         }
@@ -437,7 +423,6 @@ class ReducerUtils {
          */
         fun setModifiedIfNeeded(task: Task) {
             console.log("setModifiedIfNeeded()", task)
-            if (task.original == null) task.original = task.deepCopy()
         }
     }
 }

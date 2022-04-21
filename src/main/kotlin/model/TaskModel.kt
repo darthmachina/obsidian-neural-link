@@ -3,6 +3,8 @@ package model
 import NeuralLinkPluginSettings
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
+import neurallink.core.store.FilterType
+import neurallink.core.store.FilterValue
 
 /**
  * Right now this just holds a full list of all the Tasks in the Vault.
@@ -15,13 +17,5 @@ data class TaskModel(
     val tasks: List<Task>,
     val kanbanColumns: Map<StatusTag,List<Task>>,
     val filterType: FilterType,
-    val filterValue: String
+    val filterValue: FilterValue<out Any>
 )
-
-enum class FilterType {
-    NONE,
-    TAG,
-    FILE,
-    DATAVIEW,
-    CURRENT_DATE
-}

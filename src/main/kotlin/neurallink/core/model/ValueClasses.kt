@@ -1,6 +1,7 @@
 package neurallink.core.model
 
 import arrow.core.Either
+import arrow.core.right
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -34,6 +35,7 @@ abstract class ValueClass<T>(@Transient open val value: T? = null) {
         }
     }
 }
+@Serializable data class DataviewPair(@Contextual override val value: Pair<DataviewField, DataviewValue>) : ValueClass<Pair<DataviewField, DataviewValue>>(value)
 @Serializable class DataviewMap() : HashMap<DataviewField,DataviewValue>() {
     constructor(original: Map<DataviewField,DataviewValue>) : this() {
         putAll(original)
@@ -47,10 +49,6 @@ abstract class ValueClass<T>(@Transient open val value: T? = null) {
     }
 
     fun valueForField(field: DataviewField) : Either<String,DataviewValue> {
-        return if (keys.contains(field)) {
-            Either.Right(get(field)!!)
-        } else {
-            Either.Left("Field ${field.value} does not exist")
-        }
+        return get(field)?.right() ?: Either.Left("Field $field does not exist")
     }
 }
