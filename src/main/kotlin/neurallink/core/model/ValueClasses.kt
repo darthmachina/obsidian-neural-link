@@ -35,6 +35,11 @@ abstract class ValueClass<T>(@Transient open val value: T? = null) {
     }
 }
 @Serializable class DataviewMap() : HashMap<DataviewField,DataviewValue>() {
+    constructor(original: Map<DataviewField,DataviewValue>) : this() {
+        putAll(original)
+    }
+
+
     fun copy() : DataviewMap {
         val newMap = DataviewMap()
         newMap.putAll(this)

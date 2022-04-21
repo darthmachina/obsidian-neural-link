@@ -5,17 +5,12 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import model.*
-import neurallink.core.model.StatusTag
-import neurallink.core.model.Task
-import neurallink.core.model.TaskConstants
+import neurallink.core.model.*
 import neurallink.core.service.addTag
 import neurallink.core.service.filterTags
 import neurallink.core.service.getOriginal
 import neurallink.core.store.*
-import neurallink.view.filterTasksByStatusTag
-import neurallink.view.findStatusTag
-import neurallink.view.firstTaskPosition
-import neurallink.view.setTaskOrder
+import neurallink.view.*
 import org.reduxkotlin.Reducer
 
 val reducerFunctions = Reducers()
@@ -49,15 +44,13 @@ class Reducers {
             taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
             columnTags = updateSettings.columnTags ?: store.settings.columnTags
         )
+        // FIXME Side effect
         updateSettings.plugin.saveData(updateSettings.settingsService.toJson(newSettings))
         return if (updateSettings.columnTags != null) {
-//            console.log(" - columns updated, reloading kanban")
-            val clonedTaskList = store.tasks.map { it.deepCopy() }
             store.copy(
                 settings = newSettings,
-                tasks = clonedTaskList,
                 kanbanColumns = ReducerUtils.createKanbanMap(
-                    ReducerUtils.filterTasks(clonedTaskList, store.filterType, store.filterValue),
+                    ReducerUtils.filterTasks(store.tasks, store.filterType, store.filterValue),
                     newSettings.columnTags
                 )
             )
@@ -82,7 +75,7 @@ class Reducers {
         )
     }
 
-    fun moveCard(store: TaskModel, taskId: String, newStatus: String, beforeTaskId: String?): TaskModel {
+    fun moveCard(store: TaskModel, taskId: TaskId, newStatus: Tag, beforeTaskId: String?): TaskModel {
         console.log("Reducers.taskStatusChanged()")
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {

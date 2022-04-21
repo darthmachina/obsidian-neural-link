@@ -2,12 +2,10 @@ package neurallink.core.service
 
 import arrow.core.Either
 import arrow.core.flatMap
-import neurallink.core.model.Task
 import neurallink.core.store.deepCopy
 import arrow.optics.snoc
-import neurallink.core.model.Tag
-import neurallink.core.model.TaskConstants
-import neurallink.core.model.TaskId
+import neurallink.core.model.*
+import neurallink.core.store.IncompleteSubtaskChoice
 
 /**
  * Creates a copy of the task if Task.original has not already been set,
@@ -17,12 +15,43 @@ fun getOriginal(task: Task): Task {
     return task.original ?: task.deepCopy()
 }
 
+// Tags
 fun filterTags(tags: Set<Tag>, filter: (Tag) -> Boolean): Set<Tag> {
     return tags.filter(filter).toSet()
 }
 
 fun addTag(tags: Set<Tag>, tag: Tag): Set<Tag> {
     return (tags.toList() snoc tag).toSet()
+}
+
+// Dataview
+fun Map<DataviewField,DataviewValue>.toDataviewMap() : DataviewMap {
+    return DataviewMap(this)
+}
+
+fun DataviewMap.removeKeys(vararg fields: DataviewField) : DataviewMap {
+    return this
+        .filter {
+            it.key in fields
+        }
+        .toDataviewMap()
+}
+
+// Subtasks
+fun completedTaskSubtasks(subtasks: List<Task>, choice: IncompleteSubtaskChoice) : List<Task> {
+    return when (choice) {
+        IncompleteSubtaskChoice.DELETE -> subtasks.filter { it.completed }
+        IncompleteSubtaskChoice.COMPLETE -> {
+            subtasks.map {
+                if (it.completed) {
+                    it
+                } else {
+                    it.copy(completed = true)
+                }
+            }
+        }
+        else -> subtasks
+    }
 }
 
 // Find functions

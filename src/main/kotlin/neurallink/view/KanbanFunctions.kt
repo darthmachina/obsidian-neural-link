@@ -1,8 +1,10 @@
 package neurallink.view
 
 import arrow.core.Either
+import arrow.core.computations.either
 import arrow.core.flatMap
 import arrow.core.getOrElse
+import arrow.core.getOrHandle
 import neurallink.core.model.DataviewMap
 import neurallink.core.model.DataviewValue
 import neurallink.core.model.StatusTag
@@ -83,6 +85,24 @@ fun setTaskOrder(fields: DataviewMap, order: Double) : DataviewMap {
 }
 
 /**
+ * Gets the Task for beforeTaskId.
+ * TODO Not really happy with this method; look for ways to refactor.
+ *
+ * @param tasks Ordered list of tasks for a single Status
+ * @return A Triple with the Task, Position and List Index
+ */
+fun beforeTaskWithIndexAndPosition(tasks: List<Task>, beforeTaskId: TaskId) : Either<String, Triple<Task,Double,Int>> {
+    val beforeTask = tasks.findById(beforeTaskId).getOrElse { null }
+        ?: return Either.Left("beforeTask not found")
+    val beforeTaskPosition = beforeTask.dataviewFields.valueForField(TaskConstants.TASK_ORDER_PROPERTY)
+        .flatMap { it.asDouble() }.getOrElse { null }
+        ?: return Either.Left("beforeTask does not have a position")
+    val beforeTaskIndex = tasks.indexOf(beforeTask)
+    return Either.Right(Triple(beforeTask, beforeTaskPosition, beforeTaskIndex))
+
+}
+
+/**
  * Finds the position for a task, calculated given the following scenarios:
  *
  * 1. No tasks for the status, returns 1.0 (to leave room before it for other cards)
@@ -97,11 +117,11 @@ fun findPosition(tasks: List<Task>, status: Tag, beforeTaskId: TaskId? = null) :
     } else if (beforeTaskId == null) {
         Either.Right(lastTaskPosition(tasks) + 1.0)
     } else {
+        // TODO This whole section sucks
         val statusTasks = tasks.filterByTag(status)
-        val beforeTask = statusTasks.findById(beforeTaskId)
-        val beforeTaskPosition = beforeTask.dataviewFields[TaskConstants.TASK_ORDER_PROPERTY]?.toDouble()
-            ?: throw IllegalStateException("beforeTask does not have a position property")
-        val beforeTaskIndex = statusTasks.indexOf(beforeTask)
+        val (beforeTask, beforeTaskPosition, beforeTaskIndex) = beforeTaskWithIndexAndPosition(statusTasks, beforeTaskId)
+            .getOrElse { null }
+            ?: Either.Left("Cannot get BeforeTask information")
         // Returns new position
         if (beforeTaskIndex == 0) {
             beforeTaskPosition / 2
