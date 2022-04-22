@@ -12,7 +12,6 @@ import kotlinx.uuid.UUID
 @Suppress("NON_EXPORTABLE_TYPE", "EXPERIMENTAL_IS_NOT_ENABLED") // List is flagged for this but is valid
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-@Serializable
 data class Task(
     val file: TaskFile,
     override val filePosition: FilePosition,
@@ -32,8 +31,12 @@ data class Task(
 ) : ListItem() {
     @OptIn(ExperimentalSerializationApi::class)
     fun deepCopy(): Task {
-        val bytes = Cbor.encodeToByteArray(this)
-        return Cbor.decodeFromByteArray(bytes)
+        return this.copy(
+            tags = tags.map { tag -> tag.copy() }.toMutableSet(),
+            dataviewFields = dataviewFields.copy(),
+            subtasks = subtasks.map { subtask -> subtask.deepCopy() }.toMutableList(),
+            notes = notes.map { note -> note.copy() }.toMutableList()
+        )
     }
 
     /**

@@ -5,8 +5,8 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.uuid.UUID
+import service.TagSerializer
 
-@Serializable
 sealed class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null) : Comparable<T> {
     override fun toString(): String {
         return value.toString()
@@ -17,31 +17,23 @@ sealed class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null)
     }
 }
 
-@Serializable
 data class TaskFile(override val value: String) : ValueClass<String>(value)
 
-@Serializable
 data class FilePosition(override val value: Int) : ValueClass<Int>(value)
 
-@Serializable
 data class Description(override val value: String) : ValueClass<String>(value)
 
-@Serializable
+@Serializable(with = TagSerializer::class)
 data class Tag(override val value: String) : ValueClass<String>(value)
 
-@Serializable
 data class DueOn(override val value: LocalDate) : ValueClass<LocalDate>(value)
 
-@Serializable
 data class CompletedOn(override val value: LocalDate) : ValueClass<LocalDate>(value)
 
-@Serializable
 data class TaskId(override val value: UUID) : ValueClass<UUID>(value)
 
-@Serializable
 data class DataviewField(override val value: String) : ValueClass<String>(value)
 
-@Serializable
 data class DataviewValue<T : Comparable<T>>(@Contextual override val value: T) : ValueClass<T>(value) {
     fun asDouble(): Double {
         return when (value) {
@@ -58,10 +50,8 @@ data class DataviewValue<T : Comparable<T>>(@Contextual override val value: T) :
     }
 }
 
-@Serializable
 data class DataviewPair<T : Comparable<T>>(@Contextual val value: Pair<DataviewField, DataviewValue<T>>)
 
-@Serializable
 class DataviewMap() : HashMap<DataviewField, DataviewValue<out Comparable<*>>>() {
     constructor(original: Map<DataviewField, DataviewValue<out Comparable<*>>>) : this() {
         putAll(original)

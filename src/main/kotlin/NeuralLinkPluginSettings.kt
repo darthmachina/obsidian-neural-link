@@ -14,7 +14,7 @@ data class NeuralLinkPluginSettings(
     companion object {
         fun default(): NeuralLinkPluginSettings {
             return NeuralLinkPluginSettings(
-                "3",
+                "4",
                 """#kanban/[\w-]+(\s|$)""",
                 listOf(
                     StatusTag(Tag("backlog"), "Backlog"),
@@ -33,15 +33,6 @@ data class NeuralLinkPluginSettings(
         }
     }
 }
-
-@OptIn(ExperimentalJsExport::class)
-@JsExport
-@Serializable
-data class NeuralLinkPluginSettings2(
-    val version: String,
-    val taskRemoveRegex: String,
-    val columnTags: List<StatusTag>
-)
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport

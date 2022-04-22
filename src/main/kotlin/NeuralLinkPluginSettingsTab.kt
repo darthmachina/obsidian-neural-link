@@ -49,7 +49,7 @@ class NeuralLinkPluginSettingsTab(
             .addTextArea { text ->
                 val columns = store.state.settings.columnTags
                 console.log(" - current columns", columns)
-                val stringList = columns.map { statusTag -> "${statusTag.tag}:${statusTag.displayName}" }
+                val stringList = columns.map { statusTag -> "${statusTag.tag}:${statusTag.displayName}:${statusTag.dateSort}" }
                 console.log(" - stringList", stringList)
                 val textVersion = stringList.joinToString("\n")
                 console.log(" - textVersion", textVersion)
