@@ -127,11 +127,11 @@ class TaskService {
      */
     fun getNextRepeatingTask(task: Task) : Task {
 //        console.log("Before copy", task)
-        val repeatTask = task.deepCopy()
+        val repeatTask = task.copy()
 //        console.log("After copy", repeatTask)
-        repeatTask.due = getNextRepeatDate(task)
-        repeatTask.completed = false
-        repeatTask.completedDate = null
+//        repeatTask.due = getNextRepeatDate(task)
+//        repeatTask.completed = false
+//        repeatTask.completedDate = null
         return repeatTask
     }
 

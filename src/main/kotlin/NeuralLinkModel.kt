@@ -1,5 +1,4 @@
 import kotlinx.serialization.*
-import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -36,10 +35,10 @@ data class Task(
     val notes: MutableList<String> = mutableListOf()
 ) {
     @OptIn(ExperimentalSerializationApi::class)
-    fun deepCopy(): Task {
-        val bytes = Cbor.encodeToByteArray(this)
-        return Cbor.decodeFromByteArray(bytes)
-    }
+//    fun deepCopy(): Task {
+//        val bytes = Cbor.encodeToByteArray(this)
+//        return Cbor.decodeFromByteArray(bytes)
+//    }
 
     /**
      * Creates a Markdown String, suitable for writing to a Markdown file.
