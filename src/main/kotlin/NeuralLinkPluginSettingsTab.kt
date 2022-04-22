@@ -87,10 +87,10 @@ class NeuralLinkPluginSettingsTab(
                 text.setPlaceholder("'tag:hex_color' separated by newlines")
                     .setValue(textVersion)
                     .onChange { value ->
-                        val tagColors = mutableMapOf<String,String>()
+                        val tagColors = mutableMapOf<Tag,String>()
                         value.split("\n").forEach { tagColor ->
                             val singleValues = tagColor.split(":")
-                            tagColors[singleValues[0]] = singleValues[1]
+                            tagColors[Tag(singleValues[0])] = singleValues[1]
                         }
                         store.dispatch(UpdateSettings(plugin, settingsService, tagColors = tagColors))
                     }

@@ -223,7 +223,7 @@ class Reducers {
 
     fun filterByDataviewValue(store: TaskModel, value: String?) : TaskModel {
         val dataview = value?.split("::") ?: throw IllegalStateException("Filter value is not a valid dataview field '$value'")
-        val filterValue = DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
+        val filterValue = DataviewFilterValue(DataviewPair<String>(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
                 ReducerUtils.filterTasks(store.tasks, filterValue),
@@ -261,7 +261,10 @@ class ReducerUtils {
                 is NoneFilterValue -> tasks
                 is TagFilterValue -> tasks.filter { task -> task.tags.contains(filterValue.filterValue) }
                 is FileFilterValue -> tasks.filter { task -> task.file == filterValue.filterValue }
-                is DataviewFilterValue -> tasks.filter { task -> task.dataviewFields.containsKey(filterValue.filterValue.value.first) }
+                is DataviewFilterValue -> tasks.filter { task ->
+                    task.dataviewFields.containsKey(filterValue.filterValue.value.first)
+                    // TODO This is only filtering on the key being present, not using the value at all
+                }
                 is FutureDateFilterValue -> {
                     val currentDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) // TODO Is TimeZone here going to affect anything?
                     val currentDate = LocalDate(currentDateTime.year, currentDateTime.month, currentDateTime.dayOfMonth)

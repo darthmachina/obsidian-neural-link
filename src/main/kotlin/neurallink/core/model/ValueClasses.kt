@@ -7,13 +7,13 @@ import kotlinx.serialization.Transient
 import kotlinx.uuid.UUID
 
 @Serializable
-abstract class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null) : Comparable<T> {
+sealed class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null) : Comparable<T> {
     override fun toString(): String {
         return value.toString()
     }
 
     override fun compareTo(other: T): Int {
-        return value.compareTo(other)
+        return value?.compareTo(other) ?: -1
     }
 }
 
@@ -39,14 +39,10 @@ data class CompletedOn(override val value: LocalDate) : ValueClass<LocalDate>(va
 data class TaskId(override val value: UUID) : ValueClass<UUID>(value)
 
 @Serializable
-data class DataviewField(override val value: String) : ValueClass<String>(value), Comparable<DataviewField> {
-    override fun compareTo(other: DataviewField): Int {
-        return value.compareTo(other.value)
-    }
-}
+data class DataviewField(override val value: String) : ValueClass<String>(value)
 
 @Serializable
-data class DataviewValue(@Contextual override val value: Any) : ValueClass<Any>(value) {
+data class DataviewValue<T : Comparable<T>>(@Contextual override val value: T) : ValueClass<T>(value) {
     fun asDouble(): Double {
         return when (value) {
             is Double -> value
@@ -63,12 +59,11 @@ data class DataviewValue(@Contextual override val value: Any) : ValueClass<Any>(
 }
 
 @Serializable
-data class DataviewPair(@Contextual override val value: Pair<DataviewField, DataviewValue>) :
-    ValueClass<Pair<DataviewField, DataviewValue>>(value)
+data class DataviewPair<T : Comparable<T>>(@Contextual val value: Pair<DataviewField, DataviewValue<T>>)
 
 @Serializable
-class DataviewMap() : HashMap<DataviewField, DataviewValue>() {
-    constructor(original: Map<DataviewField, DataviewValue>) : this() {
+class DataviewMap() : HashMap<DataviewField, DataviewValue<out Comparable<*>>>() {
+    constructor(original: Map<DataviewField, DataviewValue<out Comparable<*>>>) : this() {
         putAll(original)
     }
 
@@ -78,11 +73,11 @@ class DataviewMap() : HashMap<DataviewField, DataviewValue>() {
         return newMap
     }
 
-    fun valueForField(field: DataviewField): DataviewValue {
+    fun valueForField(field: DataviewField): DataviewValue<out Comparable<*>> {
         return get(field) ?: throw IllegalStateException("Field $field does not exist")
     }
 }
 
-fun Map<DataviewField,DataviewValue>.toDataviewMap() : DataviewMap {
+fun Map<DataviewField,DataviewValue<out Comparable<*>>>.toDataviewMap() : DataviewMap {
     return DataviewMap(this)
 }

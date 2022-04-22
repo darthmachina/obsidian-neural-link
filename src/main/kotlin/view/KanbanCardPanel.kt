@@ -213,8 +213,8 @@ class KanbanCardPanel(
     private fun chooseNewStatus() {
         console.log("chooseNewStatus()")
         val statusSelect = DialogInput.SELECT.apply {
-            model = store.state.settings.columnTags.map { it.tag to it.displayName }
-            current = status.tag
+            model = store.state.settings.columnTags.map { it to it.displayName }
+            current = status
         }
         val dialog = Dialog(
             "Change Status",
@@ -223,9 +223,9 @@ class KanbanCardPanel(
         )
         dialog.setCallback { result ->
             console.log("Dialog callback()", result)
-            if (result.accept && (result.result as String) != status.tag.value) {
+            if (result.accept && (result.result as StatusTag) != status) {
                 console.log(" - saving result: ", result.result)
-                store.dispatch(TaskMoved(task.id, Tag(result.result)))
+                store.dispatch(TaskMoved(task.id, result.result))
             }
             dialog.hide()
             remove(dialog)

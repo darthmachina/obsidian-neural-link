@@ -22,7 +22,7 @@ sealed class FilterValue<T>(open val filterValue : T? = null)
 class NoneFilterValue() : FilterValue<Any>()
 class TagFilterValue(override val filterValue: Tag) : FilterValue<Tag>(filterValue)
 class FileFilterValue(override val filterValue: TaskFile) : FilterValue<TaskFile>(filterValue)
-class DataviewFilterValue(override val filterValue: DataviewPair) : FilterValue<DataviewPair>(filterValue)
+class DataviewFilterValue(override val filterValue: DataviewPair<out Comparable<*>>) : FilterValue<DataviewPair<out Comparable<*>>>(filterValue)
 class FutureDateFilterValue(override val filterValue: Boolean) : FilterValue<Boolean>(filterValue)
 
 data class VaultLoaded(val tasks: List<Task>) : Action

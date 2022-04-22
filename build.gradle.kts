@@ -1,6 +1,6 @@
 plugins {
-    kotlin("js") version "1.6.0"
-    kotlin("plugin.serialization") version "1.6.0"
+    kotlin("js") version "1.6.20"
+    kotlin("plugin.serialization") version "1.6.20"
 }
 
 group = "io.github.darthmachina"
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    val kotlinVersion = "1.6.0"
+    val kotlinVersion = "1.6.20"
     val kotlinxHtmlVersion = "0.7.5"
     val kvisionVersion = "5.8.3"
 
@@ -25,10 +25,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
     implementation("org.reduxkotlin:redux-kotlin:0.5.5")
     implementation("org.reduxkotlin:redux-kotlin-reselect:0.2.10")
-    implementation("app.softwork:kotlinx-uuid-core:0.0.12")
+    implementation("app.softwork:kotlinx-uuid-core:0.0.13")
 
     implementation("io.kvision:kvision:$kvisionVersion")
     implementation("io.kvision:kvision-fontawesome:$kvisionVersion")

@@ -128,10 +128,15 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
                     }
                 )
             }
+            .asSequence()
+            .map {
+                it.value
+            }
             .distinct()
-            .minus(store.state.settings.columnTags.map { it.tag }.toSet())
+            .minus(store.state.settings.columnTags.map { it.tag.value }.toSet())
             .sorted()
             .map { tag -> tag to tag }
+            .toList()
     }
 
     /**
@@ -140,7 +145,7 @@ class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify =
     private fun getAllFiles() : List<StringPair> {
         return store.state.tasks
             .map { task ->
-                task.file
+                task.file.value
             }
             .distinct()
             .sorted()
