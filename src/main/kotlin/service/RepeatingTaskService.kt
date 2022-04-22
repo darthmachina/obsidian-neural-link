@@ -8,6 +8,7 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import model.RepeatItem
 import neurallink.core.model.DataviewField
+import neurallink.core.model.DueOn
 import neurallink.core.model.Task
 import neurallink.core.model.TaskConstants
 
@@ -31,7 +32,7 @@ class RepeatingTaskService {
     fun getNextRepeatingTask(task: Task) : Task {
         console.log("getNextRepeatingTask()")
         val repeatTask = task.deepCopy()
-        repeatTask.dueOn = getNextRepeatDate(task)
+        repeatTask.dueOn = DueOn(getNextRepeatDate(task))
         repeatTask.completed = false
         repeatTask.completedOn = null
         return repeatTask
@@ -44,7 +45,7 @@ class RepeatingTaskService {
 
         val repeatItem = parseRepeating(task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)).asString())
         val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) // TODO Is TimeZone here going to affect anything?
-        val fromDate = if (repeatItem.fromComplete) LocalDate(currentDate.year, currentDate.month, currentDate.dayOfMonth) else task.dueOn!!
+        val fromDate = if (repeatItem.fromComplete) LocalDate(currentDate.year, currentDate.month, currentDate.dayOfMonth) else task.dueOn!!.value
 
         return when (repeatItem.span) {
             TaskConstants.REPEAT_SPAN.DAILY -> fromDate.plus(repeatItem.amount, DateTimeUnit.DAY)

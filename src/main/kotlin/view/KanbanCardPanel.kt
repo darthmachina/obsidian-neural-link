@@ -118,9 +118,9 @@ class KanbanCardPanel(
                     addCssStyle(KanbanStyles.KANBAN_DUE)
                     if (task.dueOn!! < todayDate) {
                         background = Background(color = Color.name(Col.DARKRED))
-                    } else if (task.dueOn!! == todayDate) {
+                    } else if (task.dueOn!!.value == todayDate) {
                         background = Background(color = Color.name(Col.DARKGREEN))
-                    } else if (task.dueOn!!.until(todayDate, DateTimeUnit.DAY) == -1) {
+                    } else if (task.dueOn!!.value.until(todayDate, DateTimeUnit.DAY) == -1) {
                         background = Background(color = Color.name(Col.DARKBLUE))
                     }
                     +task.dueOn.toString()

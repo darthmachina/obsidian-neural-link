@@ -1,7 +1,5 @@
 package neurallink.core.model
 
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.uuid.UUID
 
@@ -12,8 +10,8 @@ data class Task(
     val file: TaskFile,
     override val filePosition: FilePosition,
     var description: Description,
-    var dueOn: LocalDate?,
-    var completedOn: LocalDateTime?,
+    var dueOn: DueOn?,
+    var completedOn: CompletedOn?,
     val tags: MutableSet<Tag>,
     val dataviewFields: DataviewMap,
     var completed: Boolean,

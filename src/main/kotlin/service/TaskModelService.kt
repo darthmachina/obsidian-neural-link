@@ -14,18 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import neurallink.core.model.ListItem
-import neurallink.core.model.Note
-import neurallink.core.model.Task
-import neurallink.core.model.TaskConstants
 import model.TaskModel
-import neurallink.core.model.DataviewField
-import neurallink.core.model.DataviewValue
-import neurallink.core.model.Description
-import neurallink.core.model.FilePosition
-import neurallink.core.model.Tag
-import neurallink.core.model.TaskFile
-import neurallink.core.model.toDataviewMap
+import neurallink.core.model.*
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
@@ -246,8 +236,8 @@ class TaskModelService(val store: Store<TaskModel>) {
             TaskFile(file),
             FilePosition(line),
             Description(stripped),
-            due,
-            completedDate,
+            if (due == null) null else DueOn(due),
+            if (completedDate == null) null else CompletedOn(completedDate),
             tagMatches,
             dataviewMatches,
             completed

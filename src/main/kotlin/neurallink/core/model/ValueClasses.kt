@@ -1,6 +1,7 @@
 package neurallink.core.model
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -28,7 +29,7 @@ data class Tag(override val value: String) : ValueClass<String>(value) {
 
 data class DueOn(override val value: LocalDate) : ValueClass<LocalDate>(value)
 
-data class CompletedOn(override val value: LocalDate) : ValueClass<LocalDate>(value)
+data class CompletedOn(override val value: LocalDateTime) : ValueClass<LocalDateTime>(value)
 
 data class TaskId(override val value: UUID) : ValueClass<UUID>(value)
 

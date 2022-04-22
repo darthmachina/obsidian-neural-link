@@ -253,7 +253,7 @@ class ReducerUtils {
         }
 
         private val taskDateComparator = compareBy<Task,LocalDate?>(nullsFirst()) {
-            it.dueOn
+            it.dueOn?.value
         }
 
         fun filterTasks(tasks: List<Task>, filterValue: FilterValue<out Any>) : List<Task> {
