@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import model.TaskModel
+import neurallink.core.model.TaskFile
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import service.TaskModelService
@@ -38,7 +39,7 @@ class FileModifiedEvent(
                 fileContents.addAll(contents.split("\n"))
                 CoroutineScope(Dispatchers.Main).launch {
                     val tasks = taskModelService.readFile(context, plugin.app.vault, plugin.app.metadataCache)
-                    store.dispatch(ModifyFileTasks(context.path, tasks, repeatingTaskService))
+                    store.dispatch(ModifyFileTasks(TaskFile(context.path), tasks, repeatingTaskService))
                 }
             }
         }

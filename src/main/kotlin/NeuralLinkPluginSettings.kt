@@ -17,10 +17,10 @@ data class NeuralLinkPluginSettings(
                 "3",
                 """#kanban/[\w-]+(\s|$)""",
                 listOf(
-                    StatusTag("backlog", "Backlog"),
-                    StatusTag("scheduled", "Scheduled", true),
-                    StatusTag("inprogress", "In Progress"),
-                    StatusTag("completed", "Completed")
+                    StatusTag(Tag("backlog"), "Backlog"),
+                    StatusTag(Tag("scheduled"), "Scheduled", true),
+                    StatusTag(Tag("inprogress"), "In Progress"),
+                    StatusTag(Tag("completed"), "Completed")
                 ),
                 mapOf(
                     Tag("personal") to "13088C",

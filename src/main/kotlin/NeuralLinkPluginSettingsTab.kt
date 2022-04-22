@@ -2,6 +2,7 @@ import kotlinx.html.dom.append
 import kotlinx.html.js.h2
 import neurallink.core.model.StatusTag
 import model.TaskModel
+import neurallink.core.model.Tag
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
 import service.SettingsService
@@ -60,7 +61,7 @@ class NeuralLinkPluginSettingsTab(
                             val tagValues = column.split(":")
                             statusList.add(
                                 StatusTag(
-                                tagValues[0],
+                                Tag(tagValues[0]),
                                 tagValues[1],
                                 if (tagValues.size == 3) tagValues[2].toBoolean() else false
                             )

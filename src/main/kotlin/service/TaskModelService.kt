@@ -185,7 +185,6 @@ class TaskModelService(val store: Store<TaskModel>) {
                     //                console.log(" - is an indented item")
                     val parentListItem = listItemsByLine[listItem.parent.toInt()]!! // TODO Handle error better
                     if (listItem.task == null) {
-//                        console.log(" - is a note, parent:", parentListItem)
                         // Is a note, find the parent task and add this line to the notes list
                         // removing the first two characters (the list marker, '- ')
                         val note = Note(lineContents.trim().drop(2), FilePosition(listItemLine))
@@ -196,7 +195,6 @@ class TaskModelService(val store: Store<TaskModel>) {
                         }
 
                     } else {
-//                        console.log(" - is a subtask")
                         // Is a task, construct task and find the parent task to add to subtasks list
                         val subtask = createTask(filename, listItemLine, lineContents)
                         when (parentListItem) {

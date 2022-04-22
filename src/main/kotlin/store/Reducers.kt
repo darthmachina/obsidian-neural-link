@@ -46,7 +46,8 @@ class Reducers {
         console.log("updateSettings()")
         val newSettings = store.settings.copy(
             taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
-            columnTags = updateSettings.columnTags ?: store.settings.columnTags
+            columnTags = updateSettings.columnTags ?: store.settings.columnTags,
+            tagColors = updateSettings.tagColors ?: store.settings.tagColors
         )
         updateSettings.plugin.saveData(updateSettings.settingsService.toJson(newSettings))
         return if (updateSettings.columnTags != null) {

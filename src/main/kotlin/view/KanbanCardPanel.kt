@@ -21,10 +21,7 @@ import io.kvision.panel.vPanel
 import io.kvision.utils.px
 import kotlinx.datetime.*
 import model.*
-import neurallink.core.model.StatusTag
-import neurallink.core.model.Tag
-import neurallink.core.model.Task
-import neurallink.core.model.TaskConstants
+import neurallink.core.model.*
 import org.reduxkotlin.Store
 import service.RepeatingTaskService
 import store.*
@@ -102,7 +99,7 @@ class KanbanCardPanel(
         }
 
         // Dataview Fields
-        val filteredDataviewFields = task.dataviewFields.filter { entry -> entry.key != TaskConstants.TASK_ORDER_PROPERTY }
+        val filteredDataviewFields = task.dataviewFields.filter { entry -> entry.key != DataviewField(TaskConstants.TASK_ORDER_PROPERTY) }.toDataviewMap()
         if (filteredDataviewFields.isNotEmpty()) {
             add(createDataviewPanel(filteredDataviewFields))
         }
@@ -162,18 +159,18 @@ class KanbanCardPanel(
         }
     }
 
-    private fun createDataviewPanel(filteredDataviewFields: Map<String,String>) : Table {
+    private fun createDataviewPanel(filteredDataviewFields: DataviewMap) : Table {
         return table {
             addCssStyle(KanbanStyles.KANBAN_DATAVIEW_TABLE)
             filteredDataviewFields.forEach { entry ->
                 tr {
                     td {
                         addCssStyle(KanbanStyles.KANBAN_DATAVIEW_LABEL)
-                        +entry.key
+                        +entry.key.value
                     }
                     td {
                         addCssStyle(KanbanStyles.KANBAN_DATAVIEW_VALUE)
-                        +entry.value
+                        +entry.value.value.toString()
                     }
                 }
             }
@@ -272,7 +269,7 @@ class KanbanCardPanel(
 
     private fun openSourceFile(task: Task, leaf: WorkspaceLeaf) {
         console.log("openSourceFile()")
-        val filePath = leaf.view.app.metadataCache.getFirstLinkpathDest(task.file, "")
+        val filePath = leaf.view.app.metadataCache.getFirstLinkpathDest(task.file.value, "")
         if (filePath == null) {
             console.log(" - ERROR: file path not found: ${task.file}")
             return

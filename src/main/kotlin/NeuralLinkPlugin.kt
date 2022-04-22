@@ -1,6 +1,5 @@
 import event.FileModifiedEvent
 import kotlinx.coroutines.*
-import model.FilterType
 import model.TaskModel
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
@@ -8,6 +7,7 @@ import org.reduxkotlin.middleware
 import service.RepeatingTaskService
 import service.SettingsService
 import service.TaskModelService
+import store.NoneFilterValue
 import store.reducer
 import view.KanbanView
 
@@ -27,7 +27,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
     private val store = createStore(
         reducer,
-        TaskModel(NeuralLinkPluginSettings.default(), mutableListOf(), mutableMapOf(), FilterType.NONE, ""),
+        TaskModel(NeuralLinkPluginSettings.default(), mutableListOf(), mutableMapOf(), NoneFilterValue()),
         applyMiddleware(loggerMiddleware)
     ).apply {
         subscribe(::taskModifiedListener)

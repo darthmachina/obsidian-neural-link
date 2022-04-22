@@ -45,5 +45,5 @@ data class UpdateSettings(
     val settingsService: SettingsService,
     var taskRemoveRegex: String? = null,
     var columnTags: List<StatusTag>? = null,
-    var tagColors: Map<String,String>? = null
+    var tagColors: Map<Tag,String>? = null
 ) : Action

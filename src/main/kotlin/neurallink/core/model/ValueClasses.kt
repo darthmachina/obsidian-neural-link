@@ -7,9 +7,13 @@ import kotlinx.serialization.Transient
 import kotlinx.uuid.UUID
 
 @Serializable
-abstract class ValueClass<T>(@Transient open val value: T? = null) {
+abstract class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null) : Comparable<T> {
     override fun toString(): String {
         return value.toString()
+    }
+
+    override fun compareTo(other: T): Int {
+        return value.compareTo(other)
     }
 }
 
