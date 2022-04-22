@@ -221,7 +221,13 @@ class TaskModelService(val store: Store<TaskModel>) {
 
         // Pull out all Dataview fields
         val dataviewMatches = dataviewRegex.findAll(text).associate {
-            DataviewField(it.groupValues[1]) to DataviewValue(it.groupValues[2])
+            val doubleValue = it.groupValues[2].toDoubleOrNull()
+            if (doubleValue != null) {
+                DataviewField(it.groupValues[1]) to DataviewValue(doubleValue)
+            } else {
+                // Just use the value
+                DataviewField(it.groupValues[1]) to DataviewValue(it.groupValues[2])
+            }
         }.toDataviewMap()
 
         val completed = completedRegex.containsMatchIn(text)

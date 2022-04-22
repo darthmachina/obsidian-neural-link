@@ -8,10 +8,6 @@ import kotlinx.uuid.UUID
 import service.TagSerializer
 
 sealed class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null) : Comparable<T> {
-    override fun toString(): String {
-        return value.toString()
-    }
-
     override fun compareTo(other: T): Int {
         return value?.compareTo(other) ?: -1
     }
@@ -24,7 +20,11 @@ data class FilePosition(override val value: Int) : ValueClass<Int>(value)
 data class Description(override val value: String) : ValueClass<String>(value)
 
 @Serializable(with = TagSerializer::class)
-data class Tag(override val value: String) : ValueClass<String>(value)
+data class Tag(override val value: String) : ValueClass<String>(value) {
+    override fun toString(): String {
+        return value
+    }
+}
 
 data class DueOn(override val value: LocalDate) : ValueClass<LocalDate>(value)
 
