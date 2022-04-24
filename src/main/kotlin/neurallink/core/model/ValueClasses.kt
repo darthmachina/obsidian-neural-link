@@ -65,7 +65,7 @@ class DataviewMap() : HashMap<DataviewField, DataviewValue<out Comparable<*>>>()
     }
 
     fun valueForField(field: DataviewField): DataviewValue<out Comparable<*>> {
-        return get(field) ?: throw IllegalStateException("Field $field does not exist")
+        return get(field) ?: throw IllegalStateException("Field $field does not exist, ${this.keys}")
     }
 }
 

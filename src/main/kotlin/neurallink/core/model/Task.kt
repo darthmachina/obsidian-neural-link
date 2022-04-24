@@ -43,23 +43,23 @@ data class Task(
         val markdownElements = mutableListOf<String>()
 
         markdownElements.add(if (completed) "- [x]" else "- [ ]")
-        markdownElements.add(description.toString())
-        if (tags.size > 0) {
-            markdownElements.add(tags.joinToString(" ") { tag -> "#$tag" })
+        markdownElements.add(description.value)
+        if (tags.isNotEmpty()) {
+            markdownElements.add(tags.joinToString(" ") { tag -> "#${tag.value}" })
         }
         if (dataviewFields.isNotEmpty()) {
-            markdownElements.add(dataviewFields.map { (key, value) -> "[$key:: $value]" }.joinToString("  "))
+            markdownElements.add(dataviewFields.map { (key, value) -> "[${key.value}:: ${value.value}]" }.joinToString("  "))
         }
         if (dueOn != null) {
-            markdownElements.add("@due(${dueOn!!})")
+            markdownElements.add("@due(${dueOn.value})")
         }
         if (completedOn != null) {
-            markdownElements.add("@completed(${completedOn!!})")
+            markdownElements.add("@completed(${completedOn.value})")
         }
-        if (subtasks.size > 0) {
+        if (subtasks.isNotEmpty()) {
             markdownElements.add("\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() })
         }
-        if (notes.size > 0) {
+        if (notes.isNotEmpty()) {
             markdownElements.add("\n\t" + notes.joinToString("\n\t") { note -> note.toMarkdown(1) })
         }
 

@@ -86,7 +86,7 @@ class Reducers {
                 val oldStatus = ReducerUtils.getStatusTagFromTask(task, store.settings.columnTags)!!
                 task.copy(
                     original = task.original ?: task.deepCopy(),
-                    tags = task.tags.filter { it != oldStatus.tag }.toSet(),
+                    tags = task.tags.filter { it != oldStatus.tag }.plus(newStatus.tag).toSet(),
                     dataviewFields = task.dataviewFields.entries.associate { entry ->
                         if (entry.key == DataviewField(TaskConstants.TASK_ORDER_PROPERTY)) {
                             DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(ReducerUtils.findPosition(store.tasks, newStatus, beforeTaskId))
@@ -146,14 +146,14 @@ class Reducers {
         repeatingTaskService: RepeatingTaskService
     ): TaskModel {
         console.log("Reducers.taskCompleted()")
-        val clonedTaskList = store.tasks.map { it.deepCopy() }
-        console.log(" - store and cloned list", store, clonedTaskList)
-        val task = clonedTaskList.find { task -> task.id == taskId }
-        if (task == null) {
-            console.log(" - ERROR: Task not found for id: $taskId")
-            return store
+        val clonedTaskList = store.tasks.map { task ->
+            if (task.id == taskId) {
+                ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags, repeatingTaskService)
+            } else {
+                task
+            }
         }
-        ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags, repeatingTaskService)
+
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = ReducerUtils.createKanbanMap(
@@ -329,7 +329,7 @@ class ReducerUtils {
             return tasks
                 .sortedWith(taskComparator)
                 .map { task ->
-                    if (task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY))) {
+                    if (!task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY))) {
                         updateTaskOrder(task, maxPosition++)
                     } else {
                         maxPosition = task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
@@ -470,7 +470,7 @@ class ReducerUtils {
                         key != DataviewField(TaskConstants.TASK_ORDER_PROPERTY) && // Remove Order
                                 (repeatingTaskService.isTaskRepeating(task) && key != DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) // If repeating remove repeat
                     }.toDataviewMap(),
-                tags = task.tags.filter { tag -> tag in columns.map { it.tag } }.toSet(),
+                tags = task.tags.filter { tag -> tag !in columns.map { it.tag } }.toSet(),
                 before = if (repeatingTaskService.isTaskRepeating(task)) repeatingTaskService.getNextRepeatingTask(task) else null
             )
         }

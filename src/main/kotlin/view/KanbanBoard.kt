@@ -98,7 +98,7 @@ class KanbanBoard(
     private fun createCard(task: Task, status: StatusTag, leaf: WorkspaceLeaf): KanbanCardPanel {
         console.log("KanbanBoard.createCard(): ", task.description)
         val card = KanbanCardPanel(leaf, store, task, status, repeatingTaskService)
-        card.id = task.id.toString()
+        card.id = task.id.value.toString()
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)
         card.setEventListener<Div> {
             dragover = {
