@@ -50,8 +50,8 @@ class SettingsService(private val store: Store<TaskModel>, private val plugin: P
 //                        columnTags = jsonSettings.columnTags
 //                    ))
 //                }
-                "3" -> {
-                    console.log(" - Version 3, just loading")
+                "4" -> {
+                    console.log(" - Version 4, just loading")
                     val settings = Json { ignoreUnknownKeys = true }.decodeFromString<NeuralLinkPluginSettings>(json)
                     dispatchUpdates(settings)
                 }
