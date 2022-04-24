@@ -32,10 +32,11 @@ class RepeatingTaskService {
     fun getNextRepeatingTask(task: Task) : Task {
         console.log("getNextRepeatingTask()")
         val repeatTask = task.deepCopy()
-        repeatTask.dueOn = DueOn(getNextRepeatDate(task))
-        repeatTask.completed = false
-        repeatTask.completedOn = null
-        return repeatTask
+        return repeatTask.copy(
+            dueOn = DueOn(getNextRepeatDate(task)),
+            completed = false,
+            completedOn = null
+        )
     }
 
     private fun getNextRepeatDate(task: Task) : LocalDate {

@@ -78,7 +78,7 @@ class TaskModelService(val store: Store<TaskModel>) {
                     linesToRemove.addAll((firstIndent until (firstIndent + indentedCount)).toList())
 //                    console.log(" - linesToRemove now", linesToRemove)
                 }
-                task.original = null
+//                task.original = null
                 fileModified = true
             }
         linesToRemove.sortedDescending().forEach {
@@ -155,7 +155,6 @@ class TaskModelService(val store: Store<TaskModel>) {
 
         listItems
             .forEach { listItem ->
-    //            console.log(" - loading listItem", listItem)
                 val listItemLine = listItem.position.start.line.toInt()
                 val lineContents = fileContents[listItemLine]
                 // If the parent is negative (no parent set), or there is no task seen previously (so parent was not a task)
@@ -163,16 +162,12 @@ class TaskModelService(val store: Store<TaskModel>) {
                     // Root level list item
                     //                console.log(" - is a root level item")
                     if (listItem.task != null) {
-    //                    console.log(" - is a task so add it")
                         // Only care about root items that are tasks
                         val task = createTask(filename, listItemLine, lineContents)
-//                        console.log(" - created task", task)
-//                        console.log(mapToString(task.dataviewFields, "\n   -"))
                         listItemsByLine[listItemLine] = task
                     }
                 } else {
                     // Child list item
-                    //                console.log(" - is an indented item")
                     val parentListItem = listItemsByLine[listItem.parent.toInt()]!! // TODO Handle error better
                     if (listItem.task == null) {
                         // Is a note, find the parent task and add this line to the notes list
@@ -180,15 +175,15 @@ class TaskModelService(val store: Store<TaskModel>) {
                         val note = Note(lineContents.trim().drop(2), FilePosition(listItemLine))
                         listItemsByLine[listItemLine] = note
                         when (parentListItem) {
-                            is Task -> parentListItem.notes.add(note)
-                            is Note -> parentListItem.subnotes.add(note)
+                            is Task -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(notes = parentListItem.notes.plus(note))
+                            is Note -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(subnotes = parentListItem.subnotes.plus(note))
                         }
 
                     } else {
                         // Is a task, construct task and find the parent task to add to subtasks list
                         val subtask = createTask(filename, listItemLine, lineContents)
                         when (parentListItem) {
-                            is Task -> parentListItem.subtasks.add(subtask)
+                            is Task -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(subtasks = parentListItem.subtasks.plus(subtask))
                             is Note -> {
                                 console.log(" - ERROR: Trying to add Subtask to Note", parentListItem, subtask, listItem.parent)
                                 throw IllegalStateException("Cannot add Subtask to Note")
@@ -301,15 +296,14 @@ class TaskModelService(val store: Store<TaskModel>) {
      * TODO: Does not handle notes with subnotes
      */
     private fun indentedCount(task: Task) : Int {
-        return if (task.subtasks.size == 0 && task.notes.size == 0) {
+        return if (task.subtasks.isEmpty() && task.notes.isEmpty()) {
             0
         } else {
             task.subtasks.size +
-                    task.notes.size +
-                    task.subtasks.fold(0) { accumulator, subtask ->
-                        accumulator + indentedCount(subtask)
-                    }
-
+                task.notes.size +
+                task.subtasks.fold(0) { accumulator, subtask ->
+                    accumulator + indentedCount(subtask)
+                }
         }
     }
 }

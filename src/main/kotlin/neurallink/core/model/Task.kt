@@ -9,18 +9,18 @@ import kotlinx.uuid.UUID
 data class Task(
     val file: TaskFile,
     override val filePosition: FilePosition,
-    var description: Description,
-    var dueOn: DueOn?,
-    var completedOn: CompletedOn?,
-    val tags: MutableSet<Tag>,
+    val description: Description,
+    val dueOn: DueOn?,
+    val completedOn: CompletedOn?,
+    val tags: Set<Tag>,
     val dataviewFields: DataviewMap,
-    var completed: Boolean,
-    val subtasks: MutableList<Task> = mutableListOf(),
-    val notes: MutableList<Note> = mutableListOf(),
-    var original: Task? = null, // TODO try to automate setting this
+    val completed: Boolean,
+    val subtasks: List<Task> = listOf(),
+    val notes: List<Note> = listOf(),
+    val original: Task? = null, // TODO try to automate setting this
     // 'before' is for writing the repeat task
     // TODO Find a better way to model this as I don't like needing to store this on the task itself
-    var before: Task? = null,
+    val before: Task? = null,
     val id: TaskId = TaskId(UUID())
 ) : ListItem() {
     @OptIn(ExperimentalSerializationApi::class)

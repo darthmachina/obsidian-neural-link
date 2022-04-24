@@ -5,7 +5,7 @@ package neurallink.core.model
 data class Note(
     val note: String,
     override val filePosition: FilePosition,
-    val subnotes: MutableList<Note> = mutableListOf()
+    val subnotes: List<Note> = listOf()
 ) : ListItem() {
     fun toMarkdown(level: Int) : String {
         var markdown = "- $note"
