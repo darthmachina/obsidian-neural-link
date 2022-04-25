@@ -28,6 +28,7 @@ dependencies {
     implementation("org.reduxkotlin:redux-kotlin:0.5.5")
     implementation("org.reduxkotlin:redux-kotlin-reselect:0.2.10")
     implementation("app.softwork:kotlinx-uuid-core:0.0.12")
+    implementation("io.arrow-kt:arrow-core:1.0.1")
 
     implementation("io.kvision:kvision:$kvisionVersion")
     implementation("io.kvision:kvision-fontawesome:$kvisionVersion")
