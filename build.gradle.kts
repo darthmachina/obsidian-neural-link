@@ -1,6 +1,7 @@
 plugins {
     kotlin("js") version "1.6.10"
     kotlin("plugin.serialization") version "1.6.10"
+    id("io.kotest.multiplatform") version "5.0.2"
 }
 
 group = "io.github.darthmachina"
@@ -34,8 +35,10 @@ dependencies {
     implementation("io.kvision:kvision-fontawesome:$kvisionVersion")
     implementation("io.kvision:kvision-react:$kvisionVersion")
 
-    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-    testImplementation(npm("phantomjs-prebuilt", version="^2.1.8"))
+    testImplementation("io.kotest:kotest-assertions-core:5.0.2")
+    testImplementation("io.kotest:kotest-framework-engine:5.0.2")
+    testImplementation("io.mockk:mockk-js:1.7.17")
+    testImplementation(npm("obsimian", "0.4.0"))
 }
 
 kotlin {
