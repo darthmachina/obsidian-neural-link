@@ -35,6 +35,7 @@ dependencies {
     implementation("io.kvision:kvision-react:$kvisionVersion")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
+    testImplementation(npm("phantomjs-prebuilt", version="^2.1.8"))
 }
 
 kotlin {
@@ -52,6 +53,11 @@ kotlin {
                 output.library = null
                 outputFileName = "main.js"
             }
+            testTask {
+                useKarma {
+                    useChromiumHeadless()
+                }
+            }
         }
     }
 }
@@ -60,5 +66,3 @@ kotlin {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile>().configureEach {
     kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
 }
-
-project.gradle.startParameter.excludedTaskNames.add("browserTest")
