@@ -38,7 +38,8 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core:5.0.2")
     testImplementation("io.kotest:kotest-framework-engine:5.0.2")
     testImplementation("io.mockk:mockk-js:1.7.17")
-    testImplementation(npm("obsimian", "0.4.0"))
+//    testImplementation(npm("obsimian", "0.4.0"))
+//    testImplementation(npm("rewiremock", "3.14.3"))
 }
 
 kotlin {
@@ -69,3 +70,5 @@ kotlin {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile>().configureEach {
     kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
 }
+
+project.gradle.startParameter.excludedTaskNames.add("browserTest")
