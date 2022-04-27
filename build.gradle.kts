@@ -71,4 +71,4 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile>().configureEa
     kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
 }
 
-project.gradle.startParameter.excludedTaskNames.add("browserTest")
+//project.gradle.startParameter.excludedTaskNames.add("browserTest")
