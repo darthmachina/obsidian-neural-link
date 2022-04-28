@@ -74,67 +74,96 @@ fun processFile(
     console.log("processFile()", filename)
     val listItemsByLine = mutableMapOf<Int, ListItem>() // Map of position -> Task
 
+    // Need to use recursion here to build up the Task list
     listItems
         .map { cacheListItem ->
-            if (cacheListItem.parent.toInt() < 0 || !listItemsByLine.contains(cacheListItem.parent.toInt())) {
+            if (cacheListItem.task == null) {
+                NoteInProcess(
+                    noteFromLine(fileContents, cacheListItem),
+                    cacheItemLine(cacheListItem),
+                    cacheItemParent(cacheListItem)
+                )
+            } else {
+                TaskInProcess(
+                    taskFromLine(filename, fileContents, cacheListItem),
+                    cacheItemLine(cacheListItem),
+                    cacheItemParent(cacheListItem)
+                )
+            }
+        }
+        .sortedBy { it.line }
+        .groupBy { it.parent }
+        .map {  }
+
+    listItems
+        .map { cacheListItem ->
+            if (cacheListItem.parent.toInt() < 0 || !listItemsByLine.contains(cacheItemParent(cacheListItem))) {
                 // Root level list item
                 if (cacheListItem.task != null) {
                     // Only care about root items that are tasks
                     createTask(
                         filename,
-                        cacheListItem.position.start.line.toInt(),
-                        fileContents[cacheListItem.position.start.line.toInt()]
+                        cacheItemLine(cacheListItem),
+                        fileContents[cacheItemLine(cacheListItem)]
                     )
                 }
             } else {
-                if (cacheListItem.task == null) {
-
-                } else {
-
-                }
-            }
-        }
-    // Use mapNotNull() when collecting the subtasks/notes onto the parent?
-
-    listItems
-        .forEach { listItem ->
-            val listItemLine = listItem.position.start.line.toInt()
-            val lineContents = fileContents[listItemLine]
-            // If the parent is negative (no parent set), or there is no task seen previously (so parent was not a task)
-            if (listItem.parent.toInt() < 0 || !listItemsByLine.contains(listItem.parent.toInt())) {
-                // Root level list item
-                if (listItem.task != null) {
-                    // Only care about root items that are tasks
-                    listItemsByLine[listItemLine] = createTask(filename, listItemLine, lineContents)
-                }
-            } else {
                 // Child list item
-                val parentListItem = listItemsByLine[listItem.parent.toInt()]!! // TODO Handle error better
-                if (listItem.task == null) {
+                val parentListItem = listItemsByLine[cacheItemParent(cacheListItem)]!! // TODO Handle error better
+                if (cacheListItem.task == null) {
                     // Is a note, find the parent task and add this line to the notes list
                     // removing the first two characters (the list marker, '- ')
-                    val note = Note(lineContents.trim().drop(2), FilePosition(listItemLine))
-                    listItemsByLine[listItemLine] = note
+                    val note = noteFromLine(fileContents, cacheListItem)
+                    listItemsByLine[cacheItemLine(cacheListItem)] = note
                     when (parentListItem) {
-                        is Task -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(notes = parentListItem.notes.plus(note))
-                        is Note -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(subnotes = parentListItem.subnotes.plus(note))
+                        is Task -> listItemsByLine[cacheItemParent(cacheListItem)] = parentListItem.copy(notes = parentListItem.notes.plus(note))
+                        is Note -> listItemsByLine[cacheItemParent(cacheListItem)] = parentListItem.copy(subnotes = parentListItem.subnotes.plus(note))
                     }
-
                 } else {
                     // Is a task, construct task and find the parent task to add to subtasks list
-                    val subtask = createTask(filename, listItemLine, lineContents)
+                    val subtask = createTask(filename, cacheItemLine(cacheListItem), lineContents(fileContents, cacheListItem))
                     when (parentListItem) {
-                        is Task -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(subtasks = parentListItem.subtasks.plus(subtask))
+                        is Task -> listItemsByLine[cacheItemParent(cacheListItem)] = parentListItem.copy(subtasks = parentListItem.subtasks.plus(subtask))
                         is Note -> {
-                            console.log(" - ERROR: Trying to add Subtask to Note", parentListItem, subtask, listItem.parent)
+                            console.log(" - ERROR: Trying to add Subtask to Note", parentListItem, subtask, cacheItemParent(cacheListItem))
                             throw IllegalStateException("Cannot add Subtask to Note")
                         }
                     }
                 }
             }
         }
+    // Use mapNotNull() when collecting the subtasks/notes onto the parent?
 
-    return listItemsByLine.values.filterIsInstance<Task>()}
+    return listItemsByLine.values.filterIsInstance<Task>()
+}
+
+fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<ItemInProcess> {
+    return items
+        .filter { itemInProcess -> itemInProcess.parent == parentId }
+}
+
+fun lineContents(fileContents: List<String>, item: ListItemCache) : String {
+    return fileContents[cacheItemLine(item)].trim().drop(2)
+}
+
+fun noteFromLine(fileContents: List<String>, item: ListItemCache) : Note {
+    return Note(
+        lineContents(fileContents, item),
+        FilePosition(cacheItemLine(item))
+    )
+}
+
+fun taskFromLine(filename: String, fileContents: List<String>, item: ListItemCache) : Task {
+    return createTask(filename, cacheItemLine(item), fileContents[cacheItemLine(item)])
+}
+
+fun cacheItemLine(item: ListItemCache) : Int {
+    return item.position.start.line.toInt()
+}
+
+fun cacheItemParent(item: ListItemCache) : Int {
+    return item.parent.toInt()
+}
 
 suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
 
@@ -143,3 +172,7 @@ suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
 fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: TFile) {
 
 }
+
+sealed class ItemInProcess(open val line: Int, open val parent: Int)
+data class TaskInProcess(val task: Task, override val line: Int, override val parent: Int) : ItemInProcess(line, parent)
+data class NoteInProcess(val note: Note, override val line: Int, override val parent: Int) : ItemInProcess(line, parent)

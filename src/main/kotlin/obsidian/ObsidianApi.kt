@@ -347,6 +347,11 @@ external interface ListItemCache : CacheItem {
     var task: String?
         get() = definedExternally
         set(value) = definedExternally
+
+    /**
+     * The line number of the parent list item for a nested list.
+     * - negative means there is no parent
+     */
     var parent: Number
 }
 
