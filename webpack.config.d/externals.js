@@ -14,8 +14,7 @@
 //     };
 // }
 
-config.resolve = {
-    alias: {
-        obsidian: '../../../../../test-resources/obsidian.js'
-    }
+// TODO: Set var in Karma config and check here for whether it's the normal externals or the test one
+config.externals = {
+    obsidian: '../../../../../test-resources/obsidian.js'
 };
