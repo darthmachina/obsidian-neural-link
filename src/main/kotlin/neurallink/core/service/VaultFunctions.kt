@@ -137,9 +137,49 @@ fun processFile(
     return listItemsByLine.values.filterIsInstance<Task>()
 }
 
-fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<ItemInProcess> {
+fun buildRootTaskTree(items: List<ItemInProcess>) : List<Task> {
     return items
-        .filter { itemInProcess -> itemInProcess.parent == parentId }
+        .filter { item -> item.parent < 0 }
+        .mapNotNull { item ->
+            if (item is TaskInProcess) {
+                item.task.copy(
+                    subtasks = buildTTaskTree(items, item.line),
+                    notes = buildNoteTree(items, item.line)
+                )
+            } else {
+                null
+            }
+        }
+}
+
+fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<Task> {
+    return items
+        .filter { item -> item is TaskInProcess && item.parent == parentId }
+        .mapNotNull { item ->
+            if (item is TaskInProcess) {
+                item.task.copy(
+                    subtasks = buildTTaskTree(items, item.line),
+                    notes = buildNoteTree(items, item.line)
+                )
+            } else {
+                null
+            }
+        }
+}
+
+fun buildNoteTree(items: List<ItemInProcess>, parentId: Int) : List<Note> {
+    println("buildNoteTree(): $parentId, $items")
+    return items
+        .filter { item -> item is NoteInProcess && item.parent == parentId }
+        .mapNotNull { item ->
+            if (item is NoteInProcess) {
+                item.note.copy(
+                    subnotes = buildNoteTree(items, item.line)
+                )
+            } else {
+                null
+            }
+        }
 }
 
 fun lineContents(fileContents: List<String>, item: ListItemCache) : String {

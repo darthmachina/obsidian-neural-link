@@ -2,8 +2,10 @@ package neurallink.core.service
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import neurallink.core.model.Description
+import neurallink.test.TestFactory
 import neurallink.test.TestListItemCache
 import neurallink.test.TestLoc
 import neurallink.test.TestPos
@@ -91,4 +93,42 @@ class VaultFunctionsTest : StringSpec ({
         )
         actualTask.description shouldBe Description("Test task")
     }
+
+    // *** buildNoteTree() ***
+    "buildNoteTree creates a single Note" {
+        val expectedNote = createNoteInProcess(2, 1)
+        val expectedItemsInProcess = listOf(
+            createNoteInProcess(0),
+            createTaskInProcess(1),
+            expectedNote,
+            createNoteInProcess(3)
+        )
+
+        val actualNoteList = buildNoteTree(expectedItemsInProcess, 1)
+        actualNoteList.shouldHaveSize(1)
+        actualNoteList[0].note shouldBe expectedNote.note.note
+    }
+
+//    "buildNoteTree creates a Note with a subnote" {
+//
+//    }
+
 })
+
+fun createTaskInProcess(position: Int = -1, parent: Int = -1) : TaskInProcess {
+    val task = TestFactory.createTask(position)
+    return TaskInProcess(
+        task,
+        task.filePosition.value,
+        if (parent == -1) -task.filePosition.value else parent
+    )
+}
+
+fun createNoteInProcess(position: Int = -1, parent: Int = -1) : NoteInProcess {
+    val note = TestFactory.createNote(position)
+    return NoteInProcess(
+        note,
+        note.filePosition.value,
+        if (parent == -1) -note.filePosition.value else parent
+    )
+}
