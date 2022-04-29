@@ -35,7 +35,7 @@ class TaskStringFunctionsTest : StringSpec({
 
     // *** getCompletedDate() ***
     "getCompletedDate should parse correctly" {
-        val testTask = "- [ ] Task with completed @completed(2022-01-02T03:04:05"
+        val testTask = "- [ ] Task with completed @completed(2022-01-02T03:04:05)"
 
         val maybeLocalDateTime = getCompletedDate(testTask)
         val localDateTime = maybeLocalDateTime.shouldBeRight()
@@ -49,7 +49,7 @@ class TaskStringFunctionsTest : StringSpec({
     }
 
     "getCompletedDate should parse correctly without seconds" {
-        val testTask = "- [ ] Task with completed @completed(2022-01-02T03:04"
+        val testTask = "- [ ] Task with completed @completed(2022-01-02T03:04)"
 
         val maybeLocalDateTime = getCompletedDate(testTask)
 
