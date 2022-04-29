@@ -1,21 +1,15 @@
 package service
 
-import ListItemCache
 import MetadataCache
 import TFile
 import Vault
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.await
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import model.TaskModel
 import neurallink.core.model.*
+import neurallink.core.service.processAllFiles
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
@@ -25,20 +19,9 @@ import store.VaultLoaded
  * files to incorporate those changes into the vault.
  */
 class TaskModelService(val store: Store<TaskModel>) {
-    private val dueDateRegex = Regex("""@${TaskConstants.DUE_ON_PROPERTY}${TaskConstants.TASK_PAPER_DATE_FORMAT}""")
-    private val completedDateRegex = Regex("""@${TaskConstants.COMPLETED_ON_PROPERTY}${TaskConstants.TASK_PAPER_DATE_FORMAT}""")
-    @Suppress("RegExpRedundantEscape")
-    private val dataviewRegex = Regex(TaskConstants.DATAVIEW_REGEX)
-    private val allTagsRegex = Regex(TaskConstants.ALL_TAGS_REGEX)
-    private val completedRegex = Regex(TaskConstants.COMPLETED_REGEX)
-
-    private fun mapToString(map: MutableMap<String, String>, prepend: String) : String {
-        return prepend + map.map { (key, value) -> "[$key, $value]" }.joinToString(prepend)
-    }
-
     fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
         CoroutineScope(Dispatchers.Main).launch {
-            store.dispatch(VaultLoaded(processAllFiles(vault, metadataCache)))
+            store.dispatch(VaultLoaded(processAllFiles(store, vault, metadataCache)))
         }
     }
 
@@ -90,206 +73,6 @@ class TaskModelService(val store: Store<TaskModel>) {
         }
     }
 
-    /**
-     * Processes all files in the Vault and loads any tasks into the TaskModel.
-     *
-     * NOTE: This makes changes to the TaskModel so it assumes that the Redux Store has already been copied into a
-     * new state
-     *
-     * @param vault The Obsidian Vault to process
-     * @param metadataCache Obsidian cache
-     * @return A filled TaskModel. This is the same instance as the taskModel parameter
-     */
-    private suspend fun processAllFiles(vault: Vault, metadataCache: MetadataCache): List<Task>
-    = coroutineScope {
-        vault.getFiles()
-            .filter {
-                it.name.endsWith(".md")
-            }
-            .filter { file ->
-                val listItems = metadataCache.getFileCache(file)?.listItems?.toList() ?: emptyList()
-                listItems.any { listItemCache ->
-                    listItemCache.task != null
-                }
-            }
-            .map { file ->
-                async {
-                    readFile(file, vault, metadataCache)
-                }
-            }.awaitAll()
-            .flatten()
-    }
-
-    suspend fun readFile(file: TFile, vault: Vault, metadataCache: MetadataCache): List<Task> {
-        console.log("readFile()", file.name)
-        val taskList = mutableListOf<Task>()
-
-//        console.log( " - about to read file contents")
-        vault.read(file).then { contents ->
-//            console.log(" - read file, processing")
-            val fileContents = contents.split('\n')
-            val fileListItems = metadataCache.getFileCache(file)?.listItems ?: arrayOf()
-            // Process the file and then filter according to these rules:
-            // - not completed
-            // - contains a repeat Dataview field
-            // - contains a status tag
-            // Rules for completed tasks are so they are processed by any modification listeners for tasks modified
-            // outside the plugin itself.
-            val tasksForFile = processFile(file.path, fileContents, fileListItems).filter { task ->
-                !task.completed ||
-                        task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) ||
-                        task.tags.any { tag -> tag in store.state.settings.columnTags.map { it.tag } }
-            }
-            taskList.addAll(tasksForFile)
-        }.await()
-        return taskList
-    }
-
-    private fun processFile(
-        filename: String,
-        fileContents: List<String>,
-        listItems: Array<ListItemCache>
-    ): List<Task> {
-        console.log("processFile()", filename)
-        val listItemsByLine = mutableMapOf<Int, ListItem>() // Map of position -> Task
-
-        listItems
-            .forEach { listItem ->
-                val listItemLine = listItem.position.start.line.toInt()
-                val lineContents = fileContents[listItemLine]
-                // If the parent is negative (no parent set), or there is no task seen previously (so parent was not a task)
-                if (listItem.parent.toInt() < 0 || !listItemsByLine.contains(listItem.parent.toInt())) {
-                    // Root level list item
-                    //                console.log(" - is a root level item")
-                    if (listItem.task != null) {
-                        // Only care about root items that are tasks
-                        val task = createTask(filename, listItemLine, lineContents)
-                        listItemsByLine[listItemLine] = task
-                    }
-                } else {
-                    // Child list item
-                    val parentListItem = listItemsByLine[listItem.parent.toInt()]!! // TODO Handle error better
-                    if (listItem.task == null) {
-                        // Is a note, find the parent task and add this line to the notes list
-                        // removing the first two characters (the list marker, '- ')
-                        val note = Note(lineContents.trim().drop(2), FilePosition(listItemLine))
-                        listItemsByLine[listItemLine] = note
-                        when (parentListItem) {
-                            is Task -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(notes = parentListItem.notes.plus(note))
-                            is Note -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(subnotes = parentListItem.subnotes.plus(note))
-                        }
-
-                    } else {
-                        // Is a task, construct task and find the parent task to add to subtasks list
-                        val subtask = createTask(filename, listItemLine, lineContents)
-                        when (parentListItem) {
-                            is Task -> listItemsByLine[listItem.parent.toInt()] = parentListItem.copy(subtasks = parentListItem.subtasks.plus(subtask))
-                            is Note -> {
-                                console.log(" - ERROR: Trying to add Subtask to Note", parentListItem, subtask, listItem.parent)
-                                throw IllegalStateException("Cannot add Subtask to Note")
-                            }
-                        }
-                    }
-                }
-            }
-
-        return listItemsByLine.values.filterIsInstance<Task>()
-    }
-
-    private fun createTask(file: String, line: Int, text: String) : Task {
-        // Pull out due and completed dates
-        val due = getDueDateFromTask(text)
-        val completedDate = getCompletedDateFromTask(text)
-
-        // Pull out all tags
-        val tagMatches = allTagsRegex.findAll(text).map { Tag(it.groupValues[1]) }.toMutableSet()
-
-        // Pull out all Dataview fields
-        val dataviewMatches = dataviewRegex.findAll(text).associate {
-            val doubleValue = it.groupValues[2].toDoubleOrNull()
-            if (doubleValue != null) {
-                DataviewField(it.groupValues[1]) to DataviewValue(doubleValue)
-            } else {
-                // Just use the value
-                DataviewField(it.groupValues[1]) to DataviewValue(it.groupValues[2])
-            }
-        }.toDataviewMap()
-
-        val completed = completedRegex.containsMatchIn(text)
-
-        // Strip out due, tags, dataview and task notation from the text, then clean up whitespace
-        @Suppress("RegExpRedundantEscape")
-        val stripped = text
-            .replace(dueDateRegex, "")
-            .replace(completedDateRegex, "")
-            .replace(allTagsRegex, "")
-            .replace(dataviewRegex, "")
-            .trim()
-            .replace("""\s+""".toRegex(), " ")
-            .replace("""- \[[Xx ]\] """.toRegex(), "")
-        return Task(
-            TaskFile(file),
-            FilePosition(line),
-            Description(stripped),
-            if (due == null) null else DueOn(due),
-            if (completedDate == null) null else CompletedOn(completedDate),
-            tagMatches,
-            dataviewMatches,
-            completed
-        )
-    }
-
-    /**
-     * Gets the due date from the task string
-     *
-     * So, given `Task @due(2021-01-01)`, this will return a Date object set to`2021-01-01`
-     * TODO Support Dataview style inline field for Due Date
-     *
-     * @param task The task String
-     * @return A SimpleDate object representing the due date or null if no due date is present
-     */
-    private fun getDueDateFromTask(task: String) : LocalDate? {
-        val dateMatch = dueDateRegex.find(task)
-        return if (dateMatch == null) {
-            null
-        } else {
-            val dateSplit = dateMatch.groupValues[1].split('-')
-            LocalDate(
-                dateSplit[0].toInt(),
-                dateSplit[1].toInt(),
-                dateSplit[2].toInt()
-            )
-        }
-    }
-
-
-    /**
-     * Gets the completed date from the task string
-     *
-     * So, given `Task @completed(2021-01-01)`, this will return a Date object set to`2021-01-01`
-     * TODO Support Dataview style inline field for Completed Date
-     *
-     * @param task The task String
-     * @return A Date object representing the completed date or null if no completed date is present
-     */
-    private fun getCompletedDateFromTask(task: String) : LocalDateTime? {
-        val dateMatch = completedDateRegex.find(task)
-        return if (dateMatch == null) {
-            null
-        } else {
-            val dateAndTime = dateMatch.groupValues[1].split("T")
-            val dateSplit = dateAndTime[0].split('-')
-            val timeSplit = dateAndTime[1].split(':')
-            LocalDateTime(
-                dateSplit[0].toInt(), // Year
-                dateSplit[1].toInt(), // Month
-                dateSplit[2].toInt(), // Day
-                timeSplit[0].toInt(), // Hour
-                timeSplit[1].toInt(), // Minute
-                if (timeSplit.size == 3) timeSplit[2].toInt() else 0 // Second
-            )
-        }
-    }
     /**
      * Recursive method to get the number of indented items.
      *
