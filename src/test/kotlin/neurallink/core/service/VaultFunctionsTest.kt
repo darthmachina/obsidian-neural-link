@@ -9,6 +9,7 @@ import neurallink.test.TestFactory
 import neurallink.test.TestListItemCache
 import neurallink.test.TestLoc
 import neurallink.test.TestPos
+import kotlin.math.exp
 
 @Suppress("UNUSED_PARAMETER")
 class VaultFunctionsTest : StringSpec ({
@@ -107,12 +108,98 @@ class VaultFunctionsTest : StringSpec ({
         val actualNoteList = buildNoteTree(expectedItemsInProcess, 1)
         actualNoteList.shouldHaveSize(1)
         actualNoteList[0].note shouldBe expectedNote.note.note
+        actualNoteList[0].subnotes.shouldBeEmpty()
     }
 
-//    "buildNoteTree creates a Note with a subnote" {
-//
-//    }
+    "buildNoteTree creates a Note with a subnote" {
+        val expectedNote = createNoteInProcess(2, 1)
+        val expectedSubnote = createNoteInProcess(3, 2)
+        val expectedItemsInProcess = listOf(
+            createNoteInProcess(0),
+            createTaskInProcess(1),
+            expectedNote,
+            expectedSubnote
+        )
 
+        val actualNoteList = buildNoteTree(expectedItemsInProcess, 1)
+        actualNoteList.shouldHaveSize(1)
+        actualNoteList[0].note shouldBe expectedNote.note.note
+        actualNoteList[0].subnotes.shouldHaveSize(1)
+        actualNoteList[0].subnotes[0].note shouldBe expectedSubnote.note.note
+    }
+
+    // *** buildTaskTree() ***
+    "buildTaskTree creates a single Task" {
+        val expectedTask = createTaskInProcess(2, 1)
+        val expectedItemsInProcess = listOf(
+            createNoteInProcess(0),
+            createTaskInProcess(1),
+            expectedTask,
+            createNoteInProcess(3)
+        )
+
+        val actualTaskList = buildTTaskTree(expectedItemsInProcess, 1)
+        actualTaskList.shouldHaveSize(1)
+        actualTaskList[0].description shouldBe expectedTask.task.description
+        actualTaskList[0].subtasks.shouldBeEmpty()
+        actualTaskList[0].notes.shouldBeEmpty()
+    }
+
+    "buildTaskTree creates a Task with a subtask and a note" {
+        val expectedTask = createTaskInProcess(2, 1)
+        val expectedNote = createNoteInProcess(3, 2)
+        val expectedSubtask = createTaskInProcess(4, 2)
+        val expectedItemsInProcess = listOf(
+            createNoteInProcess(0),
+            createTaskInProcess(1),
+            expectedTask,
+            expectedNote,
+            expectedSubtask,
+            createTaskInProcess(5)
+        )
+
+        val actualTaskList = buildTTaskTree(expectedItemsInProcess, 1)
+        actualTaskList.shouldHaveSize(1)
+        actualTaskList[0].description shouldBe expectedTask.task.description
+        actualTaskList[0].subtasks.shouldHaveSize(1)
+        actualTaskList[0].subtasks[0].description shouldBe expectedSubtask.task.description
+        actualTaskList[0].notes.shouldHaveSize(1)
+        actualTaskList[0].notes[0].note shouldBe expectedNote.note.note
+    }
+
+    // *** buildRootTaskTree() ***
+    "buildRootTaskTree builds a correct tree" {
+        val expectedTaskOne = createTaskInProcess(1)
+        val expectedTaskTwo = createTaskInProcess(2)
+        val expectedSubtask = createTaskInProcess(3, 2)
+        val expectedNote = createNoteInProcess(4, 2)
+        val expectedTaskThree = createTaskInProcess(5)
+
+        val expectedItemsInProcess = listOf(
+            createNoteInProcess(0),
+            expectedTaskOne,
+            expectedTaskTwo,
+            expectedSubtask,
+            expectedNote,
+            expectedTaskThree,
+            createNoteInProcess(6)
+        )
+
+        val actualTaskList = buildRootTaskTree(expectedItemsInProcess)
+        actualTaskList.shouldHaveSize(3)
+        // Tasks should maintain file order, so check in order
+        actualTaskList[0].description shouldBe expectedTaskOne.task.description
+        actualTaskList[0].subtasks.shouldBeEmpty()
+        actualTaskList[0].notes.shouldBeEmpty()
+        actualTaskList[1].description shouldBe expectedTaskTwo.task.description
+        actualTaskList[1].subtasks.shouldHaveSize(1)
+        actualTaskList[1].subtasks[0].description shouldBe expectedSubtask.task.description
+        actualTaskList[1].notes.shouldHaveSize(1)
+        actualTaskList[1].notes[0].note shouldBe expectedNote.note.note
+        actualTaskList[2].description shouldBe expectedTaskThree.task.description
+        actualTaskList[2].subtasks.shouldBeEmpty()
+        actualTaskList[2].notes.shouldBeEmpty()
+    }
 })
 
 fun createTaskInProcess(position: Int = -1, parent: Int = -1) : TaskInProcess {
