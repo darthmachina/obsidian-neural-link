@@ -72,10 +72,8 @@ fun processFile(
     listItems: Array<ListItemCache>
 ): List<Task> {
     console.log("processFile()", filename)
-    val listItemsByLine = mutableMapOf<Int, ListItem>() // Map of position -> Task
-
     // Need to use recursion here to build up the Task list
-    listItems
+    return listItems
         .map { cacheListItem ->
             if (cacheListItem.task == null) {
                 NoteInProcess(
@@ -92,53 +90,22 @@ fun processFile(
             }
         }
         .sortedBy { it.line }
-        .groupBy { it.parent }
-        .map {  }
+        .convertToTree()
+}
 
-    listItems
-        .map { cacheListItem ->
-            if (cacheListItem.parent.toInt() < 0 || !listItemsByLine.contains(cacheItemParent(cacheListItem))) {
-                // Root level list item
-                if (cacheListItem.task != null) {
-                    // Only care about root items that are tasks
-                    createTask(
-                        filename,
-                        cacheItemLine(cacheListItem),
-                        fileContents[cacheItemLine(cacheListItem)]
-                    )
-                }
-            } else {
-                // Child list item
-                val parentListItem = listItemsByLine[cacheItemParent(cacheListItem)]!! // TODO Handle error better
-                if (cacheListItem.task == null) {
-                    // Is a note, find the parent task and add this line to the notes list
-                    // removing the first two characters (the list marker, '- ')
-                    val note = noteFromLine(fileContents, cacheListItem)
-                    listItemsByLine[cacheItemLine(cacheListItem)] = note
-                    when (parentListItem) {
-                        is Task -> listItemsByLine[cacheItemParent(cacheListItem)] = parentListItem.copy(notes = parentListItem.notes.plus(note))
-                        is Note -> listItemsByLine[cacheItemParent(cacheListItem)] = parentListItem.copy(subnotes = parentListItem.subnotes.plus(note))
-                    }
-                } else {
-                    // Is a task, construct task and find the parent task to add to subtasks list
-                    val subtask = createTask(filename, cacheItemLine(cacheListItem), lineContents(fileContents, cacheListItem))
-                    when (parentListItem) {
-                        is Task -> listItemsByLine[cacheItemParent(cacheListItem)] = parentListItem.copy(subtasks = parentListItem.subtasks.plus(subtask))
-                        is Note -> {
-                            console.log(" - ERROR: Trying to add Subtask to Note", parentListItem, subtask, cacheItemParent(cacheListItem))
-                            throw IllegalStateException("Cannot add Subtask to Note")
-                        }
-                    }
-                }
-            }
-        }
-    // Use mapNotNull() when collecting the subtasks/notes onto the parent?
-
-    return listItemsByLine.values.filterIsInstance<Task>()
+/**
+ * Simple extension function to convert a list of ItemInProcess objects to a list of Tasks
+ * with all subtasks and notes in place.
+ *
+ * @return A list of root level Tasks
+ */
+fun List<ItemInProcess>.convertToTree() : List<Task> {
+    return buildRootTaskTree(this)
 }
 
 fun buildRootTaskTree(items: List<ItemInProcess>) : List<Task> {
     return items
+        // FIXME This won't handle the case of a task under a note
         .filter { item -> item.parent < 0 }
         .mapNotNull { item ->
             if (item is TaskInProcess) {
