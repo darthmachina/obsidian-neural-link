@@ -21,6 +21,8 @@ class TestPos(
     companion object {
         val EMPTY = TestPos(TestLoc.EMPTY, TestLoc.EMPTY)
     }
+
+    constructor(single: Loc) : this(single, single)
 }
 
 class TestListItemCache(
