@@ -26,3 +26,5 @@ hs_err_pid*
 .idea/
 build/
 src/main/kotlin/externals/
+kotlin-js-store/
+package-lock.json
