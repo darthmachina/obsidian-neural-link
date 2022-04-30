@@ -2,7 +2,10 @@
 
 package neurallink.core.service
 
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
@@ -322,6 +325,65 @@ class VaultFunctionsTest : StringSpec ({
         actualJoinedMap[4]!!.first shouldBe "- [ ] Task 2"
         actualJoinedMap[4]!!.second shouldBe null
         actualJoinedMap[4]!!.third shouldBe null
+    }
+
+    "markRemoveLines marks the correct lines in the data" {
+        // Example File
+        // ------------
+        // 0: - Note 1
+        // 1: - [ ] Task 1
+        // 2:   - [ ] Subtask 1
+        // 3:   - Subnote 1
+        // 4: - [ ] Task 2
+        // We will be replacing Task 1 on line 1 and both indented items, though
+        //  the Task details will be randomized by the TestFactory
+        val inputMap = mapOf(
+            0 to Triple("- Note 1", null, false),
+            1 to Triple("- [ ] Task 1", listOf(1,2,3), true),
+            2 to Triple("  - [ ] Subtask 1", null, false),
+            3 to Triple("  - Subnote 1", null, false),
+            4 to Triple("- [ ] Task 2", null, false),
+        )
+
+        val maybeLines = inputMap.markRemoveLines()
+        val lines = maybeLines
+            .shouldBeRight()
+        lines.shouldHaveSize(5)
+        lines[0].first shouldBe "- Note 1"
+        lines[0].second.shouldBeFalse()
+        lines[1].first shouldBe "- [ ] Task 1"
+        lines[1].second.shouldBeTrue()
+        lines[2].first shouldBe "  - [ ] Subtask 1"
+        lines[2].second.shouldBeTrue()
+        lines[3].first shouldBe "  - Subnote 1"
+        lines[3].second.shouldBeTrue()
+        lines[4].first shouldBe "- [ ] Task 2"
+        lines[4].second.shouldBeFalse()
+    }
+
+    "createFileContents should create the correct markdown string" {
+        // Example File
+        // ------------
+        // 0: - Note 1
+        // 1: - [ ] Task 1
+        // 2:   - [ ] Subtask 1
+        // 3:   - Subnote 1
+        // 4: - [ ] Task 2
+        // We will be replacing Task 1 on line 1 and both indented items, though
+        //  the Task details will be randomized by the TestFactory
+        val existingContents =
+            "- Note 1\n- [ ] Task 1\n  - [ ] Subtask 1\n  - Subnote 1\n- [ ] Task 2"
+        val expectedSubtask = TestFactory.createTask(2)
+        val expectedNote = TestFactory.createNote(3)
+        val expectedTask = TestFactory.createTask(1).copy(
+            subtasks = listOf(expectedSubtask),
+            notes = listOf(expectedNote)
+        )
+        val expectedString =
+            "- Note 1\n- [ ] ${expectedTask.description.value} \n\t- [ ] ${expectedSubtask.description.value} \n\t- ${expectedNote.note}\n- [ ] Task 2"
+
+        val actualString = createFileContents(existingContents, listOf(expectedTask))
+        actualString.orNull() shouldBe expectedString
     }
 })
 

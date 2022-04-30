@@ -6,12 +6,20 @@ import TFile
 import Vault
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.merge
+import arrow.core.right
 import kotlinx.coroutines.*
 import model.TaskModel
 import neurallink.core.model.*
 import org.reduxkotlin.Store
+import store.VaultLoaded
 
 // ************* FILE READING *************
+fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
+    CoroutineScope(Dispatchers.Main).launch {
+        store.dispatch(VaultLoaded(processAllFiles(store, vault, metadataCache)))
+    }
+}
 
 /**
  * Processes all files in the Vault and loads any tasks into the TaskModel.
@@ -194,7 +202,16 @@ suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
 
 fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: TFile) {
     console.log("writeFile(): ${file.name}")
-    joinFileContentsWithTasks(existingContents.split('\n'), tasks)
+    createFileContents(existingContents, tasks)
+        .map { vault.modify(file, it) }
+        .mapLeft {
+            console.log("File was not modified, not writing to disk")
+        }
+
+}
+
+fun createFileContents(existingContents: String, tasks: List<Task>) : Either<TaskWritingWarning,String> {
+    return joinFileContentsWithTasks(existingContents.split('\n'), tasks)
         .mapValues {
             if (it.value.second != null) {
                 Triple(toMarkdown(it.value.second!!), it.value.third, true)
@@ -204,15 +221,16 @@ fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: T
         }
         .markRemoveLines()
         .map {
-            it.map {
+            it.mapNotNull {
                 if (it.second) {
                     null
                 } else {
                     it.first
                 }
             }
-        }.map {
-
+        }
+        .flatMap {
+            Either.Right(it.joinToString("\n"))
         }
 }
 
@@ -229,7 +247,7 @@ fun Map<Int,Triple<String,List<Int>?,Boolean>>.markRemoveLines() : Either<TaskWr
     // Basically caching the value of the fold operation instead of running it every iteration
     // TODO Memoize this in a function, but need to find out how to memoize in Kotlin
     val removeList = this.values.fold(listOf<Int>()) { accu, item ->
-        accu.plus(item.second!!)
+        accu.plus(if (item.second == null) emptyList() else item.second!!)
     }
 
     return Either.Right(this

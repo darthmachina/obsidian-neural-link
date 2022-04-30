@@ -1,12 +1,13 @@
 import event.FileModifiedEvent
 import kotlinx.coroutines.*
 import model.TaskModel
+import neurallink.core.service.loadTasKModelIntoStore
+import neurallink.core.service.writeModifiedTasks
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
 import service.RepeatingTaskService
 import service.SettingsService
-import service.TaskModelService
 import store.NoneFilterValue
 import store.reducer
 import view.KanbanView
@@ -36,11 +37,10 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
     // SERVICES
     private val settingsService = SettingsService(store, this)
-    private val taskModelService = TaskModelService(store)
     private val repeatingTaskService = RepeatingTaskService()
 
     // EVENTS
-    private val fileModifiedEvent = FileModifiedEvent(this, store, taskModelService, repeatingTaskService)
+    private val fileModifiedEvent = FileModifiedEvent(this, store, repeatingTaskService)
 
     override fun onload() {
         // TODO Need to wrap this around something so it's delayed on app startup
@@ -74,7 +74,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     private fun taskModifiedListener() {
         console.log("NeuralLinkPlugin.taskModifiedListener()")
         CoroutineScope(Dispatchers.Main).launch {
-            taskModelService.writeModifiedTasks(
+            writeModifiedTasks(
                 store.state.tasks,
                 app.vault
             )
@@ -85,7 +85,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         console.log("NeuralLinkPlugin.loadSettingAndTaskModel()")
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.Default) { loadSettings() } // Load settings first and wait
-            taskModelService.loadTasKModelIntoStore(
+            loadTasKModelIntoStore(
                 app.vault,
                 app.metadataCache,
                 store
