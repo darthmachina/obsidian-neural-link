@@ -8,3 +8,5 @@ sealed class Error(open val message: String) {
 
 class TaskReadingError(message: String) : Error(message)
 class TaskReadingWarning(message: String) : Error(message)
+class TaskWritingError(message: String) : Error(message)
+class TaskWritingWarning(message: String) : Error(message)

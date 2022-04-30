@@ -34,44 +34,6 @@ data class Task(
     }
 
     /**
-     * Creates a Markdown String, suitable for writing to a Markdown file.
-     *
-     * Does not indent itself, but will recursively call this on any subtasks, applying
-     * indentation where needed to maintain the hierarchy.
-     */
-    fun toMarkdown(): String {
-        val markdownElements = mutableListOf<String>()
-
-        markdownElements.add(if (completed) "- [x]" else "- [ ]")
-        markdownElements.add(description.value)
-        if (tags.isNotEmpty()) {
-            markdownElements.add(tags.joinToString(" ") { tag -> "#${tag.value}" })
-        }
-        if (dataviewFields.isNotEmpty()) {
-            markdownElements.add(dataviewFields.map { (key, value) -> "[${key.value}:: ${value.value}]" }.joinToString("  "))
-        }
-        if (dueOn != null) {
-            markdownElements.add("@due(${dueOn.value})")
-        }
-        if (completedOn != null) {
-            markdownElements.add("@completed(${completedOn.value})")
-        }
-        if (subtasks.isNotEmpty()) {
-            markdownElements.add("\n\t" + subtasks.joinToString("\n\t") { it.toMarkdown() })
-        }
-        if (notes.isNotEmpty()) {
-            markdownElements.add("\n\t" + notes.joinToString("\n\t") { note -> note.toMarkdown(1) })
-        }
-
-        // Check for a 'before' task
-        var beforeMarkdown = ""
-        if (before != null) {
-            beforeMarkdown = "${before!!.toMarkdown()}\n"
-        }
-        return beforeMarkdown + markdownElements.joinToString(" ")
-    }
-
-    /**
      * Compares just the relevant data fields for e
      */
     override fun equals(other: Any?) : Boolean {

@@ -9,7 +9,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import model.TaskModel
 import neurallink.core.model.*
+import neurallink.core.service.indentedCount
 import neurallink.core.service.processAllFiles
+import neurallink.core.service.toMarkdown
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
@@ -53,7 +55,7 @@ class TaskModelService(val store: Store<TaskModel>) {
             .sortedByDescending { it.filePosition.value }
             .forEach { task ->
 //                console.log(" - Updating task : ${task.description}")
-                fileContents[task.filePosition.value] = task.toMarkdown()
+                fileContents[task.filePosition.value] = toMarkdown(task)
                 val indentedCount = indentedCount(task.original!!)
                 if (indentedCount > 0) {
                     val firstIndent = task.filePosition.value + 1
@@ -71,22 +73,4 @@ class TaskModelService(val store: Store<TaskModel>) {
         if (fileModified) {
             vault.modify(file, fileContents.joinToString("\n"))
         }
-    }
-
-    /**
-     * Recursive method to get the number of indented items.
-     *
-     * TODO: Does not handle notes with subnotes
-     */
-    private fun indentedCount(task: Task) : Int {
-        return if (task.subtasks.isEmpty() && task.notes.isEmpty()) {
-            0
-        } else {
-            task.subtasks.size +
-                task.notes.size +
-                task.subtasks.fold(0) { accumulator, subtask ->
-                    accumulator + indentedCount(subtask)
-                }
-        }
-    }
-}
+    } }

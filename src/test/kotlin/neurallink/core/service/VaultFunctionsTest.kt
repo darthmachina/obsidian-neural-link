@@ -1,17 +1,18 @@
+@file:Suppress("RemoveRedundantQualifierName", "UNUSED_PARAMETER")
+
 package neurallink.core.service
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import neurallink.core.model.Description
 import neurallink.test.TestFactory
 import neurallink.test.TestListItemCache
 import neurallink.test.TestLoc
 import neurallink.test.TestPos
-import kotlin.math.exp
 
-@Suppress("UNUSED_PARAMETER")
 class VaultFunctionsTest : StringSpec ({
     // *** cacheItemParent() ***
     "cacheItemParent returns correct value" {
@@ -199,6 +200,128 @@ class VaultFunctionsTest : StringSpec ({
         actualTaskList[2].description shouldBe expectedTaskThree.task.description
         actualTaskList[2].subtasks.shouldBeEmpty()
         actualTaskList[2].notes.shouldBeEmpty()
+    }
+
+    // *** indentedCount() ***
+    "indentedCount returns 0 if there are no subtasks or notes" {
+        val expectedTask = TestFactory.createTask()
+
+        val actualIndentedCount = indentedCount(expectedTask)
+        actualIndentedCount shouldBe 0
+    }
+
+    "indentedCount returns 1 if there is a subtask" {
+        val expectedTask = TestFactory.createTask().copy(
+            subtasks = listOf(TestFactory.createTask())
+        )
+
+
+        val actualIndentedCount = indentedCount(expectedTask)
+        actualIndentedCount shouldBe 1
+    }
+
+    "indentedCont returns 2 if there is a subtask and a note" {
+        val expectedTask = TestFactory.createTask().copy(
+            subtasks = listOf(TestFactory.createTask()),
+            notes = listOf(TestFactory.createNote())
+        )
+
+        val actualIndentedCount = indentedCount(expectedTask)
+        actualIndentedCount shouldBe 2
+    }
+
+    "indentedCount returns 4 if there is subtask with a subtask and a note with a note" {
+        val expectedTask = TestFactory.createTask().copy(
+            subtasks = listOf(
+                TestFactory.createTask().copy(
+                    subtasks = listOf(TestFactory.createTask())
+                )
+            ),
+            notes = listOf(
+                TestFactory.createNote().copy(
+                    subnotes = listOf(TestFactory.createNote())
+                )
+            )
+        )
+
+        val actualIndentedCount = indentedCount(expectedTask)
+        actualIndentedCount shouldBe 4
+    }
+
+    // *** indentedNoteCount() ***
+    "indentedNoteCount returns 0 if there are no subnotes" {
+        val expectedNote = TestFactory.createNote()
+
+        val actualIndentedCount = indentedNoteCount(expectedNote)
+        actualIndentedCount shouldBe 0
+    }
+
+    "indentedNoteCount returns 1 if there is a subnote" {
+        val expectedNote = TestFactory.createNote().copy(
+            subnotes = listOf(TestFactory.createNote())
+        )
+
+        val actualIndentedCount = indentedNoteCount(expectedNote)
+        actualIndentedCount shouldBe 1
+    }
+
+    // *** expandRemovalLines() ***
+    "expandRemovalLines calculates the correct value" {
+        // Example Task
+        // ------------
+        // 5: - [ ] Test task
+        // 6:   - Indented 1
+        // 7:   - Indented 2
+        // 8:   - Indented 3
+        // 9:   - Indented 4
+        val lineNumber = 5
+        val indentedCount = 4
+        val expectedLinesToRemove = listOf(6, 7, 8, 9)
+
+        val actualLinesToRemove = expandRemovalLines(lineNumber, indentedCount)
+        actualLinesToRemove shouldBe expectedLinesToRemove
+    }
+
+    // *** joinFileContentsWithTasks() ***
+    "joinFileContentsWithTasks collates the data correctly" {
+        // Example File
+        // ------------
+        // 0: - Note 1
+        // 1: - [ ] Task 1
+        // 2:   - [ ] Subtask 1
+        // 3:   - Subnote 1
+        // 4: - [ ] Task 2
+        // We will be replacing Task 1 on line 1 and both indented items, though
+        //  the Task details will be randomized by the TestFactory
+        val existingContents = listOf(
+            "- Note 1",
+            "- [ ] Task 1",
+            "  - [ ] Subtask 1",
+            "  - Subnote 1",
+            "- [ ] Task 2"
+        )
+        val expectedTask = TestFactory.createTask(1).copy(
+            subtasks = listOf(TestFactory.createTask(2)),
+            notes = listOf(TestFactory.createNote(3))
+        )
+
+        val actualJoinedMap = joinFileContentsWithTasks(existingContents, listOf(expectedTask))
+        actualJoinedMap.shouldHaveSize(5)
+        actualJoinedMap[0]!!.first shouldBe "- Note 1"
+        actualJoinedMap[0]!!.second shouldBe null
+        actualJoinedMap[0]!!.third shouldBe null
+        actualJoinedMap[1]!!.first shouldBe "- [ ] Task 1"
+        actualJoinedMap[1]!!.second shouldBe expectedTask
+        actualJoinedMap[1]!!.third shouldBe listOf(2, 3)
+        actualJoinedMap[2]!!.first shouldBe "  - [ ] Subtask 1"
+        actualJoinedMap[2]!!.second shouldBe null
+        actualJoinedMap[2]!!.third shouldBe null
+        actualJoinedMap[3]!!.first shouldBe "  - Subnote 1"
+        actualJoinedMap[3]!!.second shouldBe null
+        actualJoinedMap[3]!!.third shouldBe null
+        actualJoinedMap[4]!!.first shouldBe "- [ ] Task 2"
+        actualJoinedMap[4]!!.second shouldBe null
+        actualJoinedMap[4]!!.third shouldBe null
     }
 })
 

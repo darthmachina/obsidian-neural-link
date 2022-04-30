@@ -4,13 +4,14 @@ import ListItemCache
 import MetadataCache
 import TFile
 import Vault
-import kotlinx.coroutines.async
-import kotlinx.coroutines.await
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import arrow.core.Either
+import arrow.core.flatMap
+import kotlinx.coroutines.*
 import model.TaskModel
 import neurallink.core.model.*
 import org.reduxkotlin.Store
+
+// ************* FILE READING *************
 
 /**
  * Processes all files in the Vault and loads any tasks into the TaskModel.
@@ -172,12 +173,135 @@ fun cacheItemParent(item: ListItemCache) : Int {
     return item.parent.toInt()
 }
 
-suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
+// ************* FILE WRITING *************
 
+suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
+    console.log("writeModifiedTasks()", tasks)
+    withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
+        tasks
+            .filter { it.original != null }
+            .groupBy { it.file }
+            .forEach { entry ->
+                launch {
+                    val file = vault.getAbstractFileByPath(entry.key.value) as TFile
+                    vault.read(file).then { contents ->
+                        writeFile(vault, contents, entry.value, file)
+                    }
+                }
+            }
+    }
 }
 
 fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: TFile) {
+    console.log("writeFile(): ${file.name}")
+    joinFileContentsWithTasks(existingContents.split('\n'), tasks)
+        .mapValues {
+            if (it.value.second != null) {
+                Triple(toMarkdown(it.value.second!!), it.value.third, true)
+            } else {
+                Triple(it.value.first, null, false)
+            }
+        }
+        .markRemoveLines()
+        .map {
+            it.map {
+                if (it.second) {
+                    null
+                } else {
+                    it.first
+                }
+            }
+        }.map {
 
+        }
+}
+
+/**
+ * Converts a Map of file lines with a list of indented lines to remove into a
+ * list of strings with a boolean for whether to remove the line.
+ */
+fun Map<Int,Triple<String,List<Int>?,Boolean>>.markRemoveLines() : Either<TaskWritingWarning, List<Pair<String, Boolean>>> {
+    // Check for modifications and return Either.Left if the file was not modified
+    if (this.values.none { it.third }) {
+        return Either.Left(TaskWritingWarning("File was not modified"))
+    }
+
+    // Basically caching the value of the fold operation instead of running it every iteration
+    // TODO Memoize this in a function, but need to find out how to memoize in Kotlin
+    val removeList = this.values.fold(listOf<Int>()) { accu, item ->
+        accu.plus(item.second!!)
+    }
+
+    return Either.Right(this
+        .entries
+        .map {
+            Pair(it.value.first, removeList.contains(it.key))
+        }
+    )
+}
+
+/**
+ * Joins file contents with the list of tasks, using the line number as a key
+ *
+ * @return A map of line number to a Triple containing: current file contents, task for line if it exists, list of lines to remove if a task exists on this line
+ */
+fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>) : Map<Int,Triple<String,Task?,List<Int>?>> {
+    return existingContents
+        .mapIndexed { index, line -> Pair(index, line) }
+        .groupBy(
+            keySelector = { it.first },
+            valueTransform = {
+                Pair(
+                    it.second,
+                    tasks.find { task ->
+                        task.filePosition.value == it.first
+                    }
+                )
+            }
+        )
+        .mapValues { it.value[0] } // Will only be one Pair as the key is the line in the file
+        .mapValues { Triple(it.value.first, it.value.second, if (it.value.second == null) null else expandRemovalLines(it.key, indentedCount(it.value.second!!))) }
+}
+
+/**
+ * Recursive method to get the number of indented items.
+ */
+fun indentedCount(task: Task) : Int {
+    return if (task.subtasks.isEmpty() && task.notes.isEmpty()) {
+        0
+    } else {
+        task.subtasks.size +
+            task.notes.size +
+            task.subtasks.fold(0) { accumulator, subtask ->
+                accumulator + indentedCount(subtask)
+            } +
+            task.notes.fold(0) { accumulator, note ->
+                accumulator + indentedNoteCount(note)
+            }
+    }
+}
+
+/**
+ * Recursive method to get the number of indented Notes.
+ */
+fun indentedNoteCount(note: Note) : Int {
+    return if (note.subnotes.isEmpty()) {
+        0
+    } else {
+        note.subnotes.size +
+            note.subnotes.fold(0) { accu, note ->
+                accu + indentedNoteCount(note)
+            }
+    }
+}
+
+/**
+ * Given a line number and an indented count, returns a list of lines to remove
+ */
+fun expandRemovalLines(line: Int, indentedCount: Int) : List<Int> {
+    return ((line + 1)until(line + 1 + indentedCount)).map {
+        it
+    }
 }
 
 sealed class ItemInProcess(open val line: Int, open val parent: Int)
