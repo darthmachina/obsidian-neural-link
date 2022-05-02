@@ -1,5 +1,6 @@
 package store
 
+import arrow.core.getOrElse
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -119,9 +120,9 @@ class Reducers {
                             DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(
                                 store.tasks
                                     .filter { task -> task.tags.contains(ReducerUtils.getStatusTagFromTask(task, store.settings.columnTags)?.tag) }
-                                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() })
+                                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).orNull()?.asDouble() })
                                     .first()
-                                    .dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() / 2)
+                                    .dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).getOrElse { DataviewValue(0.0) }.asDouble() / 2)
                         } else {
                             entry.key to entry.value
                         }
@@ -264,7 +265,7 @@ class Reducers {
 class ReducerUtils {
     companion object {
         private val taskComparator = compareBy<Task,Double?>(nullsLast()) {
-            val position = it.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
+            val position = it.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).orNull()?.asDouble()
             position
         }
 
@@ -332,7 +333,7 @@ class ReducerUtils {
                     if (!task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY))) {
                         updateTaskOrder(task, maxPosition++)
                     } else {
-                        maxPosition = task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
+                        maxPosition = task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).getOrElse { DataviewValue(0.0) }.asDouble()
                         task
                     }
             }
@@ -367,24 +368,24 @@ class ReducerUtils {
 //                console.log(" - no beforeTaskId, adding to end of list")
                 (tasks
                     .filter { task -> task.tags.contains(status.tag) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() })
+                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).orNull()?.asDouble() })
                     .last()
-                    .dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()) + 1.0
+                    .dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).getOrElse { DataviewValue(0.0) }.asDouble()) + 1.0
             } else {
 //                console.log(" - beforeTaskId set, finding new position")
                 val statusTasks = tasks
                     .filter { task -> task.tags.contains(status.tag) }
-                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble() })
+                    .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).orNull()?.asDouble() })
                 val beforeTask = statusTasks.find { it.id == beforeTaskId }
                     ?: throw IllegalStateException("beforeTask not found for id $beforeTaskId")
-                val beforeTaskPosition = beforeTask.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
+                val beforeTaskPosition = beforeTask.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).getOrElse { DataviewValue(0.0) }.asDouble()
                 val beforeTaskIndex = statusTasks.indexOf(beforeTask)
                 // Returns new position
                 if (beforeTaskIndex == 0) {
                     beforeTaskPosition / 2
                 } else {
                     val beforeBeforeTask = statusTasks[beforeTaskIndex - 1]
-                    val beforeBeforeTaskPosition = beforeBeforeTask.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).asDouble()
+                    val beforeBeforeTaskPosition = beforeBeforeTask.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).getOrElse { DataviewValue(0.0) }.asDouble()
                     (beforeTaskPosition + beforeBeforeTaskPosition) / 2
                 }
             }

@@ -2,6 +2,7 @@ package neurallink.core.service
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import arrow.core.rightIfNotNull
 import kotlinx.datetime.*
 import neurallink.core.model.*
@@ -20,7 +21,7 @@ fun isTaskRepeating(task: Task) : Boolean {
  * 2. Marks as incomplete
  * 3. Replaces the due date with the next date in the cycle
  */
-fun getNextRepeatingTask(task: Task) : Either<RepeatTaskParseError,Task> {
+fun getNextRepeatingTask(task: Task) : Either<Error,Task> {
     return getNextRepeatDate(task)
         .map { repeatDate ->
             task.copy(
@@ -31,7 +32,7 @@ fun getNextRepeatingTask(task: Task) : Either<RepeatTaskParseError,Task> {
         }
 }
 
-fun getNextRepeatDate(task: Task) : Either<RepeatTaskParseError,LocalDate> {
+fun getNextRepeatDate(task: Task) : Either<Error,LocalDate> {
     return parseRepeating(task)
         .map { repeatItem ->
             Pair(repeatItem, getFromDate(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), task.dueOn!!, repeatItem.fromComplete))
@@ -65,7 +66,7 @@ fun getFromDate(currentDate: LocalDateTime, dueOn: DueOn, fromComplete: Boolean)
     return if (fromComplete) LocalDate(currentDate.year, currentDate.month, currentDate.dayOfMonth) else dueOn.value
 }
 
-fun parseRepeating(task: Task) : Either<RepeatTaskParseError,RepeatItem> {
+fun parseRepeating(task: Task) : Either<Error,RepeatItem> {
     return findRepeatMatches(task)
         .flatMap {
             it.groupValues.rightIfNotNull {
@@ -85,10 +86,14 @@ fun parseRepeating(task: Task) : Either<RepeatTaskParseError,RepeatItem> {
         }
 }
 
-fun findRepeatMatches(task: Task) : Either<RepeatTaskParseError,MatchResult> {
-    return TaskConstants.repeatItemRegex.find(
-        task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)).asString()
-    ).rightIfNotNull {
-        RepeatTaskParseError("No matches found for repeat property")
-    }
+fun findRepeatMatches(task: Task) : Either<Error,MatchResult> {
+    return task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY))
+        .flatMap {
+            TaskConstants.repeatItemRegex.find(it.asString()).right()
+        }
+        .flatMap {
+            it.rightIfNotNull {
+                RepeatTaskParseError("No matches found for repeat property")
+            }
+        }
 }

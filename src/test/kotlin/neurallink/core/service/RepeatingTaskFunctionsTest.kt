@@ -61,7 +61,7 @@ class RepeatingTaskFunctionsTest : StringSpec({
         val expectedDateTime = LocalDateTime(2023, 1, 2, 3, 4, 5)
         val expectedDueOn = DueOn(LocalDate(2022, 6, 7))
 
-        val actualFromDate = getFromDate(expectedDateTime, expectedDueOn, true)
+        val actualFromDate = getFromDate(expectedDateTime, expectedDueOn, false)
         actualFromDate.year shouldBe 2022
         actualFromDate.monthNumber shouldBe 6
         actualFromDate.dayOfMonth shouldBe 7

@@ -1,11 +1,14 @@
 package neurallink.core.model
 
+import arrow.core.Either
+import arrow.core.right
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.uuid.UUID
+import neurallink.core.service.DataviewFieldDoesNotExist
 import service.TagSerializer
 
 sealed class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null) : Comparable<T> {
@@ -64,8 +67,8 @@ class DataviewMap() : HashMap<DataviewField, DataviewValue<out Comparable<*>>>()
         return newMap
     }
 
-    fun valueForField(field: DataviewField): DataviewValue<out Comparable<*>> {
-        return get(field) ?: throw IllegalStateException("Field $field does not exist, ${this.keys}")
+    fun valueForField(field: DataviewField): Either<DataviewFieldDoesNotExist, DataviewValue<out Comparable<*>>> {
+        return get(field)?.right() ?: Either.Left(DataviewFieldDoesNotExist("Field $field does not exist, ${this.keys}"))
     }
 }
 
