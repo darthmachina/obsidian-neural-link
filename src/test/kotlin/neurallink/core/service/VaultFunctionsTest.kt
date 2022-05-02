@@ -1,4 +1,4 @@
-@file:Suppress("RemoveRedundantQualifierName", "UNUSED_PARAMETER")
+@file:Suppress("RemoveRedundantQualifierName")
 
 package neurallink.core.service
 

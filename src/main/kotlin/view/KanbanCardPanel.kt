@@ -23,15 +23,13 @@ import kotlinx.datetime.*
 import model.*
 import neurallink.core.model.*
 import org.reduxkotlin.Store
-import service.RepeatingTaskService
 import store.*
 
 class KanbanCardPanel(
     leaf: WorkspaceLeaf,
     val store: Store<TaskModel>,
     val task: Task,
-    private val status: StatusTag,
-    private val repeatingTaskService: RepeatingTaskService
+    private val status: StatusTag
 ): VPanel(spacing = 5) {
     init {
         addCssStyle(KanbanStyles.KANBAN_CARD)
@@ -54,7 +52,7 @@ class KanbanCardPanel(
                     // Incomplete subtasks exist, ask what to do. Dialog completes the task is requested.
                     askAboutIncompleteSubtasks(task)
                 } else {
-                    store.dispatch(TaskCompleted(task.id, repeatingTaskService))
+                    store.dispatch(TaskCompleted(task.id))
                 }
             }
         }
@@ -259,7 +257,7 @@ class KanbanCardPanel(
                     "delete" -> IncompleteSubtaskChoice.DELETE
                     else -> throw IllegalStateException("Subtask Choice result is not handled: ${result.result}")
                 }
-                store.dispatch(TaskCompleted(task.id, repeatingTaskService, subtaskChoice))
+                store.dispatch(TaskCompleted(task.id, subtaskChoice))
             }
             dialog.hide()
             remove(dialog)

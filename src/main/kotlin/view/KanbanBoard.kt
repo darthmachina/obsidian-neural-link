@@ -9,13 +9,11 @@ import neurallink.core.model.Task
 import model.TaskModel
 import neurallink.core.model.TaskId
 import org.reduxkotlin.Store
-import service.RepeatingTaskService
 import store.TaskMoved
 
 class KanbanBoard(
     val leaf: WorkspaceLeaf,
-    val store: Store<TaskModel>,
-    private val repeatingTaskService: RepeatingTaskService
+    val store: Store<TaskModel>
 ): VPanel() {
     companion object {
         const val CARD_MIME_TYPE = "text/x-card"
@@ -97,7 +95,7 @@ class KanbanBoard(
 
     private fun createCard(task: Task, status: StatusTag, leaf: WorkspaceLeaf): KanbanCardPanel {
         console.log("KanbanBoard.createCard(): ", task.description)
-        val card = KanbanCardPanel(leaf, store, task, status, repeatingTaskService)
+        val card = KanbanCardPanel(leaf, store, task, status)
         card.id = task.id.value.toString()
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)
         card.setEventListener<Div> {

@@ -9,7 +9,6 @@ import model.TaskModel
 import neurallink.core.model.TaskFile
 import neurallink.core.service.readFile
 import org.reduxkotlin.Store
-import service.RepeatingTaskService
 import store.ModifyFileTasks
 
 /**
@@ -21,8 +20,7 @@ import store.ModifyFileTasks
 @JsExport
 class FileModifiedEvent(
     plugin: NeuralLinkPlugin,
-    store: Store<TaskModel>,
-    val repeatingTaskService: RepeatingTaskService
+    store: Store<TaskModel>
 ) : Event(plugin, store) {
     override fun processEvent(context: Any) {
         console.log("processEvent()", context)
@@ -32,7 +30,7 @@ class FileModifiedEvent(
                 fileContents.addAll(contents.split("\n"))
                 CoroutineScope(Dispatchers.Main).launch {
                     val tasks = readFile(store, context, plugin.app.vault, plugin.app.metadataCache)
-                    store.dispatch(ModifyFileTasks(TaskFile(context.path), tasks, repeatingTaskService))
+                    store.dispatch(ModifyFileTasks(TaskFile(context.path), tasks))
                 }
             }
         }

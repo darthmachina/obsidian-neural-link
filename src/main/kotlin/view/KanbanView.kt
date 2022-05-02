@@ -6,7 +6,6 @@ import io.kvision.*
 import io.kvision.panel.root
 import model.TaskModel
 import org.reduxkotlin.Store
-import service.RepeatingTaskService
 import kotlin.js.Promise
 
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
@@ -14,8 +13,7 @@ import kotlin.js.Promise
 @JsExport
 class KanbanView(
     leaf: WorkspaceLeaf,
-    val store: Store<TaskModel>,
-    val repeatingTaskService: RepeatingTaskService
+    val store: Store<TaskModel>
 ) : ItemView(leaf) {
     companion object {
         const val VIEW_TYPE = "NEURAL-LINK-KANBAN-VIEW"
@@ -50,7 +48,7 @@ class KanbanView(
         override fun start() {
             root(contentEl) {
                 addCssStyle(KanbanStyles.ROOT)
-                add(KanbanBoard(leaf, store, repeatingTaskService))
+                add(KanbanBoard(leaf, store))
             }
         }
     }

@@ -6,7 +6,6 @@ import neurallink.core.service.writeModifiedTasks
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
-import service.RepeatingTaskService
 import service.SettingsService
 import store.NoneFilterValue
 import store.reducer
@@ -37,10 +36,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
     // SERVICES
     private val settingsService = SettingsService(store, this)
-    private val repeatingTaskService = RepeatingTaskService()
 
     // EVENTS
-    private val fileModifiedEvent = FileModifiedEvent(this, store, repeatingTaskService)
+    private val fileModifiedEvent = FileModifiedEvent(this, store)
 
     override fun onload() {
         // TODO Need to wrap this around something so it's delayed on app startup
@@ -55,7 +53,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
         // Kanban View
         this.registerView(KanbanView.VIEW_TYPE) { leaf ->
-            KanbanView(leaf, store, repeatingTaskService)
+            KanbanView(leaf, store)
         }
         this.addCommand(KanbanViewCommand(
             "neural-link-kanban",

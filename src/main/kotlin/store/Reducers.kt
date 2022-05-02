@@ -6,8 +6,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import model.*
 import neurallink.core.model.*
+import neurallink.core.service.getNextRepeatingTask
+import neurallink.core.service.isTaskRepeating
 import org.reduxkotlin.Reducer
-import service.RepeatingTaskService
 
 val reducerFunctions = Reducers()
 
@@ -16,8 +17,8 @@ val reducer: Reducer<TaskModel> = { store, action ->
         is VaultLoaded -> reducerFunctions.copyAndPopulateKanban(store, action.tasks)
         is TaskMoved -> reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask)
         is MoveToTop -> reducerFunctions.moveToTop(store, action.taskd)
-        is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks, action.repeatingTaskService)
-        is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.subtaskChoice, action.repeatingTaskService)
+        is ModifyFileTasks -> reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks)
+        is TaskCompleted -> reducerFunctions.taskCompleted(store, action.taskId, action.subtaskChoice)
         is SubtaskCompleted -> reducerFunctions.markSubtaskCompletion(store, action.taskId, action.subtaskId, action.complete)
         is RepeatTask -> store
         is FilterByTag -> reducerFunctions.filterByTag(store, action.tag)
@@ -142,13 +143,12 @@ class Reducers {
     fun taskCompleted(
         store: TaskModel,
         taskId: TaskId,
-        subtaskChoice: IncompleteSubtaskChoice,
-        repeatingTaskService: RepeatingTaskService
+        subtaskChoice: IncompleteSubtaskChoice
     ): TaskModel {
         console.log("Reducers.taskCompleted()")
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
-                ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags, repeatingTaskService)
+                ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags)
             } else {
                 task
             }
@@ -195,13 +195,13 @@ class Reducers {
         )
     }
 
-    fun modifyFileTasks(store: TaskModel, file: TaskFile, fileTasks: List<Task>, repeatingTaskService: RepeatingTaskService): TaskModel {
+    fun modifyFileTasks(store: TaskModel, file: TaskFile, fileTasks: List<Task>): TaskModel {
         console.log("Reducers.modifyFileTasks()")
-        val modifiedFiles = ReducerUtils.runFileModifiedListeners(fileTasks, store, repeatingTaskService)
+        val modifiedFiles = ReducerUtils.runFileModifiedListeners(fileTasks, store)
         // Only return a new state if any of the tasks were modified
         val clonedTaskList = store.tasks
             .filter { it.file != file }
-            .plus(ReducerUtils.runFileModifiedListeners(fileTasks, store, repeatingTaskService))
+            .plus(ReducerUtils.runFileModifiedListeners(fileTasks, store))
 
         return store.copy(
             tasks = clonedTaskList,
@@ -402,7 +402,7 @@ class ReducerUtils {
             return fileTasks.minus(storeFileTasks.toSet())
         }
 
-        fun runFileModifiedListeners(tasks: List<Task>, store: TaskModel, repeatingTaskService: RepeatingTaskService) : List<Task> {
+        fun runFileModifiedListeners(tasks: List<Task>, store: TaskModel) : List<Task> {
             console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
 
             // Check for completed tasks with either a status tag or a repeat field (might have been completed outside the app)
@@ -413,7 +413,7 @@ class ReducerUtils {
                     if (task.completed &&
                                 (getStatusTagFromTask(task, store.settings.columnTags) != null
                                 || task.dataviewFields.keys.contains(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)))) {
-                        completeTask(task, IncompleteSubtaskChoice.NOTHING, store.settings.columnTags, repeatingTaskService)
+                        completeTask(task, IncompleteSubtaskChoice.NOTHING, store.settings.columnTags)
                     } else {
                         task
                     }
@@ -444,8 +444,7 @@ class ReducerUtils {
         fun completeTask(
             task: Task,
             subtaskChoice: IncompleteSubtaskChoice,
-            columns: Collection<StatusTag>,
-            repeatingTaskService: RepeatingTaskService
+            columns: Collection<StatusTag>
         ) : Task {
             return task.copy(
                 original = task.original ?: task.deepCopy(),
@@ -468,10 +467,10 @@ class ReducerUtils {
                 dataviewFields = task.dataviewFields
                     .filterKeys { key ->
                         key != DataviewField(TaskConstants.TASK_ORDER_PROPERTY) && // Remove Order
-                                (repeatingTaskService.isTaskRepeating(task) && key != DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) // If repeating remove repeat
+                                (isTaskRepeating(task) && key != DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) // If repeating remove repeat
                     }.toDataviewMap(),
                 tags = task.tags.filter { tag -> tag !in columns.map { it.tag } }.toSet(),
-                before = if (repeatingTaskService.isTaskRepeating(task)) repeatingTaskService.getNextRepeatingTask(task) else null
+                before = if (isTaskRepeating(task)) getNextRepeatingTask(task).orNull() else null
             )
         }
 

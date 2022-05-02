@@ -32,8 +32,8 @@ object TaskConstants {
                 return values().map { it.tag }
             }
 
-            fun findForTag(tag: String): REPEAT_SPAN? {
-                return values().find { it.tag == tag}
+            fun findForTag(tag: String): REPEAT_SPAN {
+                return values().find { it.tag == tag } ?: UNKNOWN
             }
         }
     }
