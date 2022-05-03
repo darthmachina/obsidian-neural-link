@@ -12,6 +12,13 @@ import kotlin.random.Random
 
 class TestFactory {
     companion object {
+        private val charPool : List<Char> = ('a'..'z') + ('A'..'Z')
+        private fun randomString(length: Int) = (1..length)
+            .map { Random.nextInt(0, charPool.size) }
+            .map(charPool::get)
+            .joinToString("")
+
+
         fun createTask(position: Int = -1) : Task {
             return Task(
                 TaskFile(randomString(10) + ".md"),
@@ -37,9 +44,3 @@ class TestFactory {
         }
     }
 }
-
-private val charPool : List<Char> = ('a'..'z') + ('A'..'Z')
-fun randomString(length: Int) = (1..length)
-    .map { Random.nextInt(0, charPool.size) }
-    .map(charPool::get)
-    .joinToString("")

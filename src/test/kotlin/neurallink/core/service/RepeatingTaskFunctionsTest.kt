@@ -70,7 +70,10 @@ class RepeatingTaskFunctionsTest : StringSpec({
     // *** findRepeatMatches() ***
     "findRepeatMatches gets the results if the field exists" {
         val expectedTask = TestFactory.createTask().copy(
-            dataviewFields = mapOf(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY) to DataviewValue("month: 1")).toDataviewMap()
+            dataviewFields = mapOf(
+                DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                        to DataviewValue("month: 1")
+            ).toDataviewMap()
         )
 
         val maybeMatches = findRepeatMatches(expectedTask)
@@ -83,4 +86,50 @@ class RepeatingTaskFunctionsTest : StringSpec({
         val maybeMatches = findRepeatMatches(expectedTask)
         maybeMatches.shouldBeLeft()
     }
+
+    // ** parseRepeating() ***
+    "parseRepeating parses a month: 1 value correctly" {
+        val expectedTask = TestFactory.createTask().copy(
+            dataviewFields = mapOf(
+                DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                        to DataviewValue("monthly: 1")
+            ).toDataviewMap()
+        )
+
+        val maybeRepeatItem = parseRepeating(expectedTask)
+        val repeatItem = maybeRepeatItem.shouldBeRight()
+        repeatItem.span shouldBe TaskConstants.REPEAT_SPAN.MONTHLY
+        repeatItem.amount shouldBe 1
+        repeatItem.fromComplete.shouldBeFalse()
+    }
+
+    "parseRepeating should return an Error if the value is invalid" {
+        val expectedTask = TestFactory.createTask().copy(
+            dataviewFields = mapOf(
+                DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                        to DataviewValue("invalid: 1")
+            ).toDataviewMap()
+        )
+
+        val maybeRepeatItem = parseRepeating(expectedTask)
+        val error = maybeRepeatItem.shouldBeLeft()
+        (error is RepeatTaskParseError).shouldBeTrue()
+    }
+
+    // TODO Create more tests around repeat values
+
+    // *** getNextRepeatDate() ***
+    val expectedTask = TestFactory.createTask().copy(
+        dataviewFields = mapOf(
+            DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                    to DataviewValue("monthly: 1")
+        ).toDataviewMap(),
+        dueOn = DueOn(LocalDate(2022, 1, 3))
+    )
+
+    val maybeLocalDate = getNextRepeatDate(expectedTask)
+    val localDate = maybeLocalDate.shouldBeRight()
+    localDate.year shouldBe 2022
+    localDate.monthNumber shouldBe 2
+    localDate.dayOfMonth shouldBe 3
 })

@@ -21,7 +21,7 @@ fun isTaskRepeating(task: Task) : Boolean {
  * 2. Marks as incomplete
  * 3. Replaces the due date with the next date in the cycle
  */
-fun getNextRepeatingTask(task: Task) : Either<Error,Task> {
+fun getNextRepeatingTask(task: Task) : Either<NeuralLinkError,Task> {
     return getNextRepeatDate(task)
         .map { repeatDate ->
             task.copy(
@@ -32,7 +32,7 @@ fun getNextRepeatingTask(task: Task) : Either<Error,Task> {
         }
 }
 
-fun getNextRepeatDate(task: Task) : Either<Error,LocalDate> {
+fun getNextRepeatDate(task: Task) : Either<NeuralLinkError,LocalDate> {
     return parseRepeating(task)
         .map { repeatItem ->
             Pair(repeatItem, getFromDate(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), task.dueOn!!, repeatItem.fromComplete))
@@ -66,7 +66,7 @@ fun getFromDate(currentDate: LocalDateTime, dueOn: DueOn, fromComplete: Boolean)
     return if (fromComplete) LocalDate(currentDate.year, currentDate.month, currentDate.dayOfMonth) else dueOn.value
 }
 
-fun parseRepeating(task: Task) : Either<Error,RepeatItem> {
+fun parseRepeating(task: Task) : Either<NeuralLinkError,RepeatItem> {
     return findRepeatMatches(task)
         .flatMap {
             it.groupValues.rightIfNotNull {
@@ -86,7 +86,7 @@ fun parseRepeating(task: Task) : Either<Error,RepeatItem> {
         }
 }
 
-fun findRepeatMatches(task: Task) : Either<Error,MatchResult> {
+fun findRepeatMatches(task: Task) : Either<NeuralLinkError,MatchResult> {
     return task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY))
         .flatMap {
             TaskConstants.repeatItemRegex.find(it.asString()).right()
