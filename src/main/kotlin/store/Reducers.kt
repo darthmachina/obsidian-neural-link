@@ -198,7 +198,6 @@ class Reducers {
 
     fun modifyFileTasks(store: TaskModel, file: TaskFile, fileTasks: List<Task>): TaskModel {
         console.log("Reducers.modifyFileTasks()")
-        val modifiedFiles = ReducerUtils.runFileModifiedListeners(fileTasks, store)
         // Only return a new state if any of the tasks were modified
         val clonedTaskList = store.tasks
             .filter { it.file != file }

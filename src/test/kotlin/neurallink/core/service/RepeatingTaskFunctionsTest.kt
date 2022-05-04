@@ -1,4 +1,4 @@
-@file:Suppress("RemoveRedundantQualifierName")
+@file:Suppress("RemoveRedundantQualifierName", "unused")
 
 package neurallink.core.service
 
@@ -12,7 +12,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import neurallink.core.model.*
 import neurallink.test.TestFactory
-import kotlin.math.exp
 
 class RepeatingTaskFunctionsTest : StringSpec({
     // *** isTaskRepeating() ***
