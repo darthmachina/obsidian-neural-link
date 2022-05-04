@@ -7,7 +7,6 @@ import neurallink.core.model.Tag
 import neurallink.core.model.Task
 import neurallink.core.model.TaskFile
 import neurallink.core.model.TaskId
-import service.SettingsService
 
 interface Action
 
@@ -40,7 +39,6 @@ data class FilterByDataviewValue(val value: String?) : Action
 data class FilterFutureDate(val filter: Boolean) : Action
 data class UpdateSettings(
     val plugin: Plugin,
-    val settingsService: SettingsService,
     var taskRemoveRegex: String? = null,
     var columnTags: List<StatusTag>? = null,
     var tagColors: Map<Tag,String>? = null

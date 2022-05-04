@@ -8,7 +8,7 @@ import io.kvision.html.div
 import io.kvision.panel.HPanel
 import io.kvision.utils.px
 import neurallink.core.model.TaskConstants
-import model.TaskModel
+import model.NeuralLinkModel
 import neurallink.core.model.DataviewField
 import org.reduxkotlin.Store
 import store.FilterByDataviewValue
@@ -16,7 +16,7 @@ import store.FilterByFile
 import store.FilterByTag
 import store.FilterFutureDate
 
-class KanbanHeader(val store: Store<TaskModel>) : HPanel(spacing = 10, justify = JustifyContent.END) {
+class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, justify = JustifyContent.END) {
     private var filtering = false
     private val tagSelect: SimpleSelectInput
     private val fileSelect: SimpleSelectInput

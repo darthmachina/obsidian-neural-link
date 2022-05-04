@@ -1,17 +1,16 @@
 package model
 
+import NeuralLinkPlugin
 import NeuralLinkPluginSettings
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 import store.FilterValue
 
 /**
- * Right now this just holds a full list of all the Tasks in the Vault.
- *
- * The idea is that there will be helper properties and methods to work with
- * this list.
+ * Global data store. Immutable and meant to be used with Redux.
  */
-data class TaskModel(
+data class NeuralLinkModel(
+    val plugin: NeuralLinkPlugin,
     val settings: NeuralLinkPluginSettings,
     val tasks: List<Task>,
     val kanbanColumns: Map<StatusTag,List<Task>>,

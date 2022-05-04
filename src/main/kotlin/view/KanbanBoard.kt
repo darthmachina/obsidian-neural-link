@@ -6,14 +6,14 @@ import io.kvision.panel.VPanel
 import kotlinx.uuid.UUID
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
-import model.TaskModel
+import model.NeuralLinkModel
 import neurallink.core.model.TaskId
 import org.reduxkotlin.Store
 import store.TaskMoved
 
 class KanbanBoard(
     val leaf: WorkspaceLeaf,
-    val store: Store<TaskModel>
+    val store: Store<NeuralLinkModel>
 ): VPanel() {
     companion object {
         const val CARD_MIME_TYPE = "text/x-card"

@@ -6,16 +6,14 @@ import TFile
 import Vault
 import arrow.core.Either
 import arrow.core.flatMap
-import arrow.core.merge
-import arrow.core.right
 import kotlinx.coroutines.*
-import model.TaskModel
+import model.NeuralLinkModel
 import neurallink.core.model.*
 import org.reduxkotlin.Store
 import store.VaultLoaded
 
 // ************* FILE READING *************
-fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<TaskModel>) {
+fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<NeuralLinkModel>) {
     CoroutineScope(Dispatchers.Main).launch {
         store.dispatch(VaultLoaded(processAllFiles(store, vault, metadataCache)))
     }
@@ -31,7 +29,7 @@ fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: St
  * @param metadataCache Obsidian cache
  * @return A filled TaskModel. This is the same instance as the taskModel parameter
  */
-suspend fun processAllFiles(store: Store<TaskModel>, vault: Vault, metadataCache: MetadataCache): List<Task>
+suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadataCache: MetadataCache): List<Task>
         = coroutineScope {
     console.log("processAllFiles()")
     vault.getFiles()
@@ -52,7 +50,7 @@ suspend fun processAllFiles(store: Store<TaskModel>, vault: Vault, metadataCache
         .flatten()
 }
 
-suspend fun readFile(store: Store<TaskModel>, file: TFile, vault: Vault, metadataCache: MetadataCache): List<Task> {
+suspend fun readFile(store: Store<NeuralLinkModel>, file: TFile, vault: Vault, metadataCache: MetadataCache): List<Task> {
     console.log("readFile()", file.name)
     val taskList = mutableListOf<Task>()
 

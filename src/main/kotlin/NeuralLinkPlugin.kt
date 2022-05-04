@@ -1,13 +1,14 @@
 import event.FileModifiedEvent
 import kotlinx.coroutines.*
-import model.TaskModel
+import model.NeuralLinkModel
+import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
-import service.SettingsService
 import store.NoneFilterValue
+import store.UpdateSettings
 import store.reducer
 import view.KanbanView
 
@@ -18,7 +19,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     /**
      * Logs all actions and states after they are dispatched.
      */
-    val loggerMiddleware = middleware<TaskModel> { store, next, action ->
+    val loggerMiddleware = middleware<NeuralLinkModel> { store, next, action ->
         val result = next(action)
         console.log("DISPATCH action: ${action::class.simpleName}:", action)
         console.log("next state :", store.state)
@@ -27,15 +28,16 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
     private val store = createStore(
         reducer,
-        TaskModel(NeuralLinkPluginSettings.default(), mutableListOf(), mutableMapOf(), NoneFilterValue()),
+        NeuralLinkModel(
+            this,
+            NeuralLinkPluginSettings.default(),
+            listOf(),
+            mapOf(),
+            NoneFilterValue()),
         applyMiddleware(loggerMiddleware)
     ).apply {
         subscribe(::taskModifiedListener)
     }
-
-    // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
-    // SERVICES
-    private val settingsService = SettingsService(store, this)
 
     // EVENTS
     private val fileModifiedEvent = FileModifiedEvent(this, store)
@@ -49,7 +51,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         })
 
         // Add Settings tab
-        addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, store))
+        addSettingTab(NeuralLinkPluginSettingsTab(app, this, store))
 
         // Kanban View
         this.registerView(KanbanView.VIEW_TYPE) { leaf ->
@@ -92,7 +94,23 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private suspend fun loadSettings() {
-        loadData().then { result -> settingsService.loadFromJson(result) }.await()
+        loadData().then { result ->
+            loadFromJson(result)
+                .map {
+                    store.dispatch(
+                        UpdateSettings(
+                            store.state.plugin,
+                            it.taskRemoveRegex,
+                            it.columnTags,
+                            it.tagColors
+                        )
+                    )
+                }
+                .mapLeft {
+                    console.log("ERROR loading settings JSON")
+                    it
+                }
+        }.await()
     }
 
     private fun activateView() {

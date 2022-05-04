@@ -1,11 +1,10 @@
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
 import neurallink.core.model.StatusTag
-import model.TaskModel
+import model.NeuralLinkModel
 import neurallink.core.model.Tag
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
-import service.SettingsService
 import store.UpdateSettings
 
 @OptIn(ExperimentalJsExport::class)
@@ -13,8 +12,7 @@ import store.UpdateSettings
 class NeuralLinkPluginSettingsTab(
     override var app: App,
     private var plugin: NeuralLinkPlugin,
-    private val settingsService: SettingsService,
-    private val store: Store<TaskModel>
+    private val store: Store<NeuralLinkModel>
 ) : PluginSettingTab(app, plugin) {
     override fun display() {
         while (containerEl.firstChild != null) {
@@ -36,7 +34,7 @@ class NeuralLinkPluginSettingsTab(
                     .setValue(store.state.settings.taskRemoveRegex)
                     .onChange { value ->
                         console.log("Regex: $value")
-                        store.dispatch(UpdateSettings(plugin, settingsService, taskRemoveRegex = value))
+                        store.dispatch(UpdateSettings(plugin, taskRemoveRegex = value))
                     }
             }
     }
@@ -67,7 +65,7 @@ class NeuralLinkPluginSettingsTab(
                             )
                             )
                         }
-                        store.dispatch(UpdateSettings(plugin, settingsService, columnTags = statusList))
+                        store.dispatch(UpdateSettings(plugin, columnTags = statusList))
                     }
             }
     }
@@ -92,7 +90,7 @@ class NeuralLinkPluginSettingsTab(
                             val singleValues = tagColor.split(":")
                             tagColors[Tag(singleValues[0])] = singleValues[1]
                         }
-                        store.dispatch(UpdateSettings(plugin, settingsService, tagColors = tagColors))
+                        store.dispatch(UpdateSettings(plugin, tagColors = tagColors))
                     }
             }
     }

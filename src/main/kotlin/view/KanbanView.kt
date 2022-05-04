@@ -4,7 +4,7 @@ import ItemView
 import WorkspaceLeaf
 import io.kvision.*
 import io.kvision.panel.root
-import model.TaskModel
+import model.NeuralLinkModel
 import org.reduxkotlin.Store
 import kotlin.js.Promise
 
@@ -13,7 +13,7 @@ import kotlin.js.Promise
 @JsExport
 class KanbanView(
     leaf: WorkspaceLeaf,
-    val store: Store<TaskModel>
+    val store: Store<NeuralLinkModel>
 ) : ItemView(leaf) {
     companion object {
         const val VIEW_TYPE = "NEURAL-LINK-KANBAN-VIEW"

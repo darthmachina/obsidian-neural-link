@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.uuid.UUID
 import neurallink.core.service.DataviewFieldDoesNotExist
-import service.TagSerializer
+import neurallink.core.service.TagSerializer
 
 sealed class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null) : Comparable<T> {
     override fun compareTo(other: T): Int {

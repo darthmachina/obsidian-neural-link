@@ -27,7 +27,7 @@ import store.*
 
 class KanbanCardPanel(
     leaf: WorkspaceLeaf,
-    val store: Store<TaskModel>,
+    val store: Store<NeuralLinkModel>,
     val task: Task,
     private val status: StatusTag
 ): VPanel(spacing = 5) {

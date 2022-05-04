@@ -5,7 +5,7 @@ import TFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import model.TaskModel
+import model.NeuralLinkModel
 import neurallink.core.model.TaskFile
 import neurallink.core.service.readFile
 import org.reduxkotlin.Store
@@ -20,7 +20,7 @@ import store.ModifyFileTasks
 @JsExport
 class FileModifiedEvent(
     plugin: NeuralLinkPlugin,
-    store: Store<TaskModel>
+    store: Store<NeuralLinkModel>
 ) : Event(plugin, store) {
     override fun processEvent(context: Any) {
         console.log("processEvent()", context)

@@ -9,6 +9,7 @@ sealed class NeuralLinkError(
     }
 }
 
+class LoadSettingsError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
 class TaskReadingError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
 class TaskReadingWarning(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
 class TaskWritingError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
