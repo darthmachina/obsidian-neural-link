@@ -1,15 +1,18 @@
 package neurallink.core.service
 
-sealed class NeuralLinkError(open val message: String) {
+sealed class NeuralLinkError(
+    open val message: String,
+    open val throwable: Throwable? = null
+) {
     override fun toString(): String {
-        return message
+        return "$message ($throwable)"
     }
 }
 
-class TaskReadingError(message: String) : NeuralLinkError(message)
-class TaskReadingWarning(message: String) : NeuralLinkError(message)
-class TaskWritingError(message: String) : NeuralLinkError(message)
-class TaskWritingWarning(message: String) : NeuralLinkError(message)
-class NotARepeatingTaskError(message: String) : NeuralLinkError(message)
-class RepeatTaskParseError(message: String) : NeuralLinkError(message)
-class DataviewFieldDoesNotExist(message: String) : NeuralLinkError(message)
+class TaskReadingError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
+class TaskReadingWarning(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
+class TaskWritingError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
+class TaskWritingWarning(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
+class NotARepeatingTaskError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
+class RepeatTaskParseError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)
+class DataviewFieldDoesNotExist(message: String, throwable: Throwable? = null) : NeuralLinkError(message, throwable)

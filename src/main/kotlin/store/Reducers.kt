@@ -239,7 +239,7 @@ class Reducers {
 
     fun filterByDataviewValue(store: TaskModel, value: String?) : TaskModel {
         val dataview = value?.split("::") ?: throw IllegalStateException("Filter value is not a valid dataview field '$value'")
-        val filterValue = DataviewFilterValue(DataviewPair<String>(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
+        val filterValue = DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
         return store.copy(
             kanbanColumns = ReducerUtils.createKanbanMap(
                 ReducerUtils.filterTasks(store.tasks, filterValue),
@@ -418,6 +418,7 @@ class ReducerUtils {
                         task
                     }
                 }
+            console.log("newTasks after checking for completed", newTasks)
 
             // Check for tasks with no position
             newTasks = newTasks
@@ -446,6 +447,7 @@ class ReducerUtils {
             subtaskChoice: IncompleteSubtaskChoice,
             columns: Collection<StatusTag>
         ) : Task {
+            console.log("completeTask()")
             return task.copy(
                 original = task.original ?: task.deepCopy(),
                 completed = true,
@@ -470,7 +472,16 @@ class ReducerUtils {
                                 (isTaskRepeating(task) && key != DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) // If repeating remove repeat
                     }.toDataviewMap(),
                 tags = task.tags.filter { tag -> tag !in columns.map { it.tag } }.toSet(),
-                before = if (isTaskRepeating(task)) getNextRepeatingTask(task).orNull() else null
+                before =
+                    if (isTaskRepeating(task))
+                        getNextRepeatingTask(task)
+                            .mapLeft {
+                                console.log("Error creating repeating task", it)
+                                it
+                            }
+                            .orNull()
+                    else
+                        null
             )
         }
 

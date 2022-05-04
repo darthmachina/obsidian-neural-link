@@ -12,6 +12,7 @@ import neurallink.core.model.*
  * field and an @due being set.
  */
 fun isTaskRepeating(task: Task) : Boolean {
+    console.log("isTaskRepeating()")
     return task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) && task.dueOn != null
 }
 
@@ -22,6 +23,7 @@ fun isTaskRepeating(task: Task) : Boolean {
  * 3. Replaces the due date with the next date in the cycle
  */
 fun getNextRepeatingTask(task: Task) : Either<NeuralLinkError,Task> {
+    console.log("getNextRepeatingTask()")
     return getNextRepeatDate(task)
         .map { repeatDate ->
             task.copy(
@@ -81,7 +83,7 @@ fun parseRepeating(task: Task) : Either<NeuralLinkError,RepeatItem> {
                     it[4].toInt()
                 )
             }.mapLeft {
-                RepeatTaskParseError("Error creating RepeatItem")
+                RepeatTaskParseError("Error creating RepeatItem", it)
             }
         }
 }

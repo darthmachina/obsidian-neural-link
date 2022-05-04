@@ -7,6 +7,8 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -118,17 +120,39 @@ class RepeatingTaskFunctionsTest : StringSpec({
     // TODO Create more tests around repeat values
 
     // *** getNextRepeatDate() ***
-    val expectedTask = TestFactory.createTask().copy(
-        dataviewFields = mapOf(
-            DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
-                    to DataviewValue("monthly: 1")
-        ).toDataviewMap(),
-        dueOn = DueOn(LocalDate(2022, 1, 3))
-    )
+    "getNextRepeatDate returns the right date" {
+        val expectedTask = TestFactory.createTask().copy(
+            dataviewFields = mapOf(
+                DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                        to DataviewValue("monthly: 1")
+            ).toDataviewMap(),
+            dueOn = DueOn(LocalDate(2022, 1, 3))
+        )
 
-    val maybeLocalDate = getNextRepeatDate(expectedTask)
-    val localDate = maybeLocalDate.shouldBeRight()
-    localDate.year shouldBe 2022
-    localDate.monthNumber shouldBe 2
-    localDate.dayOfMonth shouldBe 3
+        val maybeLocalDate = getNextRepeatDate(expectedTask)
+        val localDate = maybeLocalDate.shouldBeRight()
+        localDate.year shouldBe 2022
+        localDate.monthNumber shouldBe 2
+        localDate.dayOfMonth shouldBe 3
+    }
+
+    // *** getNextRepeatTask() ***
+    "getNextRepeatTask returns the right task" {
+        val originalTask = TestFactory.createTask().copy(
+            dataviewFields = mapOf(
+                DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                        to DataviewValue("monthly: 1")
+            ).toDataviewMap(),
+            dueOn = DueOn(LocalDate(2022, 1, 3))
+        )
+
+        val maybeRepeatTask = getNextRepeatingTask(originalTask)
+        val task = maybeRepeatTask.shouldBeRight()
+        task.completed.shouldBeFalse()
+        task.completedOn.shouldBeNull()
+        task.dueOn.shouldNotBeNull()
+        task.dueOn!!.value.year shouldBe 2022
+        task.dueOn!!.value.monthNumber shouldBe 2
+        task.dueOn!!.value.dayOfMonth shouldBe 3
+    }
 })
