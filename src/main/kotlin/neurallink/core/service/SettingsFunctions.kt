@@ -2,10 +2,7 @@ package neurallink.core.service
 
 import NeuralLinkPluginSettings
 import SettingsVersion
-import arrow.core.Either
-import arrow.core.flatMap
-import arrow.core.right
-import arrow.core.toOption
+import arrow.core.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -30,8 +27,7 @@ import neurallink.core.model.Tag
  */
 fun loadFromJson(json: Any?) : Either<LoadSettingsError, NeuralLinkPluginSettings> {
     console.log("loadFromJson()")
-
-    json.toOption()
+    return json.toOption()
         .fold(
             ifEmpty = {
                 NeuralLinkPluginSettings
@@ -64,6 +60,7 @@ fun loadFromJson(json: Any?) : Either<LoadSettingsError, NeuralLinkPluginSetting
                 .mapLeft {
                     LoadSettingsError("Cannot read JSON", it)
                 }
+                .flatten()
             }
         )
 }
