@@ -9,8 +9,8 @@ import arrow.core.flatMap
 import kotlinx.coroutines.*
 import model.NeuralLinkModel
 import neurallink.core.model.*
+import neurallink.core.store.VaultLoaded
 import org.reduxkotlin.Store
-import store.VaultLoaded
 
 // ************* FILE READING *************
 fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<NeuralLinkModel>) {

@@ -4,7 +4,7 @@ import NeuralLinkPlugin
 import NeuralLinkPluginSettings
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
-import store.FilterValue
+import neurallink.core.store.FilterValue
 
 /**
  * Global data store. Immutable and meant to be used with Redux.

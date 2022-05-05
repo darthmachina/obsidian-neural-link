@@ -1,2 +1,0 @@
-package neurallink.core.service
-

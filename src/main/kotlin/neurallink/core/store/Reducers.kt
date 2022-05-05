@@ -1,14 +1,14 @@
 package neurallink.core.store
 
 import arrow.core.getOrElse
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import model.*
 import neurallink.core.model.*
-import neurallink.core.service.getNextRepeatingTask
-import neurallink.core.service.isTaskRepeating
+import neurallink.core.service.completeTask
+import neurallink.core.service.filterTasks
+import neurallink.core.service.kanban.createKanbanMap
+import neurallink.core.service.kanban.findEndPosition
+import neurallink.core.service.kanban.findPosition
+import neurallink.core.service.kanban.getStatusTagFromTask
 import neurallink.core.service.toJson
 import org.reduxkotlin.Reducer
 
@@ -51,8 +51,8 @@ class Reducers {
             store.copy(
                 settings = newSettings,
                 tasks = clonedTaskList,
-                kanbanColumns = ReducerUtils.createKanbanMap(
-                    ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
+                kanbanColumns = createKanbanMap(
+                    filterTasks(clonedTaskList, store.filterValue),
                     newSettings.columnTags
                 )
             )
@@ -70,8 +70,8 @@ class Reducers {
         console.log("Reducers.copyAndPopulateKanban()")
         return store.copy(
             tasks = tasks,
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(tasks, store.filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(tasks, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -86,19 +86,32 @@ class Reducers {
 
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
-                val oldStatus = ReducerUtils.getStatusTagFromTask(task, store.settings.columnTags)!!
+                val oldStatus = getStatusTagFromTask(task, store.settings.columnTags)
                 task.copy(
                     original = task.original ?: task.deepCopy(),
-                    tags = task.tags.filter { it != oldStatus.tag }.plus(newStatus.tag).toSet(),
+                    tags = task.tags
+                        .filter { tag ->
+                            oldStatus.map { it.tag != tag }.getOrElse { true }
+                        }
+                        .plus(newStatus.tag)
+                        .toSet(),
                     dataviewFields = task.dataviewFields.entries.associate { entry ->
                         if (entry.key == DataviewField(TaskConstants.TASK_ORDER_PROPERTY)) {
-                            DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(
-                                ReducerUtils.findPosition(
-                                    store.tasks,
-                                    newStatus,
-                                    beforeTaskId
-                                )
-                            )
+                            findPosition(store.tasks, newStatus, beforeTaskId)
+                                .map {
+                                    DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(it)
+                                }
+                                .mapLeft {
+                                    console.log("ERROR finding position in new list", it)
+                                }
+                                .getOrElse {
+                                    // No position found
+                                    DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(
+                                        findEndPosition(store.tasks, newStatus)
+                                    )
+                                }
+
+
                         } else {
                             entry.key to entry.value
                         }
@@ -110,8 +123,8 @@ class Reducers {
         }
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -126,11 +139,13 @@ class Reducers {
                         if (entry.key == DataviewField(TaskConstants.TASK_ORDER_PROPERTY)) {
                             DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(
                                 store.tasks
-                                    .filter { task -> task.tags.contains(
-                                        ReducerUtils.getStatusTagFromTask(
-                                            task,
-                                            store.settings.columnTags
-                                        )?.tag) }
+                                    .filter { task ->
+                                        getStatusTagFromTask(task, store.settings.columnTags)
+                                            .map {
+                                                task.tags.contains(it.tag)
+                                            }
+                                            .getOrElse { false }
+                                    }
                                     .sortedWith(compareBy(nullsLast()) { task -> task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).orNull()?.asDouble() })
                                     .first()
                                     .dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).getOrElse { DataviewValue(0.0) }.asDouble() / 2)
@@ -145,8 +160,8 @@ class Reducers {
         }
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -160,7 +175,7 @@ class Reducers {
         console.log("Reducers.taskCompleted()")
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
-                ReducerUtils.completeTask(task, subtaskChoice, store.settings.columnTags)
+                completeTask(task, subtaskChoice, store.settings.columnTags)
             } else {
                 task
             }
@@ -168,8 +183,8 @@ class Reducers {
 
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -200,8 +215,8 @@ class Reducers {
         }
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -216,8 +231,8 @@ class Reducers {
 
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(clonedTaskList, store.filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags
             )
         )
@@ -229,8 +244,8 @@ class Reducers {
     fun filterByTag(store: NeuralLinkModel, tag: String?) : NeuralLinkModel {
         val filterValue = TagFilterValue(Tag(tag ?: ""))
         return store.copy(
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
             filterValue = filterValue
@@ -240,8 +255,8 @@ class Reducers {
     fun filterByFile(store: NeuralLinkModel, file: String?) : NeuralLinkModel {
         val filterValue = FileFilterValue(TaskFile(file ?: ""))
         return store.copy(
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
             filterValue = filterValue
@@ -252,8 +267,8 @@ class Reducers {
         val dataview = value?.split("::") ?: throw IllegalStateException("Filter value is not a valid dataview field '$value'")
         val filterValue = DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
         return store.copy(
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
             filterValue = filterValue
@@ -263,8 +278,8 @@ class Reducers {
     fun filterFutureDate(store: NeuralLinkModel, filter: Boolean) : NeuralLinkModel {
         val filterValue = FutureDateFilterValue(filter)
         return store.copy(
-            kanbanColumns = ReducerUtils.createKanbanMap(
-                ReducerUtils.filterTasks(store.tasks, filterValue),
+            kanbanColumns = createKanbanMap(
+                filterTasks(store.tasks, filterValue),
                 store.settings.columnTags
             ),
             filterValue = filterValue
@@ -274,17 +289,6 @@ class Reducers {
 
 class ReducerUtils {
     companion object {
-        /**
-         * Returns a list of Tasks from a file that have changed from within the store
-         */
-        fun changedTasks(file: String, fileTasks: List<Task>, store: NeuralLinkModel) : List<Task> {
-            // Take the fileTasks list and subtrack any that are equal to what is already in the store
-            val storeFileTasks = store.tasks.filter { it.file.value == file }
-            if (storeFileTasks.isEmpty()) return emptyList()
-
-            console.log("ReducerUtils.changedTasks()", fileTasks, storeFileTasks)
-            return fileTasks.minus(storeFileTasks.toSet())
-        }
 
         fun runFileModifiedListeners(tasks: List<Task>, store: NeuralLinkModel) : List<Task> {
             console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
@@ -295,7 +299,7 @@ class ReducerUtils {
             var newTasks = tasks
                 .map { task ->
                     if (task.completed &&
-                                (getStatusTagFromTask(task, store.settings.columnTags) != null
+                                (getStatusTagFromTask(task, store.settings.columnTags).isRight()
                                 || task.dataviewFields.keys.contains(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)))) {
                         completeTask(task, IncompleteSubtaskChoice.NOTHING, store.settings.columnTags)
                     } else {
@@ -309,38 +313,25 @@ class ReducerUtils {
                 .map { task ->
                     val statusTag = getStatusTagFromTask(task, store.settings.columnTags)
                     if (!task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)) &&
-                            statusTag != null &&
-                            !statusTag.dateSort
+                            !statusTag.map { it.dateSort }.getOrElse { false }
                     ) {
                         task.copy(
                             original = task.original ?: task.deepCopy(),
-                            dataviewFields = task.dataviewFields
-                                .plus(DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(
-                                    findPosition(store.tasks, getStatusTagFromTask(task, store.settings.columnTags)!!)
-                                )
-                                ).toDataviewMap()
+                            dataviewFields = getStatusTagFromTask(task, store.settings.columnTags)
+                                .map { findEndPosition(store.tasks, it) }
+                                .map {
+                                    task.dataviewFields
+                                        .plus(DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(it))
+                                        .toDataviewMap()
+                                }.getOrElse {
+                                    task.dataviewFields
+                                }
                         )
                     } else {
                         task
                     }
                 }
             return newTasks
-        }
-
-        /**
-         * Updates the task order for a task if required (order is null or already set to the given value), saving the
-         * original before making the change.
-         */
-        fun updateTaskOrder(task: Task, position: Double): Task {
-            console.log("ReducerUtils.updateTaskOrder()", task, position)
-            val taskOrder = task.dataviewFields[DataviewField(TaskConstants.TASK_ORDER_PROPERTY)]
-            if (taskOrder == null || taskOrder.asDouble() != position) {
-                return task.copy(
-                    original = task.original ?: task.deepCopy(),
-                    dataviewFields = task.dataviewFields.plus(DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(position)).toDataviewMap()
-                )
-            }
-            return task
         }
     }
 }

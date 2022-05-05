@@ -8,8 +8,8 @@ import kotlinx.coroutines.launch
 import model.NeuralLinkModel
 import neurallink.core.model.TaskFile
 import neurallink.core.service.readFile
+import neurallink.core.store.ModifyFileTasks
 import org.reduxkotlin.Store
-import store.ModifyFileTasks
 
 /**
  * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this

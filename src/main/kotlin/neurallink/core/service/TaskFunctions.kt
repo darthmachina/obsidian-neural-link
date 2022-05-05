@@ -1,7 +1,9 @@
 package neurallink.core.service
 
 import arrow.core.Either
+import model.NeuralLinkModel
 import neurallink.core.model.*
+import neurallink.core.service.kanban.filterStatusTags
 import neurallink.core.store.IncompleteSubtaskChoice
 
 fun subtasksForCompletedTask(subtasks: List<Task>, subtaskChoice: IncompleteSubtaskChoice) : List<Task> {
@@ -60,4 +62,16 @@ fun completeTask(
                 if (it.isError) console.log("Cannot create repeating task", it)
             }.orNull()
     )
+}
+
+/**
+ * Returns a list of Tasks from a file that have changed from within the store
+ */
+fun changedTasks(file: String, fileTasks: List<Task>, store: NeuralLinkModel) : List<Task> {
+    // Take the fileTasks list and subtrack any that are equal to what is already in the store
+    val storeFileTasks = store.tasks.filter { it.file.value == file }
+    if (storeFileTasks.isEmpty()) return emptyList()
+
+    console.log("ReducerUtils.changedTasks()", fileTasks, storeFileTasks)
+    return fileTasks.minus(storeFileTasks.toSet())
 }

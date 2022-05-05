@@ -8,8 +8,8 @@ import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 import model.NeuralLinkModel
 import neurallink.core.model.TaskId
+import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store
-import store.TaskMoved
 
 class KanbanBoard(
     val leaf: WorkspaceLeaf,

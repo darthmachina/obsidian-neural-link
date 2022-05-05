@@ -22,8 +22,12 @@ import io.kvision.utils.px
 import kotlinx.datetime.*
 import model.*
 import neurallink.core.model.*
+import neurallink.core.store.IncompleteSubtaskChoice
+import neurallink.core.store.MoveToTop
+import neurallink.core.store.SubtaskCompleted
+import neurallink.core.store.TaskCompleted
+import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store
-import store.*
 
 class KanbanCardPanel(
     leaf: WorkspaceLeaf,

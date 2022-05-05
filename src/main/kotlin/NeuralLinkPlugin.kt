@@ -4,11 +4,11 @@ import model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks
+import neurallink.core.store.NoneFilterValue
+import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
-import store.NoneFilterValue
-import store.UpdateSettings
 import neurallink.core.store.reducer
 import view.KanbanView
 
@@ -33,7 +33,8 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             NeuralLinkPluginSettings.default(),
             listOf(),
             mapOf(),
-            NoneFilterValue()),
+            NoneFilterValue()
+        ),
         applyMiddleware(loggerMiddleware)
     ).apply {
         subscribe(::taskModifiedListener)

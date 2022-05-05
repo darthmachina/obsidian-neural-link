@@ -3,9 +3,9 @@ import kotlinx.html.js.h2
 import neurallink.core.model.StatusTag
 import model.NeuralLinkModel
 import neurallink.core.model.Tag
+import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
-import store.UpdateSettings
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport

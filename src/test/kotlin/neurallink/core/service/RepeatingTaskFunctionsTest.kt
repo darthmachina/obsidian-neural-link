@@ -79,6 +79,9 @@ class RepeatingTaskFunctionsTest : StringSpec({
 
         val maybeMatches = findRepeatMatches(expectedTask)
         val matches = maybeMatches.shouldBeRight()
+        matches.groupValues[1] shouldBe "month"
+        matches.groupValues[2] shouldBe ""
+        matches.groupValues[4] shouldBe "1"
     }
 
     "findRepeatMatches returns an error if there is no repeat field" {
