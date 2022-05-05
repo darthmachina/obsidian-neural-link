@@ -1,14 +1,9 @@
-package store
+package neurallink.core.store
 
 import Plugin
-import neurallink.core.model.DataviewPair
-import neurallink.core.model.StatusTag
-import neurallink.core.model.Tag
-import neurallink.core.model.Task
-import neurallink.core.model.TaskFile
-import neurallink.core.model.TaskId
+import neurallink.core.model.*
 
-interface Action
+sealed interface Action
 
 enum class IncompleteSubtaskChoice {
     NOTHING,

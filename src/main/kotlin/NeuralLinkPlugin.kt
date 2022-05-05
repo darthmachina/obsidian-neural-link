@@ -9,7 +9,7 @@ import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
 import store.NoneFilterValue
 import store.UpdateSettings
-import store.reducer
+import neurallink.core.store.reducer
 import view.KanbanView
 
 @OptIn(ExperimentalJsExport::class)
