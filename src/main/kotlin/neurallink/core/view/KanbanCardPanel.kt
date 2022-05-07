@@ -106,7 +106,7 @@ class KanbanCardPanel(
         }
 
         // Source & Buttons
-        add(createFooterPanel(leaf))
+        add(createFooterPanel(leaf, status))
     }
 
     private fun createTagsAndDuePanel(filteredTags: List<Tag>) : HPanel {
@@ -178,7 +178,7 @@ class KanbanCardPanel(
         }
     }
 
-    private fun createFooterPanel(leaf: WorkspaceLeaf) : HPanel {
+    private fun createFooterPanel(leaf: WorkspaceLeaf, statusTag: StatusTag) : HPanel {
         return hPanel {
             div {
                 addCssStyle(KanbanStyles.KANBAN_BUTTONS)
@@ -188,11 +188,13 @@ class KanbanCardPanel(
                 }.onClick {
                     chooseNewStatus()
                 }
-                button("", icon = "fas fa-angles-up") {
-                    addCssStyle(KanbanStyles.KANBAN_BUTTON)
-                    size = ButtonSize.SMALL
-                }.onClick {
-                    store.dispatch(MoveToTop(task.id))
+                if (!statusTag.dateSort) {
+                    button("", icon = "fas fa-angles-up") {
+                        addCssStyle(KanbanStyles.KANBAN_BUTTON)
+                        size = ButtonSize.SMALL
+                    }.onClick {
+                        store.dispatch(MoveToTop(task.id))
+                    }
                 }
             }
             div {
