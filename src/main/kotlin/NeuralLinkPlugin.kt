@@ -10,7 +10,7 @@ import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
 import neurallink.core.store.reducer
-import view.KanbanView
+import neurallink.core.view.KanbanView
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport

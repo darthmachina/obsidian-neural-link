@@ -1,11 +1,11 @@
-package view
+package neurallink.core.view
 
 import io.kvision.panel.FlexPanel
 import io.kvision.panel.HPanel
 import neurallink.core.model.StatusTag
 
 class KanbanColumnsPanel : HPanel() {
-    private val columnPanels = mutableMapOf<StatusTag,KanbanColumnPanel>()
+    private val columnPanels = mutableMapOf<StatusTag, KanbanColumnPanel>()
 
     init {
         addCssStyle(KanbanStyles.KANBAN_COLUMNS)

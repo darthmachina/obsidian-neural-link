@@ -1,4 +1,4 @@
-package view
+package neurallink.core.view
 
 
 import io.kvision.core.StringPair
@@ -75,10 +75,12 @@ class Dialog(
                                 (formComponent as SimpleSelectInput).value
                             }
                         }
-                        callback.invoke(DialogResult(
+                        callback.invoke(
+                            DialogResult(
                             true,
                             result
-                        ))
+                        )
+                        )
                     }
                 }
             }

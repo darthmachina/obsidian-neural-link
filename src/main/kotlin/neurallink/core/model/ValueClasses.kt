@@ -30,7 +30,11 @@ data class Tag(override val value: String) : ValueClass<String>(value) {
     }
 }
 
-data class DueOn(override val value: LocalDate) : ValueClass<LocalDate>(value)
+data class DueOn(override val value: LocalDate) : ValueClass<LocalDate>(value) {
+    override fun toString(): String {
+        return value.toString()
+    }
+}
 
 data class CompletedOn(override val value: LocalDateTime) : ValueClass<LocalDateTime>(value)
 

@@ -1,4 +1,4 @@
-package view
+package neurallink.core.view
 
 import MarkdownView
 import WorkspaceLeaf

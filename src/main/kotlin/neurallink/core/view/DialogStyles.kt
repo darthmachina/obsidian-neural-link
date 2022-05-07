@@ -1,4 +1,4 @@
-package view
+package neurallink.core.view
 
 import io.kvision.core.*
 import io.kvision.utils.auto

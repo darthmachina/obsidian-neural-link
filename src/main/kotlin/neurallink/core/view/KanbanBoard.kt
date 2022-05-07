@@ -1,4 +1,4 @@
-package view
+package neurallink.core.view
 
 import WorkspaceLeaf
 import io.kvision.html.Div
