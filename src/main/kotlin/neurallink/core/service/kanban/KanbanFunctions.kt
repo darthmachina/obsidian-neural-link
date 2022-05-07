@@ -2,11 +2,9 @@ package neurallink.core.service.kanban
 
 import arrow.core.*
 import neurallink.core.model.*
-import neurallink.core.service.BeforeTaskDoesNotExist
 import neurallink.core.service.NoStatusTagOnTaskWarning
 import neurallink.core.service.taskComparator
 import neurallink.core.service.taskDateComparator
-import neurallink.core.store.ReducerUtils
 
 /**
  * Create a map of StatusTag -> List<Task> for any task that has a StatusTag on it
@@ -63,7 +61,7 @@ fun getAllStatusTagsOnTasks(tasks: List<Task>, statusTags: List<StatusTag>) : Se
 }
 
 fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): Either<NoStatusTagOnTaskWarning,StatusTag> {
-//            console.log("Reducers.ReducerUtils.getStatusTagFromTask()", task)
+//            console.log("getStatusTagFromTask()", task)
     return kanbanKeys
         .filter { statusTag -> task.tags.contains(statusTag.tag) }
         .let {
@@ -78,6 +76,6 @@ fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): Either<
         }
 }
 
-fun filterStatusTags(tags: Set<Tag>, columns: Collection<StatusTag>) : Set<Tag> {
+fun filterOutStatusTags(tags: Set<Tag>, columns: Collection<StatusTag>) : Set<Tag> {
     return tags.filter { tag -> tag !in columns.map { it.tag } }.toSet()
 }

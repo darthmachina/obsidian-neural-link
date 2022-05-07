@@ -3,7 +3,7 @@ package neurallink.core.service
 import arrow.core.Either
 import model.NeuralLinkModel
 import neurallink.core.model.*
-import neurallink.core.service.kanban.filterStatusTags
+import neurallink.core.service.kanban.filterOutStatusTags
 import neurallink.core.store.IncompleteSubtaskChoice
 
 fun subtasksForCompletedTask(subtasks: List<Task>, subtaskChoice: IncompleteSubtaskChoice) : List<Task> {
@@ -56,7 +56,7 @@ fun completeTask(
             task.dataviewFields,
             DataviewField(TaskConstants.TASK_ORDER_PROPERTY),
             DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)),
-        tags = filterStatusTags(task.tags, columns),
+        tags = filterOutStatusTags(task.tags, columns),
         before = checkAndCreateRepeatingTask(task)
             .mapLeft {
                 if (it.isError) console.log("Cannot create repeating task", it)
