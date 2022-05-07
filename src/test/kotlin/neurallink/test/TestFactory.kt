@@ -1,13 +1,6 @@
 package neurallink.test
 
-import neurallink.core.model.DataviewField
-import neurallink.core.model.DataviewValue
-import neurallink.core.model.Description
-import neurallink.core.model.FilePosition
-import neurallink.core.model.Note
-import neurallink.core.model.Task
-import neurallink.core.model.TaskFile
-import neurallink.core.model.toDataviewMap
+import neurallink.core.model.*
 import kotlin.random.Random
 
 class TestFactory {
@@ -40,6 +33,13 @@ class TestFactory {
             return Note(
                 randomString(20),
                 FilePosition(if (position == -1) Random.nextInt(0, 100) else position)
+            )
+        }
+
+        fun createDataviewPosition(pos: Double) : Pair<DataviewField,DataviewValue<Double>> {
+            return Pair(
+                DataviewField(TaskConstants.TASK_ORDER_PROPERTY),
+                DataviewValue(pos)
             )
         }
     }

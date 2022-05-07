@@ -95,7 +95,8 @@ fun findPosition(tasks: List<Task>, status: StatusTag, beforeTaskId: TaskId? = n
 }
 
 /**
- * Finds the `pos` value that puts a task at the end of the given list.
+ * Finds the `pos` value that puts a task at the end of the given list
+ * filtered to only include those tags tagged with the given StatusTag.
  */
 fun findEndPosition(tasks: List<Task>, status: StatusTag) : Double {
     return findMaxPositionInStatusTasks(
@@ -115,7 +116,7 @@ fun addOrderToListItemsIfNeeded(tasks: List<Task>) : List<Task> {
         .sortedWith(taskComparator)
         .map { task ->
             if (!task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY))) {
-                updateTaskOrder(task, maxPosition++)
+                updateTaskOrder(task, ++maxPosition)
             } else {
                 maxPosition = task.dataviewFields.valueForField(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)).getOrElse { DataviewValue(0.0) }.asDouble()
                 task
@@ -133,7 +134,10 @@ fun updateTaskOrder(task: Task, position: Double): Task {
     if (taskOrder == null || taskOrder.asDouble() != position) {
         return task.copy(
             original = task.original ?: task.deepCopy(),
-            dataviewFields = task.dataviewFields.plus(DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(position)).toDataviewMap()
+            dataviewFields = task.dataviewFields
+                .plus(
+                    DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to
+                            DataviewValue(position)).toDataviewMap()
         )
     }
     return task
