@@ -1,4 +1,4 @@
-package model
+package neurallink.core.model
 
 import NeuralLinkPlugin
 import NeuralLinkPluginSettings

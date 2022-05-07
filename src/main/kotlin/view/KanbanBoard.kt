@@ -6,7 +6,7 @@ import io.kvision.panel.VPanel
 import kotlinx.uuid.UUID
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskId
 import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store

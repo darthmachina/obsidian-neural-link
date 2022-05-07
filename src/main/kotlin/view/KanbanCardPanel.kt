@@ -20,7 +20,6 @@ import io.kvision.panel.hPanel
 import io.kvision.panel.vPanel
 import io.kvision.utils.px
 import kotlinx.datetime.*
-import model.*
 import neurallink.core.model.*
 import neurallink.core.store.IncompleteSubtaskChoice
 import neurallink.core.store.MoveToTop

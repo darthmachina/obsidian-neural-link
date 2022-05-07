@@ -1,7 +1,7 @@
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
 import neurallink.core.model.StatusTag
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.Tag
 import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.Store

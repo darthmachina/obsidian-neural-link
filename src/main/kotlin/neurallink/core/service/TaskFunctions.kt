@@ -1,7 +1,7 @@
 package neurallink.core.service
 
 import arrow.core.Either
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.*
 import neurallink.core.service.kanban.filterOutStatusTags
 import neurallink.core.store.IncompleteSubtaskChoice

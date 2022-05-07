@@ -4,7 +4,7 @@ import ItemView
 import WorkspaceLeaf
 import io.kvision.*
 import io.kvision.panel.root
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import org.reduxkotlin.Store
 import kotlin.js.Promise
 

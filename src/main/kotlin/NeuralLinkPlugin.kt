@@ -1,6 +1,6 @@
-import event.FileModifiedEvent
+import neurallink.core.event.FileModifiedEvent
 import kotlinx.coroutines.*
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks

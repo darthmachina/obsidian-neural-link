@@ -12,7 +12,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import model.NeuralLinkModel
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Tag
 

@@ -8,7 +8,7 @@ import io.kvision.html.div
 import io.kvision.panel.HPanel
 import io.kvision.utils.px
 import neurallink.core.model.TaskConstants
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.DataviewField
 import neurallink.core.store.FilterByDataviewValue
 import neurallink.core.store.FilterByFile

@@ -1,7 +1,6 @@
 package neurallink.core.store
 
 import arrow.core.getOrElse
-import model.*
 import neurallink.core.model.*
 import neurallink.core.service.completeTask
 import neurallink.core.service.filterTasks

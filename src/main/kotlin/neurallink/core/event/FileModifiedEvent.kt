@@ -1,11 +1,11 @@
-package event
+package neurallink.core.event
 
 import NeuralLinkPlugin
 import TFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskFile
 import neurallink.core.service.readFile
 import neurallink.core.store.ModifyFileTasks

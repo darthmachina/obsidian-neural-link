@@ -7,7 +7,7 @@ import Vault
 import arrow.core.Either
 import arrow.core.flatMap
 import kotlinx.coroutines.*
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.*
 import neurallink.core.store.VaultLoaded
 import org.reduxkotlin.Store

@@ -1,7 +1,7 @@
-package event
+package neurallink.core.event
 
 import NeuralLinkPlugin
-import model.NeuralLinkModel
+import neurallink.core.model.NeuralLinkModel
 import org.reduxkotlin.Store
 
 @OptIn(ExperimentalJsExport::class)
