@@ -1,16 +1,19 @@
 package neurallink.core.service.kanban
 
 import arrow.core.*
+import mu.KotlinLogging
 import neurallink.core.model.*
 import neurallink.core.service.NoStatusTagOnTaskWarning
 import neurallink.core.service.taskComparator
 import neurallink.core.service.taskDateComparator
 
+private val logger = KotlinLogging.logger("NeuralLinkPlugin")
+
 /**
  * Create a map of StatusTag -> List<Task> for any task that has a StatusTag on it
  */
 fun createKanbanMap(tasks: List<Task>, statusTags: List<StatusTag>) : Map<StatusTag,List<Task>> {
-    console.log("Reducers.ReducerUtils.createKanbanMap()")
+    logger.debug { "createKanbanMap()" }
     return tasks
         .filter { task ->
             task.tags.any { tag ->
@@ -49,7 +52,7 @@ fun createKanbanMap(tasks: List<Task>, statusTags: List<StatusTag>) : Map<Status
 }
 
 fun getAllStatusTagsOnTasks(tasks: List<Task>, statusTags: List<StatusTag>) : Set<StatusTag> {
-//            console.log("getAllStatusTagsOnTasks()", tasks, statusTags)
+    logger.debug { "getAllStatusTagsOnTasks(): $tasks, $statusTags" }
     return tasks
         .asSequence()
         .map { task -> task.tags }
@@ -61,7 +64,7 @@ fun getAllStatusTagsOnTasks(tasks: List<Task>, statusTags: List<StatusTag>) : Se
 }
 
 fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): Either<NoStatusTagOnTaskWarning,StatusTag> {
-//            console.log("getStatusTagFromTask()", task)
+    logger.debug { "getStatusTagFromTask(): $task" }
     return kanbanKeys
         .filter { statusTag -> task.tags.contains(statusTag.tag) }
         .let {
@@ -69,7 +72,7 @@ fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): Either<
                 0 -> Either.Left(NoStatusTagOnTaskWarning("There is no status tag on task '${task.description}"))
                 1 -> it[0].right()
                 else -> {
-                    console.log(" - WARN: More than one status column is on the task, using the first: ", it[0])
+                    logger.warn { " - WARN: More than one status column is on the task, using the first: ${it[0]}" }
                     it[0].right()
                 }
             }

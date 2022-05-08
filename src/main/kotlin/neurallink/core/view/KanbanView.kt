@@ -4,9 +4,12 @@ import ItemView
 import WorkspaceLeaf
 import io.kvision.*
 import io.kvision.panel.root
+import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import org.reduxkotlin.Store
 import kotlin.js.Promise
+
+private val logger = KotlinLogging.logger("KanbanView")
 
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 @OptIn(ExperimentalJsExport::class)
@@ -19,10 +22,6 @@ class KanbanView(
         const val VIEW_TYPE = "NEURAL-LINK-KANBAN-VIEW"
     }
 
-    init {
-        console.log("KanbanView.init()")
-    }
-
     override fun getViewType(): String {
         return VIEW_TYPE
     }
@@ -32,7 +31,7 @@ class KanbanView(
     }
 
     override fun onOpen(): Promise<Unit> {
-        console.log("KanbanView.onOpen()")
+        logger.debug { "KanbanView.onOpen()" }
 
         startApplication(
             ::KanbanApp,

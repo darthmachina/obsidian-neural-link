@@ -7,10 +7,13 @@ import Vault
 import arrow.core.Either
 import arrow.core.flatMap
 import kotlinx.coroutines.*
+import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.*
 import neurallink.core.store.VaultLoaded
 import org.reduxkotlin.Store
+
+private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 
 // ************* FILE READING *************
 fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<NeuralLinkModel>) {
@@ -31,7 +34,7 @@ fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: St
  */
 suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadataCache: MetadataCache): List<Task>
         = coroutineScope {
-    console.log("processAllFiles()")
+    logger.debug { "processAllFiles()" }
     vault.getFiles()
         .filter {
             it.name.endsWith(".md")
@@ -51,7 +54,7 @@ suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadat
 }
 
 suspend fun readFile(store: Store<NeuralLinkModel>, file: TFile, vault: Vault, metadataCache: MetadataCache): List<Task> {
-    console.log("readFile()", file.name)
+    logger.debug { "readFile(): ${file.name}" }
     val taskList = mutableListOf<Task>()
 
     vault.read(file).then { contents ->
@@ -63,13 +66,14 @@ suspend fun readFile(store: Store<NeuralLinkModel>, file: TFile, vault: Vault, m
         // - contains a status tag
         // Rules for completed tasks are so they are processed by any modification listeners for tasks modified
         // outside the plugin itself.
-        val tasksForFile = processFile(file.path, fileContents, fileListItems)
-            .filter { task ->
-                !task.completed ||
-                    task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) ||
-                    task.tags.any { tag -> tag in store.state.settings.columnTags.map { it.tag } }
-        }
-        taskList.addAll(tasksForFile)
+        taskList.addAll(
+            processFile(file.path, fileContents, fileListItems)
+                .filter { task ->
+                    !task.completed ||
+                            task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) ||
+                            task.tags.any { tag -> tag in store.state.settings.columnTags.map { it.tag } }
+                }
+        )
     }.await()
     return taskList}
 
@@ -78,7 +82,7 @@ fun processFile(
     fileContents: List<String>,
     listItems: Array<ListItemCache>
 ): List<Task> {
-    console.log("processFile()", filename)
+    logger.debug { "processFile(): $filename" }
     // Need to use recursion here to build up the Task list
     return listItems
         .map { cacheListItem ->
@@ -142,7 +146,7 @@ fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<Task> {
 }
 
 fun buildNoteTree(items: List<ItemInProcess>, parentId: Int) : List<Note> {
-    println("buildNoteTree(): $parentId, $items")
+    logger.debug { "buildNoteTree(): $parentId, $items" }
     return items
         .filter { item -> item is NoteInProcess && item.parent == parentId }
         .mapNotNull { item ->
@@ -182,7 +186,7 @@ fun cacheItemParent(item: ListItemCache) : Int {
 // ************* FILE WRITING *************
 
 suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
-    console.log("writeModifiedTasks()", tasks)
+    logger.debug { "writeModifiedTasks(): $tasks" }
     withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
         tasks
             .filter { it.original != null }
@@ -199,11 +203,11 @@ suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
 }
 
 fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: TFile) {
-    console.log("writeFile(): ${file.name}")
+    logger.debug { "writeFile(): ${file.name}" }
     createFileContents(existingContents, tasks)
         .map { vault.modify(file, it) }
         .mapLeft {
-            console.log("File was not modified, not writing to disk")
+            logger.debug { "File was not modified, not writing to disk" }
         }
 
 }

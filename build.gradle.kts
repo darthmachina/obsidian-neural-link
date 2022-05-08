@@ -30,6 +30,7 @@ dependencies {
     implementation("org.reduxkotlin:redux-kotlin-reselect:0.2.10")
     implementation("app.softwork:kotlinx-uuid-core:0.0.12")
     implementation("io.arrow-kt:arrow-core:1.0.1")
+    implementation("io.github.microutils:kotlin-logging:2.1.21")
 
     implementation("io.kvision:kvision:$kvisionVersion")
     implementation("io.kvision:kvision-fontawesome:$kvisionVersion")
@@ -39,8 +40,6 @@ dependencies {
     testImplementation("io.kotest:kotest-framework-engine:5.0.2")
     testImplementation("io.kotest.extensions:kotest-assertions-arrow:1.2.2")
     testImplementation("io.mockk:mockk-js:1.7.17")
-//    testImplementation(npm("obsimian", "0.4.0"))
-//    testImplementation(npm("rewiremock", "3.14.3"))
 }
 
 kotlin {

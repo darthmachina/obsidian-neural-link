@@ -1,10 +1,13 @@
 package neurallink.core.service
 
 import arrow.core.Either
+import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.*
 import neurallink.core.service.kanban.filterOutStatusTags
 import neurallink.core.store.IncompleteSubtaskChoice
+
+private val logger = KotlinLogging.logger("TaskFunctions")
 
 fun subtasksForCompletedTask(subtasks: List<Task>, subtaskChoice: IncompleteSubtaskChoice) : List<Task> {
     return when (subtaskChoice) {
@@ -47,7 +50,7 @@ fun completeTask(
     subtaskChoice: IncompleteSubtaskChoice,
     columns: Collection<StatusTag>
 ) : Task {
-    console.log("completeTask()")
+    logger.debug { "completeTask()" }
     return task.copy(
         original = task.original ?: task.deepCopy(),
         completed = true,
@@ -59,7 +62,7 @@ fun completeTask(
         tags = filterOutStatusTags(task.tags, columns),
         before = checkAndCreateRepeatingTask(task)
             .mapLeft {
-                if (it.isError) console.log("Cannot create repeating task", it)
+                if (it.isError) logger.error { "Cannot create repeating task: $it" }
             }.orNull()
     )
 }
@@ -72,6 +75,6 @@ fun changedTasks(file: String, fileTasks: List<Task>, store: NeuralLinkModel) : 
     val storeFileTasks = store.tasks.filter { it.file.value == file }
     if (storeFileTasks.isEmpty()) return emptyList()
 
-    console.log("ReducerUtils.changedTasks()", fileTasks, storeFileTasks)
+    logger.debug { "ReducerUtils.changedTasks(): $fileTasks, $storeFileTasks" }
     return fileTasks.minus(storeFileTasks.toSet())
 }

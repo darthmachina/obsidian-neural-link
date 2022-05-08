@@ -1,6 +1,7 @@
 package neurallink.core.store
 
 import Plugin
+import mu.KotlinLoggingLevel
 import neurallink.core.model.*
 
 sealed interface Action
@@ -34,7 +35,8 @@ data class FilterByDataviewValue(val value: String?) : Action
 data class FilterFutureDate(val filter: Boolean) : Action
 data class UpdateSettings(
     val plugin: Plugin,
-    var taskRemoveRegex: String? = null,
-    var columnTags: List<StatusTag>? = null,
-    var tagColors: Map<Tag,String>? = null
+    val taskRemoveRegex: String? = null,
+    val columnTags: List<StatusTag>? = null,
+    val tagColors: Map<Tag,String>? = null,
+    val logLevel: KotlinLoggingLevel? = null
 ) : Action

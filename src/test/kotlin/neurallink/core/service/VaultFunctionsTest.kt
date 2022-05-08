@@ -327,6 +327,7 @@ class VaultFunctionsTest : StringSpec ({
         actualJoinedMap[4]!!.third shouldBe null
     }
 
+    // *** markRemoveLines() ***
     "markRemoveLines marks the correct lines in the data" {
         // Example File
         // ------------
@@ -361,6 +362,7 @@ class VaultFunctionsTest : StringSpec ({
         lines[4].second.shouldBeFalse()
     }
 
+    // *** createFileContents() ***
     "createFileContents should create the correct markdown string" {
         // Example File
         // ------------

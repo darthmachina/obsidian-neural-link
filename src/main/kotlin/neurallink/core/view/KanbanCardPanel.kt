@@ -20,6 +20,7 @@ import io.kvision.panel.hPanel
 import io.kvision.panel.vPanel
 import io.kvision.utils.px
 import kotlinx.datetime.*
+import mu.KotlinLogging
 import neurallink.core.model.*
 import neurallink.core.store.IncompleteSubtaskChoice
 import neurallink.core.store.MoveToTop
@@ -27,6 +28,8 @@ import neurallink.core.store.SubtaskCompleted
 import neurallink.core.store.TaskCompleted
 import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store
+
+private val logger = KotlinLogging.logger("KanbanCardPanel")
 
 class KanbanCardPanel(
     leaf: WorkspaceLeaf,
@@ -206,7 +209,7 @@ class KanbanCardPanel(
                     marginBottom = 4.px
                     marginRight = (-3).px
                 }.onClick {
-                    console.log("going to source file")
+                    logger.debug { "going to source file" }
                     openSourceFile(task, leaf)
                 }
             }
@@ -214,7 +217,7 @@ class KanbanCardPanel(
     }
 
     private fun chooseNewStatus() {
-        console.log("chooseNewStatus()")
+        logger.debug { "chooseNewStatus()" }
         val statusSelect = DialogInput.SELECT.apply {
             model = store.state.settings.columnTags.map { it.tag.value to it.displayName }
             current = status.tag.value
@@ -225,9 +228,9 @@ class KanbanCardPanel(
             input = statusSelect
         )
         dialog.setCallback { result ->
-            console.log("Dialog callback()", result)
+            logger.debug { "Dialog callback(): $result" }
             if (result.accept && (result.result) != status.tag.value) {
-                console.log(" - saving result: ", result.result)
+                logger.debug { " - saving result: ${result.result}" }
                 val statusTag = store.state.settings.columnTags.find { it.tag.value == result.result }!!
                 store.dispatch(TaskMoved(task.id, statusTag))
             }
@@ -239,7 +242,7 @@ class KanbanCardPanel(
     }
 
     private fun askAboutIncompleteSubtasks(task: Task) {
-        console.log("askAboutIncompleteSubtasks()")
+        logger.debug { "askAboutIncompleteSubtasks()" }
         val subtaskChoices = DialogInput.SELECT.apply {
             model = listOf(
                 "nothing" to "Do nothing",
@@ -254,7 +257,6 @@ class KanbanCardPanel(
             input = subtaskChoices
         )
         dialog.setCallback { result ->
-//            store.dispatch(TaskCompleted(task.id, repeatingTaskService))
             if (result.accept) {
                 val subtaskChoice = when(result.result) {
                     "nothing" -> IncompleteSubtaskChoice.NOTHING
@@ -272,10 +274,10 @@ class KanbanCardPanel(
     }
 
     private fun openSourceFile(task: Task, leaf: WorkspaceLeaf) {
-        console.log("openSourceFile()")
+        logger.debug { "openSourceFile()" }
         val filePath = leaf.view.app.metadataCache.getFirstLinkpathDest(task.file.value, "")
         if (filePath == null) {
-            console.log(" - ERROR: file path not found: ${task.file}")
+            logger.error { " - ERROR: file path not found: ${task.file}" }
             return
         }
 

@@ -7,6 +7,7 @@ import io.kvision.form.select.simpleSelectInput
 import io.kvision.html.div
 import io.kvision.panel.HPanel
 import io.kvision.utils.px
+import mu.KotlinLogging
 import neurallink.core.model.TaskConstants
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.DataviewField
@@ -15,6 +16,8 @@ import neurallink.core.store.FilterByFile
 import neurallink.core.store.FilterByTag
 import neurallink.core.store.FilterFutureDate
 import org.reduxkotlin.Store
+
+private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 
 class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, justify = JustifyContent.END) {
     private var filtering = false
@@ -42,7 +45,7 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
 
             var init = true
             subscribe {
-                console.log("tagSelect.subscribe()", it)
+                logger.debug { "tagSelect.subscribe(): $it" }
                 if (init) {
                     init = false
                 } else {
@@ -59,7 +62,7 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
 
             var init = true
             subscribe {
-                console.log("fileSelect.subscribe()", it)
+                logger.debug { "fileSelect.subscribe(): $it" }
                 if (init) {
                     init = false
                 } else {
@@ -76,7 +79,7 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
 
             var init = true
             subscribe {
-                console.log("fileSelect.subscribe()", it)
+                logger.debug { "fileSelect.subscribe(): $it" }
                 if (init) {
                     init = false
                 } else {

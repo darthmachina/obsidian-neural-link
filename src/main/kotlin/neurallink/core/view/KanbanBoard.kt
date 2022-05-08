@@ -4,12 +4,15 @@ import WorkspaceLeaf
 import io.kvision.html.Div
 import io.kvision.panel.VPanel
 import kotlinx.uuid.UUID
+import mu.KotlinLogging
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskId
 import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store
+
+private val logger = KotlinLogging.logger("KanbanBoard")
 
 class KanbanBoard(
     val leaf: WorkspaceLeaf,
@@ -37,7 +40,7 @@ class KanbanBoard(
     }
 
     private fun storeChanged() {
-        console.log("KanbanBoard.storeChanged()")
+        logger.debug { "storeChanged()" }
         if (boardCache.columns != store.state.settings.columnTags) {
             // Columns have been updated, redraw the whole board
             updateCacheColumns(store.state.settings.columnTags, leaf)
@@ -52,26 +55,23 @@ class KanbanBoard(
     }
 
     private fun updateCacheColumns(columns: List<StatusTag>, leaf: WorkspaceLeaf) {
-        console.log("KanbanBoard.updateCacheColumns(): ", columns)
+        logger.debug { "updateCacheColumns(): $columns" }
         boardCache.columns = columns
         boardCache.tasks.clear()
         boardCache.tasks.putAll(store.state.kanbanColumns)
 
         columnsPanel.removeAll()
         boardCache.columns.forEach { statusTag ->
-//            console.log(" - creating column", statusTag)
             columnsPanel.addColumn(statusTag, createColumn(statusTag, boardCache.tasks[statusTag]!!, leaf))
         }
     }
 
     private fun checkAndUpdateTasks() {
-        console.log("KanbanBoard.checkAndUpdateTasks()")
+        logger.debug { "checkAndUpdateTasks()" }
         store.state.settings.columnTags.forEach { status ->
-//            console.log(" - Checking column: ", status)
             val cacheTasks = boardCache.tasks[status]!!
             val storeTasks = store.state.kanbanColumns[status]!!
             if (cacheTasks != storeTasks) {
-//                console.log(" - Task difference between cache and store, updating")
                 boardCache.tasks[status] = storeTasks
                 columnsPanel.replaceCards(
                     status,
@@ -82,7 +82,7 @@ class KanbanBoard(
     }
 
     private fun createColumn(name: StatusTag, cards: List<Task>, leaf: WorkspaceLeaf): KanbanColumnPanel {
-        console.log("KanbanBoard.createColumn(): ", name)
+        logger.debug { "KanbanBoard.createColumn(): $name" }
         val column = KanbanColumnPanel(name, cards.map { createCard(it, name, leaf) })
         column.setDropTargetData(CARD_MIME_TYPE) { cardId ->
             if (cardId != null) {
@@ -94,7 +94,7 @@ class KanbanBoard(
     }
 
     private fun createCard(task: Task, status: StatusTag, leaf: WorkspaceLeaf): KanbanCardPanel {
-        console.log("KanbanBoard.createCard(): ", task.description)
+        logger.debug { "createCard(): ${task.description}" }
         val card = KanbanCardPanel(leaf, store, task, status)
         card.id = task.id.value.toString()
         card.setDragDropData(CARD_MIME_TYPE, card.id!!)

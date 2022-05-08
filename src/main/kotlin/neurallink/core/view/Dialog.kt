@@ -93,7 +93,6 @@ class Dialog(
     }
 
     fun show(show: Boolean) {
-        console.log("Dialog.show(${show})")
         if (show) {
             show()
         } else {

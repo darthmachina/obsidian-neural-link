@@ -5,11 +5,14 @@ import TFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskFile
 import neurallink.core.service.readFile
 import neurallink.core.store.ModifyFileTasks
 import org.reduxkotlin.Store
+
+private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 
 /**
  * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this
@@ -23,7 +26,7 @@ class FileModifiedEvent(
     store: Store<NeuralLinkModel>
 ) : Event(plugin, store) {
     override fun processEvent(context: Any) {
-        console.log("processEvent()", context)
+        logger.debug { "processEvent(): $context" }
         if (context is TFile) {
             val fileContents = mutableListOf<String>()
             plugin.app.vault.read(context).then { contents ->

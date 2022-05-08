@@ -1,6 +1,8 @@
 package neurallink.core.store
 
 import arrow.core.getOrElse
+import mu.KotlinLogging
+import mu.KotlinLoggingConfiguration
 import neurallink.core.model.*
 import neurallink.core.service.completeTask
 import neurallink.core.service.filterTasks
@@ -10,6 +12,8 @@ import neurallink.core.service.kanban.findPosition
 import neurallink.core.service.kanban.getStatusTagFromTask
 import neurallink.core.service.toJson
 import org.reduxkotlin.Reducer
+
+private val logger = KotlinLogging.logger("Reducers")
 
 val reducerFunctions = Reducers()
 
@@ -37,15 +41,15 @@ class Reducers {
      * updates.
      */
     fun updateSettings(store: NeuralLinkModel, updateSettings: UpdateSettings): NeuralLinkModel {
-        console.log("updateSettings()")
+        logger.debug { "updateSettings()" }
         val newSettings = store.settings.copy(
             taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
             columnTags = updateSettings.columnTags ?: store.settings.columnTags,
-            tagColors = updateSettings.tagColors ?: store.settings.tagColors
+            tagColors = updateSettings.tagColors ?: store.settings.tagColors,
+            logLevel = updateSettings.logLevel ?: store.settings.logLevel
         )
         updateSettings.plugin.saveData(toJson(newSettings))
         return if (updateSettings.columnTags != null) {
-//            console.log(" - columns updated, reloading kanban")
             val clonedTaskList = store.tasks.map { it }
             store.copy(
                 settings = newSettings,
@@ -56,6 +60,9 @@ class Reducers {
                 )
             )
         } else {
+            if (updateSettings.logLevel != null) {
+                KotlinLoggingConfiguration.LOG_LEVEL = updateSettings.logLevel
+            }
             store.copy(
                 settings = newSettings
             )
@@ -66,7 +73,7 @@ class Reducers {
      * Called when the vault is initially loaded with a task list, will populate the kanban data
      */
     fun copyAndPopulateKanban(store: NeuralLinkModel, tasks: List<Task>): NeuralLinkModel {
-        console.log("Reducers.copyAndPopulateKanban()")
+        logger.debug { "Reducers.copyAndPopulateKanban()" }
         return store.copy(
             tasks = tasks,
             kanbanColumns = createKanbanMap(
@@ -77,9 +84,9 @@ class Reducers {
     }
 
     fun moveCard(store: NeuralLinkModel, taskId: TaskId, newStatus: StatusTag, beforeTaskId: TaskId?): NeuralLinkModel {
-        console.log("Reducers.taskStatusChanged()")
+        logger.debug { "Reducers.taskStatusChanged()" }
         if (store.tasks.find { it.id == taskId } == null) {
-            console.log(" - ERROR: Task not found for id: $taskId")
+            logger.error { " - ERROR: Task not found for id: $taskId" }
             return store
         }
 
@@ -101,7 +108,7 @@ class Reducers {
                                     DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(it)
                                 }
                                 .mapLeft {
-                                    console.log("ERROR finding position in new list", it)
+                                    logger.error { "ERROR finding position in new list: $it" }
                                 }
                                 .getOrElse {
                                     // No position found
@@ -130,6 +137,7 @@ class Reducers {
     }
 
     fun moveToTop(store: NeuralLinkModel, taskId: TaskId) : NeuralLinkModel {
+        logger.debug { "moveToTop()" }
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
                 task.copy(
@@ -171,7 +179,7 @@ class Reducers {
         taskId: TaskId,
         subtaskChoice: IncompleteSubtaskChoice
     ): NeuralLinkModel {
-        console.log("Reducers.taskCompleted()")
+        logger.debug { "taskCompleted()" }
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
                 completeTask(task, subtaskChoice, store.settings.columnTags)
@@ -190,9 +198,9 @@ class Reducers {
     }
 
     fun markSubtaskCompletion(store: NeuralLinkModel, taskId: TaskId, subtaskId: TaskId, complete: Boolean): NeuralLinkModel {
-        console.log("Reducers.subtaskCompleted()")
+        logger.debug { "subtaskCompleted()" }
         if (store.tasks.find { it.id == taskId } == null) {
-            console.log(" - ERROR: Task not found for id: $taskId")
+            logger.error { " - ERROR: Task not found for id: $taskId" }
             return store
         }
 
@@ -222,7 +230,7 @@ class Reducers {
     }
 
     fun modifyFileTasks(store: NeuralLinkModel, file: TaskFile, fileTasks: List<Task>): NeuralLinkModel {
-        console.log("Reducers.modifyFileTasks()")
+        logger.debug { "modifyFileTasks()" }
         // Only return a new state if any of the tasks were modified
         val clonedTaskList = store.tasks
             .filter { it.file != file }
@@ -288,9 +296,8 @@ class Reducers {
 
 class ReducerUtils {
     companion object {
-
         fun runFileModifiedListeners(tasks: List<Task>, store: NeuralLinkModel) : List<Task> {
-            console.log("Reducers.ReducerUtils.runFileModifiedListeners()", tasks)
+            logger.debug { "Reducers.ReducerUtils.runFileModifiedListeners(): $tasks" }
 
             // Check for completed tasks with either a status tag or a repeat field (might have been completed outside the app)
             // remove the status tag and check for any tasks that need repeating. Do nothing with subtasks as we are outside
@@ -305,7 +312,7 @@ class ReducerUtils {
                         task
                     }
                 }
-            console.log("newTasks after checking for completed", newTasks)
+            logger.debug { "newTasks after checking for completed : $newTasks" }
 
             // Check for tasks with no position
             newTasks = newTasks

@@ -4,8 +4,11 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import mu.KotlinLogging
 import neurallink.core.model.Task
 import neurallink.core.store.*
+
+private val logger = KotlinLogging.logger("TaskFilterFunctions")
 
 fun filterTasks(tasks: List<Task>, filterValue: FilterValue<out Any>) : List<Task> {
     return when (filterValue) {
@@ -21,7 +24,7 @@ fun filterTasks(tasks: List<Task>, filterValue: FilterValue<out Any>) : List<Tas
             Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                 .let { LocalDate(it.year, it.month, it.dayOfMonth) }
                 .let {
-                    console.log("Filtering using $it")
+                    logger.debug { "Filtering using $it" }
                     it
                 }
                 .let { date ->

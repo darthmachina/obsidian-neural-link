@@ -1,6 +1,7 @@
 package neurallink.core.service
 
-import NeuralLinkPluginSettings
+import NeuralLinkPluginSettings4
+import NeuralLinkPluginSettings5
 import SettingsVersion
 import arrow.core.*
 import kotlinx.serialization.KSerializer
@@ -12,8 +13,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
+import mu.KotlinLoggingLevel
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Tag
+
+private val logger = KotlinLogging.logger("SettingsFunctions")
 
 /**
  * Processes the results of a `loadData()` call.
@@ -24,34 +29,27 @@ import neurallink.core.model.Tag
  *
  * @return A fully populated `NeuralLinkPluginSettings` object at the current version.
  */
-fun loadFromJson(json: Any?) : Either<LoadSettingsError, NeuralLinkPluginSettings> {
-    console.log("loadFromJson()")
+fun loadFromJson(json: Any?) : Either<LoadSettingsError, NeuralLinkPluginSettings5> {
+    logger.debug { "loadFromJson()" }
     return json.toOption()
         .fold(
             ifEmpty = {
-                NeuralLinkPluginSettings
+                NeuralLinkPluginSettings5
                     .default()
                     .right()
             },
             ifSome = {
                 Either.catch {
                     when (Json { ignoreUnknownKeys = true }.decodeFromString<SettingsVersion>(json as String).version) {
-//                "2" -> {
-//                    console.log(" - Version 2 saved, updating settings")
-//                    val jsonSettings = Json { ignoreUnknownKeys = true }.decodeFromString<NeuralLinkPluginSettings2>(json as String)
-//                    NeuralLinkPluginSettings.default().copy(
-//                        taskRemoveRegex = jsonSettings.taskRemoveRegex,
-//                        columnTags = jsonSettings.columnTags
-//                    )
-//                }
-                        "4" -> {
-                            console.log(" - Version 4, just loading")
+                        "5" -> {
+                            logger.debug { " - Version 5, just loading" }
                             Json { ignoreUnknownKeys = true }
-                                .decodeFromString<NeuralLinkPluginSettings>(json)
+                                .decodeFromString<NeuralLinkPluginSettings5>(json)
                                 .right()
                         }
+                        "4" -> upgradeFrom4To5(json).right()
                         else -> {
-                            console.log("ERROR Loading JSON", json)
+                            logger.error { "ERROR Loading JSON : $json" }
                             Either.Left(LoadSettingsError("Cannot load JSON"))
                         }
                     }
@@ -64,8 +62,30 @@ fun loadFromJson(json: Any?) : Either<LoadSettingsError, NeuralLinkPluginSetting
         )
 }
 
-fun toJson(settings: NeuralLinkPluginSettings): String {
+fun toJson(settings: NeuralLinkPluginSettings5): String {
     return Json.encodeToString(settings)
+}
+
+fun upgradeFrom4To5(json: String) : NeuralLinkPluginSettings5 {
+    logger.debug { "upgradeFrom4to5()" }
+    val jsonSettings = Json { ignoreUnknownKeys = true }.decodeFromString<NeuralLinkPluginSettings4>(json)
+    return NeuralLinkPluginSettings5.default().copy(
+        taskRemoveRegex = jsonSettings.taskRemoveRegex,
+        columnTags = jsonSettings.columnTags,
+        tagColors = jsonSettings.tagColors
+    )
+}
+
+object LoggingLevelSerializer : KSerializer<KotlinLoggingLevel> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LogLevel", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): KotlinLoggingLevel {
+        return KotlinLoggingLevel.valueOf(decoder.decodeString())
+    }
+
+    override fun serialize(encoder: Encoder, value: KotlinLoggingLevel) {
+        encoder.encodeString(value.name)
+    }
 }
 
 object StatusTagSerializer : KSerializer<StatusTag> {

@@ -1,11 +1,15 @@
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
+import mu.KotlinLogging
+import mu.KotlinLoggingLevel
 import neurallink.core.model.StatusTag
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.Tag
 import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
+
+private val logger = KotlinLogging.logger("NeuralLinkPluginSettingsTab")
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
@@ -23,6 +27,23 @@ class NeuralLinkPluginSettingsTab(
         createTaskTextRemovalRegexSetting(containerEl)
         createColumnListSetting(containerEl)
         createTagColorListSetting(containerEl)
+        createLogLevelSettings(containerEl)
+    }
+
+    private fun createLogLevelSettings(containerEl: HTMLElement): Setting {
+        return Setting(containerEl)
+            .setName("Log Level")
+            .setDesc("Set the log level")
+            .addDropdown { dropdown ->
+                KotlinLoggingLevel.values().forEach { level ->
+                    dropdown.addOption(level.name, level.name)
+                }
+                dropdown.setValue(store.state.settings.logLevel.name)
+                dropdown.onChange {
+                    logger.debug { "onChange(): $it" }
+                    store.dispatch(UpdateSettings(plugin, logLevel = KotlinLoggingLevel.valueOf(it)))
+                }
+            }
     }
 
     private fun createTaskTextRemovalRegexSetting(containerEl: HTMLElement): Setting {
@@ -33,24 +54,21 @@ class NeuralLinkPluginSettingsTab(
                 text.setPlaceholder("Regex")
                     .setValue(store.state.settings.taskRemoveRegex)
                     .onChange { value ->
-                        console.log("Regex: $value")
+                        logger.debug { "Regex: $value" }
                         store.dispatch(UpdateSettings(plugin, taskRemoveRegex = value))
                     }
             }
     }
 
     private fun createColumnListSetting(containerEl: HTMLElement): Setting {
-        console.log("createColumnListSetting()")
+        logger.debug { "createColumnListSetting()" }
         return Setting(containerEl)
             .setName("Kanban Columns")
             .setDesc("List of columns to use for the Kanban board")
             .addTextArea { text ->
                 val columns = store.state.settings.columnTags
-                console.log(" - current columns", columns)
                 val stringList = columns.map { statusTag -> "${statusTag.tag}:${statusTag.displayName}:${statusTag.dateSort}" }
-                console.log(" - stringList", stringList)
                 val textVersion = stringList.joinToString("\n")
-                console.log(" - textVersion", textVersion)
                 text.setPlaceholder("'tag:display name:dateSort' separated by newlines")
                     .setValue(textVersion)
                     .onChange { value ->
@@ -71,17 +89,14 @@ class NeuralLinkPluginSettingsTab(
     }
 
     private fun createTagColorListSetting(containerEl: HTMLElement): Setting {
-        console.log("createTagColorListSetting()")
+        logger.debug { "createTagColorListSetting()" }
         return Setting(containerEl)
             .setName("Tag Colors")
             .setDesc("List of colors to use for certain tags")
             .addTextArea { text ->
                 val tagColors = store.state.settings.tagColors
-                console.log(" - current tagColors", tagColors)
                 val stringList = tagColors.map { entry -> "${entry.key}:${entry.value}" }
-                console.log(" - stringList", stringList)
                 val textVersion = stringList.joinToString("\n")
-                console.log(" - textVersion", textVersion)
                 text.setPlaceholder("'tag:hex_color' separated by newlines")
                     .setValue(textVersion)
                     .onChange { value ->

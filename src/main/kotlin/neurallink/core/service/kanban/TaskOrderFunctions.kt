@@ -5,6 +5,7 @@ import arrow.core.None
 import arrow.core.Some
 import arrow.core.getOrElse
 import arrow.core.toOption
+import mu.KotlinLogging
 import neurallink.core.model.DataviewField
 import neurallink.core.model.DataviewValue
 import neurallink.core.model.StatusTag
@@ -15,6 +16,8 @@ import neurallink.core.model.toDataviewMap
 import neurallink.core.service.BeforeTaskDoesNotExist
 import neurallink.core.service.taskComparator
 import neurallink.core.store.ReducerUtils
+
+private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 
 /**
  * Finds the max `pos` value in the given list. This list would usually already be sorted to
@@ -77,7 +80,7 @@ fun findPositionBeforeTask(tasks: List<Task>, beforeTaskId: TaskId) : Either<Bef
  *  - If beforeTask is the first in the list just return its position divided by 2
  */
 fun findPosition(tasks: List<Task>, status: StatusTag, beforeTaskId: TaskId? = null) : Either<BeforeTaskDoesNotExist, Double> {
-    console.log("ReducerUtils.findPosition()")
+    logger.debug { "findPosition()" }
 
     return tasks
         .filter { task -> task.tags.contains(status.tag) }
@@ -109,7 +112,7 @@ fun findEndPosition(tasks: List<Task>, status: StatusTag) : Double {
  * Adds TaskConstants.TASK_ORDER_PROPERTY to each task in the list if it's not already set.
  */
 fun addOrderToListItemsIfNeeded(tasks: List<Task>) : List<Task> {
-//            console.log("addOrderToListItems()")
+    logger.debug { "addOrderToListItems()" }
     // TODO Find an FP way handle maxPosition
     var maxPosition = 1.0
     return tasks
@@ -129,7 +132,7 @@ fun addOrderToListItemsIfNeeded(tasks: List<Task>) : List<Task> {
  * original before making the change.
  */
 fun updateTaskOrder(task: Task, position: Double): Task {
-    console.log("updateTaskOrder()", task, position)
+    logger.debug { "updateTaskOrder(): $task, $position" }
     val taskOrder = task.dataviewFields[DataviewField(TaskConstants.TASK_ORDER_PROPERTY)]
     if (taskOrder == null || taskOrder.asDouble() != position) {
         return task.copy(

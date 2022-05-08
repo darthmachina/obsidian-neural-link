@@ -5,14 +5,17 @@ import arrow.core.flatMap
 import arrow.core.right
 import arrow.core.rightIfNotNull
 import kotlinx.datetime.*
+import mu.KotlinLogging
 import neurallink.core.model.*
+
+private val logger = KotlinLogging.logger("RepeatingTaskFunctions")
 
 /**
  * Detects whether the given task is a repeating task based on the `repeat` Dataview
  * field and an @due being set.
  */
 fun isTaskRepeating(task: Task) : Boolean {
-    console.log("isTaskRepeating()")
+    logger.debug { "isTaskRepeating()" }
     return task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)) && task.dueOn != null
 }
 
@@ -23,7 +26,7 @@ fun isTaskRepeating(task: Task) : Boolean {
  * 3. Replaces the due date with the next date in the cycle
  */
 fun getNextRepeatingTask(task: Task) : Either<NeuralLinkError,Task> {
-    console.log("getNextRepeatingTask()")
+    logger.debug { "getNextRepeatingTask()" }
     return getNextRepeatDate(task)
         .map { repeatDate ->
             task.copy(
