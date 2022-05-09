@@ -39,6 +39,9 @@ suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadat
         .filter {
             it.name.endsWith(".md")
         }
+        .log("Testing") {
+
+        }
         .filter { file ->
             val listItems = metadataCache.getFileCache(file)?.listItems?.toList() ?: emptyList()
             listItems.any { listItemCache ->
