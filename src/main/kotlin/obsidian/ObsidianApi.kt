@@ -248,6 +248,8 @@ external interface DataAdapter {
     fun copy(normalizedPath: String, normalizedNewPath: String): Promise<Unit>
 }
 
+external class Notice(message: String, timeout: Int? = definedExternally)
+
 external interface Stat {
     var type: String /* "file" | "folder" */
     var ctime: Number

@@ -12,6 +12,7 @@ import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
 import neurallink.core.store.reducer
 import neurallink.core.view.KanbanView
+import neurallink.core.view.ViewConstants
 
 private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 
@@ -62,7 +63,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         this.registerView(KanbanView.VIEW_TYPE) { leaf ->
             KanbanView(leaf, store)
         }
-        this.addCommand(KanbanViewCommand(
+        this.addCommand(NeuralLinkCommand(
             "neural-link-kanban",
             "Open Neural Link Kanban") {
             activateView()
@@ -112,6 +113,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
                     )
                 }
                 .mapLeft {
+                    Notice("ERROR loading settings JSON: ${it.message}", ViewConstants.NOTICE_TIMEOUT)
                     logger.error { "ERROR loading settings JSON: ${it.message}" }
                     it
                 }
@@ -133,7 +135,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         }
     }
 
-    class KanbanViewCommand(
+    class NeuralLinkCommand(
         override var id: String,
         override var name: String,
         override var callback: (() -> Any)?

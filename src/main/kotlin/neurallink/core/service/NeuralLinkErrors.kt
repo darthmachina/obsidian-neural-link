@@ -1,5 +1,7 @@
 package neurallink.core.service
 
+import neurallink.core.model.TaskId
+
 sealed class NeuralLinkError(
     open val message: String,
     open val isError: Boolean = true,
@@ -11,6 +13,7 @@ sealed class NeuralLinkError(
 }
 
 class LoadSettingsError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, true, throwable)
+class TaskNotFoundError(taskId: TaskId, throwable: Throwable? = null) : NeuralLinkError("Task not found: $taskId", true, throwable)
 class TaskReadingError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, true, throwable)
 class TaskReadingWarning(message: String, throwable: Throwable? = null) : NeuralLinkError(message, false, throwable)
 class TaskWritingError(message: String, throwable: Throwable? = null) : NeuralLinkError(message, true, throwable)
