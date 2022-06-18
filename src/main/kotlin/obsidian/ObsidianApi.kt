@@ -248,6 +248,8 @@ external interface DataAdapter {
     fun copy(normalizedPath: String, normalizedNewPath: String): Promise<Unit>
 }
 
+external class Notice(message: String, timeout: Int? = definedExternally)
+
 external interface Stat {
     var type: String /* "file" | "folder" */
     var ctime: Number
@@ -347,6 +349,11 @@ external interface ListItemCache : CacheItem {
     var task: String?
         get() = definedExternally
         set(value) = definedExternally
+
+    /**
+     * The line number of the parent list item for a nested list.
+     * - negative means there is no parent
+     */
     var parent: Number
 }
 

@@ -1,15 +1,22 @@
-import event.FileModifiedEvent
+import neurallink.core.event.FileModifiedEvent
 import kotlinx.coroutines.*
-import model.FilterType
-import model.TaskModel
+import mu.KotlinLogging
+import mu.KotlinLoggingConfiguration
+import mu.KotlinLoggingLevel
+import neurallink.core.model.NeuralLinkModel
+import neurallink.core.service.loadFromJson
+import neurallink.core.service.loadTasKModelIntoStore
+import neurallink.core.service.writeModifiedTasks
+import neurallink.core.store.NoneFilterValue
+import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
-import service.RepeatingTaskService
-import service.SettingsService
-import service.TaskModelService
-import store.reducer
-import view.KanbanView
+import neurallink.core.store.reducer
+import neurallink.core.view.KanbanView
+import neurallink.core.view.ViewConstants
+
+private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
@@ -18,31 +25,33 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     /**
      * Logs all actions and states after they are dispatched.
      */
-    val loggerMiddleware = middleware<TaskModel> { store, next, action ->
+    val loggerMiddleware = middleware<NeuralLinkModel> { store, next, action ->
+        logger.info { "DISPATCH action: ${action::class.simpleName}"  }
+        logger.trace { action }
         val result = next(action)
-        console.log("DISPATCH action: ${action::class.simpleName}:", action)
-        console.log("next state :", store.state)
+        logger.trace { "next state :  ${store.state}" }
         result
     }
 
     private val store = createStore(
         reducer,
-        TaskModel(NeuralLinkPluginSettings.default(), mutableListOf(), mutableMapOf(), FilterType.NONE, ""),
+        NeuralLinkModel(
+            this,
+            NeuralLinkPluginSettings5.default(),
+            listOf(),
+            mapOf(),
+            NoneFilterValue()
+        ),
         applyMiddleware(loggerMiddleware)
     ).apply {
         subscribe(::taskModifiedListener)
     }
 
-    // Dependent classes are constructed here and passed into the classes that need them. Poor man's DI.
-    // SERVICES
-    private val settingsService = SettingsService(store, this)
-    private val taskModelService = TaskModelService(store)
-    private val repeatingTaskService = RepeatingTaskService()
-
     // EVENTS
-    private val fileModifiedEvent = FileModifiedEvent(this, store, taskModelService, repeatingTaskService)
+    private val fileModifiedEvent = FileModifiedEvent(this, store)
 
     override fun onload() {
+        KotlinLoggingConfiguration.LOG_LEVEL = KotlinLoggingLevel.DEBUG
         // TODO Need to wrap this around something so it's delayed on app startup
         loadSettingAndTaskModel()
 
@@ -51,30 +60,30 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         })
 
         // Add Settings tab
-        addSettingTab(NeuralLinkPluginSettingsTab(app, this, settingsService, store))
+        addSettingTab(NeuralLinkPluginSettingsTab(app, this, store))
 
         // Kanban View
         this.registerView(KanbanView.VIEW_TYPE) { leaf ->
-            KanbanView(leaf, store, repeatingTaskService)
+            KanbanView(leaf, store)
         }
-        this.addCommand(KanbanViewCommand(
+        this.addCommand(NeuralLinkCommand(
             "neural-link-kanban",
             "Open Neural Link Kanban") {
             activateView()
         })
 
-        console.log("NeuralLinkPlugin onload()")
+        logger.debug { "NeuralLinkPlugin onload()" }
     }
 
     override fun onunload() {
-        console.log("NeuralLinkPlugin.onunload()")
+        logger.debug { "NeuralLinkPlugin.onunload()" }
         this.app.workspace.detachLeavesOfType(KanbanView.VIEW_TYPE)
     }
 
     private fun taskModifiedListener() {
-        console.log("NeuralLinkPlugin.taskModifiedListener()")
+        logger.debug { "NeuralLinkPlugin.taskModifiedListener()" }
         CoroutineScope(Dispatchers.Main).launch {
-            taskModelService.writeModifiedTasks(
+            writeModifiedTasks(
                 store.state.tasks,
                 app.vault
             )
@@ -82,10 +91,10 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun loadSettingAndTaskModel() {
-        console.log("NeuralLinkPlugin.loadSettingAndTaskModel()")
+        logger.debug { "NeuralLinkPlugin.loadSettingAndTaskModel()" }
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.Default) { loadSettings() } // Load settings first and wait
-            taskModelService.loadTasKModelIntoStore(
+            loadTasKModelIntoStore(
                 app.vault,
                 app.metadataCache,
                 store
@@ -94,29 +103,42 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private suspend fun loadSettings() {
-        loadData().then { result -> settingsService.loadFromJson(result) }.await()
+        loadData().then { result ->
+            loadFromJson(result)
+                .map {
+                    store.dispatch(
+                        UpdateSettings(
+                            store.state.plugin,
+                            it.taskRemoveRegex,
+                            it.columnTags,
+                            it.tagColors
+                        )
+                    )
+                }
+                .mapLeft {
+                    Notice("ERROR loading settings JSON: ${it.message}", ViewConstants.NOTICE_TIMEOUT)
+                    logger.error { "ERROR loading settings JSON: ${it.message}" }
+                    it
+                }
+        }.await()
     }
 
     private fun activateView() {
-        console.log("NeuralLinkPlugin.activateView()")
+        logger.debug { "NeuralLinkPlugin.activateView()" }
         this.app.workspace.detachLeavesOfType(KanbanView.VIEW_TYPE)
 
-        console.log(" - setting view state")
         val viewState = object : ViewState {
             override var type: String = KanbanView.VIEW_TYPE
         }
-        console.log(" - getRightLeaf")
         this.app.workspace.getRightLeaf(false).setViewState(viewState).then {
             val leaf = this.app.workspace.getLeavesOfType(KanbanView.VIEW_TYPE)
-            console.log(" - leaf found: [$leaf]")
             if (leaf.isNotEmpty()) {
                 this.app.workspace.revealLeaf(leaf[0])
             }
         }
-        console.log("activateView() end")
     }
 
-    class KanbanViewCommand(
+    class NeuralLinkCommand(
         override var id: String,
         override var name: String,
         override var callback: (() -> Any)?
