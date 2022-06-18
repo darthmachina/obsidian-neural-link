@@ -7,13 +7,15 @@ import Vault
 import arrow.core.Either
 import arrow.core.flatMap
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.*
 import neurallink.core.store.VaultLoaded
 import org.reduxkotlin.Store
 
-private val logger = KotlinLogging.logger("NeuralLinkPlugin")
+private val logger = KotlinLogging.logger("VaultFunctions")
 
 // ************* FILE READING *************
 fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: Store<NeuralLinkModel>) {
@@ -35,6 +37,8 @@ fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: St
 suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadataCache: MetadataCache): List<Task>
         = coroutineScope {
     logger.debug { "processAllFiles()" }
+    val fileSemaphore = Semaphore(2)
+
     vault.getFiles()
         .filter {
             it.name.endsWith(".md")
@@ -50,7 +54,9 @@ suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadat
         }
         .map { file ->
             async {
-                readFile(store, file, vault, metadataCache)
+                fileSemaphore.withPermit {
+                    readFile(store, file, vault, metadataCache)
+                }
             }
         }.awaitAll()
         .flatten()
@@ -134,6 +140,7 @@ fun buildRootTaskTree(items: List<ItemInProcess>) : List<Task> {
 }
 
 fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<Task> {
+//    logger.debug { "buildTaskTree(): parentId: $parentId" }
     return items
         .filter { item -> item is TaskInProcess && item.parent == parentId }
         .mapNotNull { item ->
@@ -149,7 +156,7 @@ fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<Task> {
 }
 
 fun buildNoteTree(items: List<ItemInProcess>, parentId: Int) : List<Note> {
-    logger.debug { "buildNoteTree(): $parentId, $items" }
+//    logger.debug { "buildNoteTree(): $parentId" }
     return items
         .filter { item -> item is NoteInProcess && item.parent == parentId }
         .mapNotNull { item ->
@@ -189,7 +196,7 @@ fun cacheItemParent(item: ListItemCache) : Int {
 // ************* FILE WRITING *************
 
 suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
-    logger.debug { "writeModifiedTasks(): $tasks" }
+    logger.debug { "writeModifiedTasks()" }
     withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
         tasks
             .filter { it.original != null }

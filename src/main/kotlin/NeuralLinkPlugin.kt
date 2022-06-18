@@ -1,6 +1,8 @@
 import neurallink.core.event.FileModifiedEvent
 import kotlinx.coroutines.*
 import mu.KotlinLogging
+import mu.KotlinLoggingConfiguration
+import mu.KotlinLoggingLevel
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
@@ -25,9 +27,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
      */
     val loggerMiddleware = middleware<NeuralLinkModel> { store, next, action ->
         logger.info { "DISPATCH action: ${action::class.simpleName}"  }
-        logger.debug { action }
+        logger.trace { action }
         val result = next(action)
-        logger.debug { "next state :  ${store.state}" }
+        logger.trace { "next state :  ${store.state}" }
         result
     }
 
@@ -49,6 +51,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     private val fileModifiedEvent = FileModifiedEvent(this, store)
 
     override fun onload() {
+        KotlinLoggingConfiguration.LOG_LEVEL = KotlinLoggingLevel.DEBUG
         // TODO Need to wrap this around something so it's delayed on app startup
         loadSettingAndTaskModel()
 

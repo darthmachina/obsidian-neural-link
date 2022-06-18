@@ -7,7 +7,7 @@ import neurallink.core.service.NoStatusTagOnTaskWarning
 import neurallink.core.service.taskComparator
 import neurallink.core.service.taskDateComparator
 
-private val logger = KotlinLogging.logger("NeuralLinkPlugin")
+private val logger = KotlinLogging.logger("KanbanFunctions")
 
 /**
  * Create a map of StatusTag -> List<Task> for any task that has a StatusTag on it
@@ -52,7 +52,8 @@ fun createKanbanMap(tasks: List<Task>, statusTags: List<StatusTag>) : Map<Status
 }
 
 fun getAllStatusTagsOnTasks(tasks: List<Task>, statusTags: List<StatusTag>) : Set<StatusTag> {
-    logger.debug { "getAllStatusTagsOnTasks(): $tasks, $statusTags" }
+    logger.debug { "getAllStatusTagsOnTasks()" }
+    logger.trace { " - $tasks, $statusTags" }
     return tasks
         .asSequence()
         .map { task -> task.tags }
@@ -64,7 +65,8 @@ fun getAllStatusTagsOnTasks(tasks: List<Task>, statusTags: List<StatusTag>) : Se
 }
 
 fun getStatusTagFromTask(task: Task, kanbanKeys: Collection<StatusTag>): Either<NoStatusTagOnTaskWarning,StatusTag> {
-    logger.debug { "getStatusTagFromTask(): $task" }
+    logger.debug { "getStatusTagFromTask()" }
+    logger.trace { " - $task" }
     return kanbanKeys
         .filter { statusTag -> task.tags.contains(statusTag.tag) }
         .let {

@@ -14,10 +14,11 @@ import neurallink.core.model.TaskConstants
 import neurallink.core.model.TaskId
 import neurallink.core.model.toDataviewMap
 import neurallink.core.service.BeforeTaskDoesNotExist
+import neurallink.core.service.deepCopy
 import neurallink.core.service.taskComparator
 import neurallink.core.store.ReducerUtils
 
-private val logger = KotlinLogging.logger("NeuralLinkPlugin")
+private val logger = KotlinLogging.logger("TaskOrderFunctions")
 
 /**
  * Finds the max `pos` value in the given list. This list would usually already be sorted to
@@ -132,9 +133,11 @@ fun addOrderToListItemsIfNeeded(tasks: List<Task>) : List<Task> {
  * original before making the change.
  */
 fun updateTaskOrder(task: Task, position: Double): Task {
-    logger.debug { "updateTaskOrder(): $task, $position" }
+    logger.debug { "updateTaskOrder(): ${task.description}" }
+    logger.trace { " - $task, $position" }
     val taskOrder = task.dataviewFields[DataviewField(TaskConstants.TASK_ORDER_PROPERTY)]
     if (taskOrder == null || taskOrder.asDouble() != position) {
+        logger.debug { " - order requires updating" }
         return task.copy(
             original = task.original ?: task.deepCopy(),
             dataviewFields = task.dataviewFields

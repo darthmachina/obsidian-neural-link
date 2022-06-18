@@ -32,7 +32,7 @@ data class NeuralLinkPluginSettings5(
                     Tag("marriage") to "196515",
                     Tag("work") to "D34807"
                 ),
-                KotlinLoggingLevel.INFO
+                KotlinLoggingLevel.DEBUG
             )
         }
     }

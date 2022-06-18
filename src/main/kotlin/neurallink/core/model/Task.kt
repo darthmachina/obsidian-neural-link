@@ -23,16 +23,6 @@ data class Task(
     val before: Task? = null,
     val id: TaskId = TaskId(UUID())
 ) : ListItem() {
-    @OptIn(ExperimentalSerializationApi::class)
-    fun deepCopy(): Task {
-        return this.copy(
-            tags = tags.map { tag -> tag.copy() }.toMutableSet(),
-            dataviewFields = dataviewFields.copy(),
-            subtasks = subtasks.map { subtask -> subtask.deepCopy() }.toMutableList(),
-            notes = notes.map { note -> note.copy() }.toMutableList()
-        )
-    }
-
     /**
      * Compares just the relevant data fields for e
      */

@@ -9,15 +9,11 @@ import arrow.core.right
 import mu.KotlinLogging
 import mu.KotlinLoggingConfiguration
 import neurallink.core.model.*
-import neurallink.core.service.NeuralLinkError
-import neurallink.core.service.TaskNotFoundError
-import neurallink.core.service.completeTask
-import neurallink.core.service.filterTasks
+import neurallink.core.service.*
 import neurallink.core.service.kanban.createKanbanMap
 import neurallink.core.service.kanban.findEndPosition
 import neurallink.core.service.kanban.findPosition
 import neurallink.core.service.kanban.getStatusTagFromTask
-import neurallink.core.service.toJson
 import neurallink.core.view.ViewConstants
 import org.reduxkotlin.Reducer
 
@@ -94,7 +90,7 @@ class Reducers {
      * Called when the vault is initially loaded with a task list, will populate the kanban data
      */
     fun copyAndPopulateKanban(store: NeuralLinkModel, tasks: List<Task>): Either<NeuralLinkError,NeuralLinkModel> {
-        logger.debug { "Reducers.copyAndPopulateKanban()" }
+        logger.debug { "copyAndPopulateKanban()" }
         return store.copy(
             tasks = tasks,
             kanbanColumns = createKanbanMap(
@@ -105,7 +101,7 @@ class Reducers {
     }
 
     fun moveCard(store: NeuralLinkModel, taskId: TaskId, newStatus: StatusTag, beforeTaskId: TaskId?): Either<NeuralLinkError,NeuralLinkModel> {
-        logger.debug { "Reducers.taskStatusChanged()" }
+        logger.debug { "taskStatusChanged()" }
         if (store.tasks.find { it.id == taskId } == null) {
             TaskNotFoundError(taskId).left()
         }
@@ -249,7 +245,7 @@ class Reducers {
     }
 
     fun modifyFileTasks(store: NeuralLinkModel, file: TaskFile, fileTasks: List<Task>): Either<NeuralLinkError,NeuralLinkModel> {
-        logger.debug { "modifyFileTasks()" }
+        logger.debug { "modifyFileTasks(): ${file.value}" }
         // Only return a new state if any of the tasks were modified
         val clonedTaskList = store.tasks
             .filter { it.file != file }
@@ -316,13 +312,14 @@ class Reducers {
 class ReducerUtils {
     companion object {
         fun runFileModifiedListeners(tasks: List<Task>, store: NeuralLinkModel) : List<Task> {
-            logger.debug { "Reducers.ReducerUtils.runFileModifiedListeners(): $tasks" }
+            logger.debug { "runFileModifiedListeners()" }
+            logger.trace { " - $tasks" }
 
             // Check for completed tasks with either a status tag or a repeat field (might have been completed outside the app)
             // remove the status tag and check for any tasks that need repeating. Do nothing with subtasks as we are outside
             // the app.
             var newTasks = tasks
-                .map { task ->
+                .mapNotNull { task ->
                     if (task.completed &&
                                 (getStatusTagFromTask(task, store.settings.columnTags).isRight()
                                 || task.dataviewFields.keys.contains(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)))) {
@@ -331,30 +328,36 @@ class ReducerUtils {
                         task
                     }
                 }
-            logger.debug { "newTasks after checking for completed : $newTasks" }
+            logger.trace { "newTasks after checking for completed : $newTasks" }
 
             // Check for tasks with no position
             newTasks = newTasks
                 .map { task ->
-                    val statusTag = getStatusTagFromTask(task, store.settings.columnTags)
-                    if (!task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY)) &&
-                            !statusTag.map { it.dateSort }.getOrElse { false }
-                    ) {
-                        task.copy(
-                            original = task.original ?: task.deepCopy(),
-                            dataviewFields = getStatusTagFromTask(task, store.settings.columnTags)
-                                .map { findEndPosition(store.tasks, it) }
-                                .map {
-                                    task.dataviewFields
-                                        .plus(DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(it))
-                                        .toDataviewMap()
-                                }.getOrElse {
-                                    task.dataviewFields
-                                }
-                        )
-                    } else {
-                        task
-                    }
+                    getStatusTagFromTask(task, store.settings.columnTags)
+                        .map { statusTag ->
+                            if (statusTag.dateSort) {
+                                // Column sorted by date, no 'pos' field used
+                                task
+                            } else if (task.dataviewFields.containsKey(DataviewField(TaskConstants.TASK_ORDER_PROPERTY))) {
+                                // Task already has a 'pos' field
+                                task
+                            } else {
+                                // Not date sorted and the 'pos' field does not exist, update task
+                                task.copy(
+                                    original = task.original ?: task.deepCopy(),
+                                    dataviewFields = getStatusTagFromTask(task, store.settings.columnTags)
+                                        .map { findEndPosition(store.tasks, it) }
+                                        .map {
+                                            task.dataviewFields
+                                                .plus(DataviewField(TaskConstants.TASK_ORDER_PROPERTY) to DataviewValue(it))
+                                                .toDataviewMap()
+                                        }.getOrElse {
+                                            task.dataviewFields
+                                        }
+                                )
+                            }
+                        }
+                        .getOrElse { task }
                 }
             return newTasks
         }

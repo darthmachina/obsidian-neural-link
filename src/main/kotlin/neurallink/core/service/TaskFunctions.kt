@@ -9,6 +9,16 @@ import neurallink.core.store.IncompleteSubtaskChoice
 
 private val logger = KotlinLogging.logger("TaskFunctions")
 
+fun Task.deepCopy(): Task {
+    logger.debug { "deepCopy()" }
+    return this.copy(
+        tags = tags.map { tag -> tag.copy() }.toSet(),
+        dataviewFields = dataviewFields.copy(),
+        subtasks = subtasks.map { subtask -> subtask.deepCopy() },
+        notes = notes.map { note -> note.copy() }
+    )
+}
+
 fun subtasksForCompletedTask(subtasks: List<Task>, subtaskChoice: IncompleteSubtaskChoice) : List<Task> {
     return when (subtaskChoice) {
         IncompleteSubtaskChoice.DELETE -> {
