@@ -51,7 +51,7 @@ class SettingsFunctionsTest : StringSpec({
                 "marriage":"196515",
                 "work":"D34807"
             },
-            "logLevel": "INFO"
+            "logLevel": "DEBUG"
         }""".trimIndent()
         val expectedSettings = NeuralLinkPluginSettings5.default()
 
@@ -65,7 +65,7 @@ class SettingsFunctionsTest : StringSpec({
 
     // *** toJson() ***
     "toJson creates the correct JSON" {
-        val expectedJson = """{"version":"5","taskRemoveRegex":"#kanban/[\\w-]+(\\s|${'$'})","columnTags":["backlog:Backlog:false","scheduled:Scheduled:true","inprogress:In Progress:false","completed:Completed:false"],"tagColors":{"personal":"13088C","home":"460A60","family":"8E791C","marriage":"196515","work":"D34807"},"logLevel":"INFO"}""".trimIndent()
+        val expectedJson = """{"version":"5","taskRemoveRegex":"#kanban/[\\w-]+(\\s|${'$'})","columnTags":["backlog:Backlog:false","scheduled:Scheduled:true","inprogress:In Progress:false","completed:Completed:false"],"tagColors":{"personal":"13088C","home":"460A60","family":"8E791C","marriage":"196515","work":"D34807"},"logLevel":"DEBUG"}""".trimIndent()
         val settings = NeuralLinkPluginSettings5.default()
 
         val actualJson = toJson(settings)
@@ -77,6 +77,6 @@ class SettingsFunctionsTest : StringSpec({
         val settings4 = Json.encodeToString(NeuralLinkPluginSettings4.default())
 
         val actualSettings5 = upgradeFrom4To5(settings4)
-        actualSettings5.logLevel shouldBe KotlinLoggingLevel.INFO
+        actualSettings5.logLevel shouldBe KotlinLoggingLevel.DEBUG
     }
 })
