@@ -11,10 +11,16 @@ class TestFactory {
             .map(charPool::get)
             .joinToString("")
 
+        fun createTasks(number: Int) : List<Task> {
+            return List(number) { createTask() }
+        }
 
-        fun createTask(position: Int = -1) : Task {
+        fun createTask(
+            position: Int = -1,
+            file: String = randomString(10) + ".md"
+        ) : Task {
             return Task(
-                TaskFile(randomString(10) + ".md"),
+                TaskFile(file),
                 FilePosition(if (position == -1) Random.nextInt(0, 100) else position),
                 Description(randomString(20)),
                 null,

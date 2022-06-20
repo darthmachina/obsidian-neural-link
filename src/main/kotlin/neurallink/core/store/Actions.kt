@@ -20,6 +20,7 @@ class DataviewFilterValue(override val filterValue: DataviewPair<out Comparable<
 class FutureDateFilterValue(override val filterValue: Boolean) : FilterValue<Boolean>(filterValue)
 
 data class VaultLoaded(val tasks: List<Task>) : Action
+data class FileDeleted(val file: TaskFile) : Action
 data class TaskMoved(val taskId: TaskId, val newStatus: StatusTag, val beforeTask: TaskId? = null) : Action
 data class MoveToTop(val taskd: TaskId) : Action
 data class ModifyFileTasks(val file: TaskFile, val fileTasks: List<Task>) : Action
