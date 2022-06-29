@@ -12,7 +12,7 @@ import neurallink.core.service.readFile
 import neurallink.core.store.ModifyFileTasks
 import org.reduxkotlin.Store
 
-private val logger = KotlinLogging.logger("NeuralLinkPlugin")
+private val logger = KotlinLogging.logger("FleModifiedEvent")
 
 /**
  * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this

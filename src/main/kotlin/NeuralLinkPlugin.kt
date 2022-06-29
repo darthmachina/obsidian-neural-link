@@ -3,6 +3,7 @@ import kotlinx.coroutines.*
 import mu.KotlinLogging
 import mu.KotlinLoggingConfiguration
 import mu.KotlinLoggingLevel
+import neurallink.core.event.FileDeletedEvent
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
@@ -49,6 +50,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
     // EVENTS
     private val fileModifiedEvent = FileModifiedEvent(this, store)
+    private val fileDeletedEvent = FileDeletedEvent(this, store)
 
     override fun onload() {
         KotlinLoggingConfiguration.LOG_LEVEL = KotlinLoggingLevel.DEBUG
@@ -57,6 +59,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
 
         this.registerEvent(this.app.metadataCache.on("changed") { file ->
             fileModifiedEvent.processEvent(file)
+        })
+        this.registerEvent(this.app.metadataCache.on("deleted") { file ->
+            fileDeletedEvent.processEvent(file)
         })
 
         // Add Settings tab

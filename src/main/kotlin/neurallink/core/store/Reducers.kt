@@ -1,11 +1,7 @@
 package neurallink.core.store
 
 import Notice
-import arrow.core.Either
-import arrow.core.getOrElse
-import arrow.core.getOrHandle
-import arrow.core.left
-import arrow.core.right
+import arrow.core.*
 import mu.KotlinLogging
 import mu.KotlinLoggingConfiguration
 import neurallink.core.model.*
@@ -24,6 +20,7 @@ val reducerFunctions = Reducers()
 val reducer: Reducer<NeuralLinkModel> = { store, action ->
     when (action) {
         is VaultLoaded -> handleError(action, reducerFunctions.copyAndPopulateKanban(store, action.tasks), store)
+        is FileDeleted -> handleError(action, reducerFunctions.removeTasksForFile(store, action.file), store)
         is TaskMoved -> handleError(action, reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask), store)
         is MoveToTop -> handleError(action, reducerFunctions.moveToTop(store, action.taskd), store)
         is ModifyFileTasks -> handleError(action, reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks), store)
@@ -51,6 +48,8 @@ fun handleError(action: Action, maybeError: Either<NeuralLinkError, NeuralLinkMo
 /**
  * All reducer functions. Should return Either<NeuralLinkError,NeuralLinkModel> to be handled by `handleError`
  * to convert the Either into whichever model is appropriate (new or existing).
+ *
+ * TODO: Create wrapper for createKanbanMap() to remove need for boilerplate code.
  */
 class Reducers {
     /**
@@ -98,6 +97,20 @@ class Reducers {
                 store.settings.columnTags
             )
         ).right()
+    }
+
+    fun removeTasksForFile(store: NeuralLinkModel, file: TaskFile): Either<NeuralLinkError, NeuralLinkModel> {
+        logger.debug { "removeTasksForFile() : $file" }
+        return removeTasksForFile(store.tasks, file)
+            .map { tasks ->
+                store.copy(
+                    tasks = tasks,
+                    kanbanColumns = createKanbanMap(
+                        filterTasks(tasks, store.filterValue),
+                        store.settings.columnTags
+                    )
+                )
+            }
     }
 
     fun moveCard(store: NeuralLinkModel, taskId: TaskId, newStatus: StatusTag, beforeTaskId: TaskId?): Either<NeuralLinkError,NeuralLinkModel> {
