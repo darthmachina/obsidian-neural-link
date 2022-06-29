@@ -389,7 +389,7 @@ open external class WorkspaceLeaf : WorkspaceItem {
     open fun getViewState(): ViewState
     open fun setViewState(viewState: ViewState, eState: Any = definedExternally): Promise<Unit>
     open fun getEphemeralState(): Any
-    open fun setEphemeralState(state: Any)
+    open fun setEphemeralState(state: dynamic)
     open fun togglePinned()
     open fun setPinned(pinned: Boolean)
     open fun setGroupMember(other: WorkspaceLeaf)

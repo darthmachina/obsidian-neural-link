@@ -9,19 +9,12 @@ import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskFile
 import neurallink.core.service.readFile
-import neurallink.core.store.ModifyFileTasks
+import neurallink.core.store.FileCreated
 import org.reduxkotlin.Store
 
-private val logger = KotlinLogging.logger("FleModifiedEvent")
+private val logger = KotlinLogging.logger("FleCreatedEvent")
 
-/**
- * Meant to be called when a file is modified (usually from the MetadataCache). This event happens a LOT, so this
- * handler needs to be *very* quick to not cause performance issues when typing.
- */
-@Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
-@OptIn(ExperimentalJsExport::class)
-@JsExport
-class FileModifiedEvent(
+class FileCreatedEvent(
     plugin: NeuralLinkPlugin,
     store: Store<NeuralLinkModel>
 ) : Event(plugin, store) {
@@ -30,7 +23,7 @@ class FileModifiedEvent(
         if (context is TFile) {
             CoroutineScope(Dispatchers.Main).launch {
                 val tasks = readFile(store, context, plugin.app.vault, plugin.app.metadataCache)
-                store.dispatch(ModifyFileTasks(TaskFile(context.path), tasks))
+                store.dispatch(FileCreated(TaskFile(context.path), tasks))
             }
         }
     }
