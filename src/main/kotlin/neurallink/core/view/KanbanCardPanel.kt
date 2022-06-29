@@ -120,11 +120,11 @@ class KanbanCardPanel(
                 val todayDate = LocalDate(today.year, today.monthNumber, today.dayOfMonth)
                 div {
                     addCssStyle(KanbanStyles.KANBAN_DUE)
-                    if (task.dueOn!! < todayDate) {
+                    if (task.dueOn < todayDate) {
                         background = Background(color = Color.name(Col.DARKRED))
-                    } else if (task.dueOn!!.value == todayDate) {
+                    } else if (task.dueOn.value == todayDate) {
                         background = Background(color = Color.name(Col.DARKGREEN))
-                    } else if (task.dueOn!!.value.until(todayDate, DateTimeUnit.DAY) == -1) {
+                    } else if (task.dueOn.value.until(todayDate, DateTimeUnit.DAY) == -1) {
                         background = Background(color = Color.name(Col.DARKBLUE))
                     }
                     +task.dueOn.toString()
@@ -288,13 +288,17 @@ class KanbanCardPanel(
             }
         }
 
+        val line = js("({})")
+        line["line"] = task.filePosition.value
+
         if (leavesWithFileAlreadyOpen.isNotEmpty()) {
             leaf.view.app.workspace.setActiveLeaf(leavesWithFileAlreadyOpen[0])
-            leavesWithFileAlreadyOpen[0].setEphemeralState(object { val line = task.filePosition.value - 1 })
+            leavesWithFileAlreadyOpen[0].setEphemeralState(line)
         } else {
             val splitLeaf = leaf.view.app.workspace.splitActiveLeaf()
-            splitLeaf.openFile(filePath)
-            splitLeaf.setEphemeralState(object { val line = task.filePosition.value - 1 })
+            splitLeaf.openFile(filePath).then {
+                splitLeaf.setEphemeralState(line)
+            }
         }
     }
 }
