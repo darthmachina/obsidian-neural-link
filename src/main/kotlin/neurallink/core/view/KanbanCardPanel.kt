@@ -281,12 +281,18 @@ class KanbanCardPanel(
             return
         }
 
-        val leavesWithFileAlreadyOpen = mutableListOf<WorkspaceLeaf>()
-        leaf.view.app.workspace.iterateAllLeaves { workspaceLeaf ->
-            if (workspaceLeaf.view is MarkdownView && (workspaceLeaf.view as MarkdownView).file.path == task.file.value) {
-                leavesWithFileAlreadyOpen.add(workspaceLeaf)
+        val leavesWithFileAlreadyOpen = leaf.view.app.workspace.getLeavesOfType("markdown")
+            .filter { leaf ->
+                (leaf.view as MarkdownView).file.path == task.file.value
             }
-        }
+        logger.debug { "Open leaf list : $leavesWithFileAlreadyOpen" }
+//        leaf.view.app.workspace.iterateAllLeaves { workspaceLeaf ->
+//            logger.debug { "Checking ${workspaceLeaf.getDisplayText()} for ${task.file.value}" }
+//            if (workspaceLeaf.view is MarkdownView && (workspaceLeaf.view as MarkdownView).file.path == task.file.value) {
+//                logger.debug { "Adding ${workspaceLeaf.getDisplayText()} to already open list (${workspaceLeaf.view.getViewType()}" }
+//                leavesWithFileAlreadyOpen.add(workspaceLeaf)
+//            }
+//        }
 
         val line = js("({})")
         line["line"] = task.filePosition.value
