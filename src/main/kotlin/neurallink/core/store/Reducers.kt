@@ -21,6 +21,7 @@ val reducer: Reducer<NeuralLinkModel> = { store, action ->
     when (action) {
         is VaultLoaded -> handleError(action, reducerFunctions.copyAndPopulateKanban(store, action.tasks), store)
         is FileDeleted -> handleError(action, reducerFunctions.removeTasksForFile(store, action.file), store)
+        is FileCreated -> handleError(action, reducerFunctions.fileCreated(store, action.fileTasks), store)
         is TaskMoved -> handleError(action, reducerFunctions.moveCard(store, action.taskId, action.newStatus, action.beforeTask), store)
         is MoveToTop -> handleError(action, reducerFunctions.moveToTop(store, action.taskd), store)
         is ModifyFileTasks -> handleError(action, reducerFunctions.modifyFileTasks(store, action.file, action.fileTasks), store)
@@ -94,6 +95,18 @@ class Reducers {
             tasks = tasks,
             kanbanColumns = createKanbanMap(
                 filterTasks(tasks, store.filterValue),
+                store.settings.columnTags
+            )
+        ).right()
+    }
+
+    fun fileCreated(store: NeuralLinkModel, tasks: List<Task>): Either<NeuralLinkError, NeuralLinkModel> {
+        logger.debug { "fileCreated()" }
+        val allTasks = store.tasks.plus(tasks)
+        return store.copy(
+            tasks = allTasks,
+            kanbanColumns = createKanbanMap(
+                filterTasks(allTasks, store.filterValue),
                 store.settings.columnTags
             )
         ).right()
