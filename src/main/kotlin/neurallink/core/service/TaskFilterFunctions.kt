@@ -18,7 +18,7 @@ fun pathInPathList(path: String, paths: List<String>) : Boolean {
             path.startsWith(onePath, ignoreCase = true)
         }
         .fold(false) { acc, next ->
-            acc && next
+            acc || next
         }
 }
 
