@@ -1,7 +1,7 @@
 package neurallink.core.model
 
 import NeuralLinkPlugin
-import NeuralLinkPluginSettings5
+import neurallink.core.settings.NeuralLinkPluginSettings5
 import neurallink.core.store.FilterValue
 
 /**

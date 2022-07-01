@@ -9,6 +9,8 @@ import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks
+import neurallink.core.settings.NeuralLinkPluginSettings5
+import neurallink.core.settings.NeuralLinkPluginSettingsTab
 import neurallink.core.store.NoneFilterValue
 import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.applyMiddleware

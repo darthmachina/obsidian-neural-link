@@ -140,7 +140,7 @@ fun buildRootTaskTree(items: List<ItemInProcess>) : List<Task> {
 }
 
 fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<Task> {
-//    logger.debug { "buildTaskTree(): parentId: $parentId" }
+//    neurallink.core.settings.logger.debug { "buildTaskTree(): parentId: $parentId" }
     return items
         .filter { item -> item is TaskInProcess && item.parent == parentId }
         .mapNotNull { item ->
@@ -156,7 +156,7 @@ fun buildTTaskTree(items: List<ItemInProcess>, parentId: Int) : List<Task> {
 }
 
 fun buildNoteTree(items: List<ItemInProcess>, parentId: Int) : List<Note> {
-//    logger.debug { "buildNoteTree(): $parentId" }
+//    neurallink.core.settings.logger.debug { "buildNoteTree(): $parentId" }
     return items
         .filter { item -> item is NoteInProcess && item.parent == parentId }
         .mapNotNull { item ->

@@ -2,7 +2,7 @@
 
 package neurallink.core.service
 
-import NeuralLinkPluginSettings4
+import neurallink.core.settings.NeuralLinkPluginSettings4
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
@@ -12,6 +12,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLoggingLevel
+import neurallink.core.settings.NeuralLinkPluginSettings5
 
 class SettingsFunctionsTest : StringSpec({
     "loadJson gives error is JSON is not valid" {

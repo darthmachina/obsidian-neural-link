@@ -1,3 +1,9 @@
+package neurallink.core.settings
+
+import App
+import NeuralLinkPlugin
+import PluginSettingTab
+import Setting
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
 import mu.KotlinLogging
@@ -9,7 +15,7 @@ import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
 
-private val logger = KotlinLogging.logger("NeuralLinkPluginSettingsTab")
+private val logger = KotlinLogging.logger("neurallink.core.settings.NeuralLinkPluginSettingsTab")
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
