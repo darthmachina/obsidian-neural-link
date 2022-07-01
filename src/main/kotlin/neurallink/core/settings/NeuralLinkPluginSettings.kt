@@ -20,7 +20,7 @@ data class NeuralLinkPluginSettings6(
     companion object {
         fun default(): NeuralLinkPluginSettings6 {
             return NeuralLinkPluginSettings6(
-                "5",
+                "6",
                 """#kanban/[\w-]+(\s|$)""",
                 listOf(
                     StatusTag(Tag("backlog"), "Backlog"),

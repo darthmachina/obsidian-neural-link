@@ -9,7 +9,7 @@ import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks
-import neurallink.core.settings.NeuralLinkPluginSettings5
+import neurallink.core.settings.NeuralLinkPluginSettings6
 import neurallink.core.settings.NeuralLinkPluginSettingsTab
 import neurallink.core.store.NoneFilterValue
 import neurallink.core.store.UpdateSettings
@@ -41,7 +41,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         reducer,
         NeuralLinkModel(
             this,
-            NeuralLinkPluginSettings5.default(),
+            NeuralLinkPluginSettings6.default(),
             listOf(),
             mapOf(),
             NoneFilterValue()
