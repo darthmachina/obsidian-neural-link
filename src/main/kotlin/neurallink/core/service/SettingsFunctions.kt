@@ -64,7 +64,7 @@ fun loadFromJson(json: Any?) : Either<LoadSettingsError, NeuralLinkPluginSetting
         )
 }
 
-fun toJson(settings: NeuralLinkPluginSettings5): String {
+fun toJson(settings: NeuralLinkPluginSettings6): String {
     return Json.encodeToString(settings)
 }
 

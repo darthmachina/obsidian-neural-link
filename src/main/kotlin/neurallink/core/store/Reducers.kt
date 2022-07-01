@@ -63,11 +63,22 @@ class Reducers {
             taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
             columnTags = updateSettings.columnTags ?: store.settings.columnTags,
             tagColors = updateSettings.tagColors ?: store.settings.tagColors,
-            logLevel = updateSettings.logLevel ?: store.settings.logLevel
+            logLevel = updateSettings.logLevel ?: store.settings.logLevel,
+            ignorePaths = updateSettings.ignorePaths ?: store.settings.ignorePaths
         )
         updateSettings.plugin.saveData(toJson(newSettings))
         return if (updateSettings.columnTags != null) {
             val clonedTaskList = store.tasks.map { it }
+            store.copy(
+                settings = newSettings,
+                tasks = clonedTaskList,
+                kanbanColumns = createKanbanMap(
+                    filterTasks(clonedTaskList, store.filterValue),
+                    newSettings.columnTags
+                )
+            ).right()
+        } else if (updateSettings.ignorePaths != null) {
+            val clonedTaskList = store.tasks.filter { task -> pathInPathList(task.file.value, updateSettings.ignorePaths) }
             store.copy(
                 settings = newSettings,
                 tasks = clonedTaskList,

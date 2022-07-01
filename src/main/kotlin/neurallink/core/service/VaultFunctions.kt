@@ -41,18 +41,22 @@ suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadat
 
     vault.getFiles()
         .filter {
+            // Process only Markdown files
             it.name.endsWith(".md")
         }
-        .log("Testing") {
-
+        .filter { file ->
+            // Ignore any files that are in the ignorePaths list
+            !pathInPathList(file.path, store.state.settings.ignorePaths)
         }
         .filter { file ->
+            // Only include files that have a task
             val listItems = metadataCache.getFileCache(file)?.listItems?.toList() ?: emptyList()
             listItems.any { listItemCache ->
                 listItemCache.task != null
             }
         }
         .map { file ->
+            // Read all files
             async {
                 fileSemaphore.withPermit {
                     readFile(store, file, vault, metadataCache)
