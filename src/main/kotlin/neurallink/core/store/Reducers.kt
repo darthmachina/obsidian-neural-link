@@ -78,7 +78,7 @@ class Reducers {
                 )
             ).right()
         } else if (updateSettings.ignorePaths != null) {
-            val clonedTaskList = store.tasks.filter { task -> pathInPathList(task.file.value, updateSettings.ignorePaths) }
+            val clonedTaskList = store.tasks.filter { task -> !pathInPathList(task.file.value, updateSettings.ignorePaths) }
             store.copy(
                 settings = newSettings,
                 tasks = clonedTaskList,

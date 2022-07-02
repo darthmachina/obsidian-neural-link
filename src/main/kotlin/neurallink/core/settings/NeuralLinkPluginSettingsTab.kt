@@ -35,6 +35,7 @@ class NeuralLinkPluginSettingsTab(
         createColumnListSetting(containerEl)
         createTagColorListSetting(containerEl)
         createLogLevelSettings(containerEl)
+        createIgnorePathSetting(containerEl)
     }
 
     private fun createLogLevelSettings(containerEl: HTMLElement): Setting {
