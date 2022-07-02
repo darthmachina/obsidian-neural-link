@@ -204,7 +204,7 @@ class KanbanCardPanel(
             }
             div {
                 addCssStyle(KanbanStyles.KANBAN_SOURCE)
-                button(text = task.file.value.dropLast(3)) {
+                button(text = task.file.value.dropLast(3).split("/").last()) {
                     size = ButtonSize.SMALL
                     padding = 1.px
                     paddingBottom = 0.px
