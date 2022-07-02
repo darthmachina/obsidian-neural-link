@@ -123,7 +123,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
                             store.state.plugin,
                             it.taskRemoveRegex,
                             it.columnTags,
-                            it.tagColors
+                            it.tagColors,
+                            it.logLevel,
+                            it.ignorePaths
                         )
                     )
                 }

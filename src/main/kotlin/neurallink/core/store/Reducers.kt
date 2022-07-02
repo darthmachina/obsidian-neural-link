@@ -58,7 +58,7 @@ class Reducers {
      * updates.
      */
     fun updateSettings(store: NeuralLinkModel, updateSettings: UpdateSettings): Either<NeuralLinkError,NeuralLinkModel> {
-        logger.debug { "updateSettings()" }
+        logger.debug { "updateSettings() : $updateSettings" }
         val newSettings = store.settings.copy(
             taskRemoveRegex = updateSettings.taskRemoveRegex ?: store.settings.taskRemoveRegex,
             columnTags = updateSettings.columnTags ?: store.settings.columnTags,
