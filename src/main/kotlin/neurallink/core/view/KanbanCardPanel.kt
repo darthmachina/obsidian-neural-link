@@ -188,6 +188,7 @@ class KanbanCardPanel(
                 button("", icon = "fas fa-arrows-left-right") {
                     addCssStyle(KanbanStyles.KANBAN_BUTTON)
                     size = ButtonSize.SMALL
+                    cursor = Cursor.POINTER
                 }.onClick {
                     chooseNewStatus()
                 }
@@ -195,6 +196,7 @@ class KanbanCardPanel(
                     button("", icon = "fas fa-angles-up") {
                         addCssStyle(KanbanStyles.KANBAN_BUTTON)
                         size = ButtonSize.SMALL
+                        cursor = Cursor.POINTER
                     }.onClick {
                         store.dispatch(MoveToTop(task.id))
                     }
@@ -208,6 +210,7 @@ class KanbanCardPanel(
                     paddingBottom = 0.px
                     marginBottom = 4.px
                     marginRight = (-3).px
+                    cursor = Cursor.POINTER
                 }.onClick {
                     logger.debug { "going to source file" }
                     openSourceFile(task, leaf)
