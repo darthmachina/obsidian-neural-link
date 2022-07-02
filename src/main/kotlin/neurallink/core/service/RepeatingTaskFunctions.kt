@@ -37,33 +37,51 @@ fun getNextRepeatingTask(task: Task) : Either<NeuralLinkError,Task> {
         }
 }
 
+fun getNextDate(repeatItem: RepeatItem, fromDate: LocalDate) : LocalDate {
+    return when (repeatItem.span) {
+        TaskConstants.REPEAT_SPAN.DAILY -> fromDate.plus(repeatItem.amount, DateTimeUnit.DAY)
+        TaskConstants.REPEAT_SPAN.WEEKLY -> fromDate.plus(repeatItem.amount, DateTimeUnit.WEEK)
+        TaskConstants.REPEAT_SPAN.MONTHLY -> fromDate.plus(repeatItem.amount, DateTimeUnit.MONTH)
+        TaskConstants.REPEAT_SPAN.YEARLY -> fromDate.plus(repeatItem.amount, DateTimeUnit.YEAR)
+        TaskConstants.REPEAT_SPAN.WEEKDAY -> {
+            // Calculate how many days to add to the current day (Sunday, Friday, Saturday go to next Monday)
+            val addDays = when (fromDate.dayOfMonth) {
+                0 -> 1
+                5 -> 3
+                6 -> 2
+                else -> 1
+            }
+            fromDate.plus(addDays, DateTimeUnit.DAY)
+        }
+        TaskConstants.REPEAT_SPAN.MONTH -> {
+            fromDate.plus(1, DateTimeUnit.MONTH)
+        }
+        // Else we are a specific month repeat so just add a year
+        else -> fromDate.plus(1, DateTimeUnit.YEAR)
+    }
+}
+
+fun addTimeUntilDate(repeatItem: RepeatItem, fromDate: LocalDate, currentDate: LocalDate) : LocalDate{
+    val nextDate = getNextDate(repeatItem, fromDate)
+    return if (nextDate < currentDate) {
+        addTimeUntilDate(repeatItem, nextDate, currentDate)
+    } else {
+        nextDate
+    }
+}
+
+fun addTimeUntilFuture(repeatItem: RepeatItem, fromDate: LocalDate) : LocalDate {
+    val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    return addTimeUntilDate(repeatItem, fromDate, currentDate)
+}
+
 fun getNextRepeatDate(task: Task) : Either<NeuralLinkError,LocalDate> {
     return parseRepeating(task)
         .map { repeatItem ->
             Pair(repeatItem, getFromDate(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), task.dueOn!!, repeatItem.fromComplete))
         }
         .map { repeatFromDatePair ->
-            when (repeatFromDatePair.first.span) {
-                TaskConstants.REPEAT_SPAN.DAILY -> repeatFromDatePair.second.plus(repeatFromDatePair.first.amount, DateTimeUnit.DAY)
-                TaskConstants.REPEAT_SPAN.WEEKLY -> repeatFromDatePair.second.plus(repeatFromDatePair.first.amount, DateTimeUnit.WEEK)
-                TaskConstants.REPEAT_SPAN.MONTHLY -> repeatFromDatePair.second.plus(repeatFromDatePair.first.amount, DateTimeUnit.MONTH)
-                TaskConstants.REPEAT_SPAN.YEARLY -> repeatFromDatePair.second.plus(repeatFromDatePair.first.amount, DateTimeUnit.YEAR)
-                TaskConstants.REPEAT_SPAN.WEEKDAY -> {
-                    // Calculate how many days to add to the current day (Sunday, Friday, Saturday go to next Monday)
-                    val addDays = when (repeatFromDatePair.second.dayOfMonth) {
-                        0 -> 1
-                        5 -> 3
-                        6 -> 2
-                        else -> 1
-                    }
-                    repeatFromDatePair.second.plus(addDays, DateTimeUnit.DAY)
-                }
-                TaskConstants.REPEAT_SPAN.MONTH -> {
-                    repeatFromDatePair.second.plus(1, DateTimeUnit.MONTH)
-                }
-                // Else we are a specific month repeat so just add a year
-                else -> repeatFromDatePair.second.plus(1, DateTimeUnit.YEAR)
-            }
+            addTimeUntilFuture(repeatFromDatePair.first, repeatFromDatePair.second)
         }
 }
 
