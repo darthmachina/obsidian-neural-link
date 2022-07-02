@@ -4,14 +4,14 @@ package neurallink.core.service
 
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.*
 import neurallink.core.model.*
 import neurallink.test.TestFactory
 
@@ -124,29 +124,67 @@ class RepeatingTaskFunctionsTest : StringSpec({
 
     // *** getNextRepeatDate() ***
     "getNextRepeatDate returns the right date" {
+        val dueDate = Clock.System.now().toLocalDateTime(
+            TimeZone.currentSystemDefault()
+        ).date.minus(1, DateTimeUnit.DAY)
+        val expectedYear = dueDate.year
+        val expectedMonth = dueDate.monthNumber + 1
+        val expectedDay = dueDate.dayOfMonth
         val expectedTask = TestFactory.createTask().copy(
             dataviewFields = mapOf(
                 DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
                         to DataviewValue("monthly: 1")
             ).toDataviewMap(),
-            dueOn = DueOn(LocalDate(2022, 1, 3))
+            dueOn = DueOn(dueDate)
         )
 
         val maybeLocalDate = getNextRepeatDate(expectedTask)
         val localDate = maybeLocalDate.shouldBeRight()
-        localDate.year shouldBe 2022
-        localDate.monthNumber shouldBe 2
-        localDate.dayOfMonth shouldBe 3
+        withClue("Year is wrong") { localDate.year shouldBe expectedYear }
+        withClue("Month is wrong") { localDate.monthNumber shouldBe expectedMonth }
+
+        withClue("Day is wrong") { localDate.dayOfMonth shouldBe expectedDay }
+    }
+
+    "getNextRepeatDate returns a date in the future" {
+        val currentDate = Clock.System.now().toLocalDateTime(
+            TimeZone.currentSystemDefault()
+        ).date
+        val expectedYear = currentDate.year
+        val expectedMonth = currentDate.monthNumber
+        val expectedDay = currentDate.dayOfMonth + 1
+        val expectedTask = TestFactory.createTask().copy(
+            dataviewFields = mapOf(
+                DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                        to DataviewValue("monthly: 1")
+            ).toDataviewMap(),
+            dueOn = DueOn(LocalDate(
+                currentDate.year,
+                currentDate.monthNumber - 2,
+                currentDate.dayOfMonth + 1))
+        )
+
+        val maybeLocalDate = getNextRepeatDate(expectedTask)
+        val localDate = maybeLocalDate.shouldBeRight()
+        withClue("Year is wrong") { localDate.year shouldBe expectedYear }
+        withClue("Month is wrong") { localDate.monthNumber shouldBe expectedMonth }
+        withClue("Day is wrong") { localDate.dayOfMonth shouldBe expectedDay }
     }
 
     // *** getNextRepeatTask() ***
     "getNextRepeatTask returns the right task" {
+        val dueDate = Clock.System.now().toLocalDateTime(
+            TimeZone.currentSystemDefault()
+        ).date.minus(1, DateTimeUnit.DAY)
+        val expectedYear = dueDate.year
+        val expectedMonth = dueDate.monthNumber + 1
+        val expectedDay = dueDate.dayOfMonth
         val originalTask = TestFactory.createTask().copy(
             dataviewFields = mapOf(
                 DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
                         to DataviewValue("monthly: 1")
             ).toDataviewMap(),
-            dueOn = DueOn(LocalDate(2022, 1, 3))
+            dueOn = DueOn(dueDate)
         )
 
         val maybeRepeatTask = getNextRepeatingTask(originalTask)
@@ -154,8 +192,8 @@ class RepeatingTaskFunctionsTest : StringSpec({
         task.completed.shouldBeFalse()
         task.completedOn.shouldBeNull()
         task.dueOn.shouldNotBeNull()
-        task.dueOn!!.value.year shouldBe 2022
-        task.dueOn!!.value.monthNumber shouldBe 2
-        task.dueOn!!.value.dayOfMonth shouldBe 3
+        withClue("Task year is wrong") { task.dueOn!!.value.year shouldBe expectedYear }
+        withClue("Task month is wrong") { task.dueOn!!.value.monthNumber shouldBe expectedMonth }
+        withClue("Task day is wrong") { task.dueOn!!.value.dayOfMonth shouldBe expectedDay }
     }
 })
