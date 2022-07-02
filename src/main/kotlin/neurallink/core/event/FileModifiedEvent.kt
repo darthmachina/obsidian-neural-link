@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskFile
+import neurallink.core.service.pathInPathList
 import neurallink.core.service.readFile
 import neurallink.core.store.ModifyFileTasks
 import org.reduxkotlin.Store
@@ -27,7 +28,7 @@ class FileModifiedEvent(
 ) : Event(plugin, store) {
     override fun processEvent(context: Any) {
         logger.debug { "processEvent(): $context" }
-        if (context is TFile) {
+        if (context is TFile && !pathInPathList(context.path, store.state.settings.ignorePaths)) {
             CoroutineScope(Dispatchers.Main).launch {
                 val tasks = readFile(store, context, plugin.app.vault, plugin.app.metadataCache)
                 store.dispatch(ModifyFileTasks(TaskFile(context.path), tasks))

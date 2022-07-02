@@ -24,6 +24,18 @@ fun loadTasKModelIntoStore(vault: Vault, metadataCache: MetadataCache, store: St
     }
 }
 
+suspend fun Array<TFile>.filterFiles(store: Store<NeuralLinkModel>) : List<TFile> {
+    return this.filter {
+            // Process only Markdown files
+            it.name.endsWith(".md")
+        }
+        .filter { file ->
+            // Ignore any files that are in the ignorePaths list
+            !pathInPathList(file.path, store.state.settings.ignorePaths)
+        }
+
+}
+
 /**
  * Processes all files in the Vault and loads any tasks into the TaskModel.
  *
@@ -40,14 +52,7 @@ suspend fun processAllFiles(store: Store<NeuralLinkModel>, vault: Vault, metadat
     val fileSemaphore = Semaphore(2)
 
     vault.getFiles()
-        .filter {
-            // Process only Markdown files
-            it.name.endsWith(".md")
-        }
-        .filter { file ->
-            // Ignore any files that are in the ignorePaths list
-            !pathInPathList(file.path, store.state.settings.ignorePaths)
-        }
+        .filterFiles(store)
         .filter { file ->
             // Only include files that have a task
             val listItems = metadataCache.getFileCache(file)?.listItems?.toList() ?: emptyList()
