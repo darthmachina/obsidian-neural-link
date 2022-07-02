@@ -10,6 +10,18 @@ import neurallink.core.store.*
 
 private val logger = KotlinLogging.logger("TaskFilterFunctions")
 
+/**
+ * Checks if the given path is in one of the given paths or is a child of the given path
+ */
+fun pathInPathList(path: String, paths: List<String>) : Boolean {
+    return paths.map { onePath ->
+            path.startsWith(onePath, ignoreCase = true)
+        }
+        .fold(false) { acc, next ->
+            acc || next
+        }
+}
+
 fun filterTasks(tasks: List<Task>, filterValue: FilterValue<out Any>) : List<Task> {
     return when (filterValue) {
         is NoneFilterValue -> tasks

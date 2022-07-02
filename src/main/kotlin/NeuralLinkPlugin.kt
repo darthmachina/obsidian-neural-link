@@ -9,6 +9,8 @@ import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks
+import neurallink.core.settings.NeuralLinkPluginSettings6
+import neurallink.core.settings.NeuralLinkPluginSettingsTab
 import neurallink.core.store.NoneFilterValue
 import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.applyMiddleware
@@ -39,7 +41,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         reducer,
         NeuralLinkModel(
             this,
-            NeuralLinkPluginSettings5.default(),
+            NeuralLinkPluginSettings6.default(),
             listOf(),
             mapOf(),
             NoneFilterValue()
@@ -121,7 +123,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
                             store.state.plugin,
                             it.taskRemoveRegex,
                             it.columnTags,
-                            it.tagColors
+                            it.tagColors,
+                            it.logLevel,
+                            it.ignorePaths
                         )
                     )
                 }

@@ -1,7 +1,7 @@
 package neurallink.core.model
 
 import NeuralLinkPlugin
-import NeuralLinkPluginSettings5
+import neurallink.core.settings.NeuralLinkPluginSettings6
 import neurallink.core.store.FilterValue
 
 /**
@@ -9,7 +9,7 @@ import neurallink.core.store.FilterValue
  */
 data class NeuralLinkModel(
     val plugin: NeuralLinkPlugin,
-    val settings: NeuralLinkPluginSettings5,
+    val settings: NeuralLinkPluginSettings6,
     val tasks: List<Task>,
     val kanbanColumns: Map<StatusTag,List<Task>>,
     val filterValue: FilterValue<out Any>

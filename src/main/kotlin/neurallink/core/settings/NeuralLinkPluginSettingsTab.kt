@@ -1,3 +1,10 @@
+package neurallink.core.settings
+
+import App
+import NeuralLinkPlugin
+import PluginSettingTab
+import Setting
+import arrow.core.split
 import kotlinx.html.dom.append
 import kotlinx.html.js.h2
 import mu.KotlinLogging
@@ -9,7 +16,7 @@ import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.Store
 import org.w3c.dom.HTMLElement
 
-private val logger = KotlinLogging.logger("NeuralLinkPluginSettingsTab")
+private val logger = KotlinLogging.logger("neurallink.core.settings.NeuralLinkPluginSettingsTab")
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
@@ -28,6 +35,7 @@ class NeuralLinkPluginSettingsTab(
         createColumnListSetting(containerEl)
         createTagColorListSetting(containerEl)
         createLogLevelSettings(containerEl)
+        createIgnorePathSetting(containerEl)
     }
 
     private fun createLogLevelSettings(containerEl: HTMLElement): Setting {
@@ -106,6 +114,22 @@ class NeuralLinkPluginSettingsTab(
                             tagColors[Tag(singleValues[0])] = singleValues[1]
                         }
                         store.dispatch(UpdateSettings(plugin, tagColors = tagColors))
+                    }
+            }
+    }
+
+    private fun createIgnorePathSetting(containerEl: HTMLElement): Setting {
+        logger.debug { "createIgnorePathSetting()" }
+        return Setting(containerEl)
+            .setName("Ignore Paths")
+            .setDesc("List of paths to ignore for cards")
+            .addTextArea { text ->
+                val ignorePaths = store.state.settings.ignorePaths
+                val textVersion = ignorePaths.joinToString("\n")
+                text.setPlaceholder("Paths separated by newlines")
+                    .setValue(textVersion)
+                    .onChange { value ->
+                        store.dispatch(UpdateSettings(plugin, ignorePaths = value.split("\n").toList()))
                     }
             }
     }

@@ -40,5 +40,6 @@ data class UpdateSettings(
     val taskRemoveRegex: String? = null,
     val columnTags: List<StatusTag>? = null,
     val tagColors: Map<Tag,String>? = null,
-    val logLevel: KotlinLoggingLevel? = null
+    val logLevel: KotlinLoggingLevel? = null,
+    val ignorePaths: List<String>? = null
 ) : Action
