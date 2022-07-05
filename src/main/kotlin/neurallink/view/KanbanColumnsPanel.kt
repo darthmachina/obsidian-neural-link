@@ -1,4 +1,4 @@
-package neurallink.core.view
+package neurallink.view
 
 import io.kvision.panel.FlexPanel
 import io.kvision.panel.HPanel

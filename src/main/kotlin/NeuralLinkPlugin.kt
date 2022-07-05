@@ -17,8 +17,8 @@ import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
 import org.reduxkotlin.middleware
 import neurallink.core.store.reducer
-import neurallink.core.view.KanbanView
-import neurallink.core.view.ViewConstants
+import neurallink.view.KanbanView
+import neurallink.view.ViewConstants
 
 private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 

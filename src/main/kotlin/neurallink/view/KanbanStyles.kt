@@ -1,4 +1,4 @@
-package neurallink.core.view
+package neurallink.view
 
 import io.kvision.core.*
 import io.kvision.utils.auto
@@ -10,6 +10,19 @@ class KanbanStyles {
         val ROOT = Style(".nl-root") {
             height = 100.perc
             maxHeight = 100.perc
+        }
+
+        val TEXT_BOLD = Style(".nl-bold") {
+            fontWeight = FontWeight.BOLDER
+        }
+
+        val TEXT_ITALIC = Style(".nl-italic") {
+            fontStyle = FontStyle.ITALIC
+        }
+
+        val TEXT_LINK = Style(".nl-wikilink") {
+            textDecoration = TextDecoration(TextDecorationLine.UNDERLINE)
+            color = Color.name(Col.AQUAMARINE)
         }
 
         val KANBAN_HEADER = Style(".nl-kanban-header") {

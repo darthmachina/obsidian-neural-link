@@ -1,4 +1,4 @@
-package neurallink.core.view
+package neurallink.view
 
 import MarkdownView
 import WorkspaceLeaf
@@ -285,8 +285,8 @@ class KanbanCardPanel(
         }
 
         val leavesWithFileAlreadyOpen = leaf.view.app.workspace.getLeavesOfType("markdown")
-            .filter { leaf ->
-                (leaf.view as MarkdownView).file.path == task.file.value
+            .filter { leafOfType ->
+                (leafOfType.view as MarkdownView).file.path == task.file.value
             }
         logger.debug { "Open leaf list : $leavesWithFileAlreadyOpen" }
 
