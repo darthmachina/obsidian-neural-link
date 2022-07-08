@@ -2,7 +2,7 @@ package neurallink.core.service
 
 import neurallink.core.model.Task
 
-val WIKILINK_REGEX = Regex("""\[\[([A-Za-z]+)]]""")
+val WIKILINK_REGEX = Regex("""\[\[([A-Za-z]+)\]\]""")
 val BOLD_REGEX = Regex("""\*\*([A-Za-z]+)\*\*""")
 val ITALIC_REGEX = Regex("""\*([A-Za-z]+)\*""")
 
