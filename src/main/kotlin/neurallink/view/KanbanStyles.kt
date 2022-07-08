@@ -22,7 +22,7 @@ class KanbanStyles {
 
         val TEXT_LINK = Style(".nl-wikilink") {
             textDecoration = TextDecoration(TextDecorationLine.UNDERLINE)
-            color = Color.name(Col.AQUAMARINE)
+            color = Color.name(Col.DEEPSKYBLUE)
         }
 
         val KANBAN_HEADER = Style(".nl-kanban-header") {

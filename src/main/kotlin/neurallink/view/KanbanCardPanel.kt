@@ -51,7 +51,11 @@ class KanbanCardPanel(
 
         div {
             addCssStyle(KanbanStyles.KANBAN_DESCRIPTION)
-            checkBox(task.completed, label = task.description.value) {
+            checkBox(
+                task.completed,
+                label = markdownToStyle(task.description.value),
+                rich = true
+            ) {
                 inline = true
             }.onClick {
                 if (task.subtasks.any { !it.completed }) {
@@ -73,22 +77,22 @@ class KanbanCardPanel(
             ul {
                 addCssStyle(KanbanStyles.KANBAN_NOTES)
                 task.notes.forEach { note ->
-                    li {
-                        +note.note
+                    li(rich = true) {
+                        +markdownToStyle(note.note)
 
                         if (note.subnotes.isNotEmpty()) {
                             ul {
                                 addCssStyle(KanbanStyles.KANBAN_SUBNOTES)
                                 note.subnotes.forEach { subnote1 ->
-                                    li {
-                                        +subnote1.note
+                                    li(rich = true) {
+                                        +markdownToStyle(subnote1.note)
 
                                         if (subnote1.subnotes.isNotEmpty()) {
                                             ul {
                                                 addCssStyle(KanbanStyles.KANBAN_SUBNOTES)
                                                 subnote1.subnotes.forEach { subnote2 ->
-                                                    li {
-                                                        +subnote2.note
+                                                    li(rich = true) {
+                                                        +markdownToStyle(subnote2.note)
                                                     }
                                                 }
                                             }
@@ -153,7 +157,11 @@ class KanbanCardPanel(
             addCssStyle(KanbanStyles.KANBAN_SUBTASKS)
             task.subtasks.forEach { subtask ->
                 div {
-                    checkBox(subtask.completed, label = subtask.description.value) {
+                    checkBox(
+                        subtask.completed,
+                        label = markdownToStyle(subtask.description.value),
+                        rich = true
+                    ) {
                         inline = true
                     }.onClick {
                         store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))

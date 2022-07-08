@@ -25,6 +25,11 @@ class TaskOrderFunctonsTest : StringSpec({
         maxPosition shouldBe 2.0
     }
 
+    "findMaxPositionInStatusTasks works with an empty task list" {
+        val maxPosition = findMaxPositionInStatusTasks(emptyList())
+        maxPosition shouldBe 1.0
+    }
+
     // *** findPositionBeforeTask() ***
     "findPositionBeforeTask finds the correct position between tasks" {
         val task1 = TestFactory.createTask().copy(

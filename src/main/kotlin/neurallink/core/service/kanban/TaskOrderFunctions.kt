@@ -27,12 +27,14 @@ private val logger = KotlinLogging.logger("TaskOrderFunctions")
  * @return The max position value in the task list, using 0.0 when one doesn't exist.
  */
 fun findMaxPositionInStatusTasks(tasks: List<Task>) : Double {
-    return tasks
-        .maxOf { task ->
-            task.dataviewFields.valueForField(
-                DataviewField(TaskConstants.TASK_ORDER_PROPERTY)
-            ).getOrElse { DataviewValue(0.0) }.asDouble()
-        }
+    return Either.catch {
+        tasks
+            .maxOf { task ->
+                task.dataviewFields.valueForField(
+                    DataviewField(TaskConstants.TASK_ORDER_PROPERTY)
+                ).getOrElse { DataviewValue(1.0) }.asDouble()
+            }
+        }.getOrElse { 1.0 }
 }
 
 /**
