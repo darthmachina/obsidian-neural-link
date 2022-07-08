@@ -17,5 +17,5 @@ fun markdownItalicToStyle(text: String) : String {
 }
 
 fun markdownLinkToStyle(text: String) : String {
-    return text.replace(WIKILINK_REGEX, "<span class=\"nl-wikilink\">\$1</span>")
+    return text.replace(WIKILINK_REGEX, "<a href=\"test\"><span class=\"nl-wikilink\">\$1</span></a>")
 }
