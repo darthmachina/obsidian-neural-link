@@ -32,9 +32,22 @@ fun getNextRepeatingTask(task: Task) : Either<NeuralLinkError,Task> {
             task.copy(
                 dueOn = DueOn(repeatDate),
                 completed = false,
-                completedOn = null
+                completedOn = null,
+                subtasks = uncompleteSubtasks(task)
             )
         }
+}
+
+/**
+ * Marks all subtasks on the given task as not completed.
+ *
+ * @param task The Task to process
+ * @return List of subtasks of which all are not completed
+ */
+fun uncompleteSubtasks(task: Task) : List<Task> {
+    return task.subtasks.map { subtask ->
+        subtask.copy(completed = false)
+    }
 }
 
 fun getNextDate(repeatItem: RepeatItem, fromDate: LocalDate) : LocalDate {
