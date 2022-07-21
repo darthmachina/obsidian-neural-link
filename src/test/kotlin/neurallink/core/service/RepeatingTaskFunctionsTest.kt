@@ -171,6 +171,23 @@ class RepeatingTaskFunctionsTest : StringSpec({
         withClue("Day is wrong") { localDate.dayOfMonth shouldBe expectedDay }
     }
 
+    // *** uncompleteSubtasks() ***
+    "uncompleteSubtasks unchecks all subtasks on task" {
+        val subtasks = TestFactory.createTasks(3)
+            .map { task ->
+                task.copy(completed = true)
+            }
+        val originalTask = TestFactory.createTask()
+            .copy(
+                subtasks = subtasks
+            )
+
+        val actualSubtasks = uncompleteSubtasks(originalTask)
+        actualSubtasks.forEach { subtask ->
+            subtask.completed shouldBe false
+        }
+    }
+
     // *** getNextRepeatTask() ***
     "getNextRepeatTask returns the right task" {
         val dueDate = Clock.System.now().toLocalDateTime(
@@ -195,5 +212,29 @@ class RepeatingTaskFunctionsTest : StringSpec({
         withClue("Task year is wrong") { task.dueOn!!.value.year shouldBe expectedYear }
         withClue("Task month is wrong") { task.dueOn!!.value.monthNumber shouldBe expectedMonth }
         withClue("Task day is wrong") { task.dueOn!!.value.dayOfMonth shouldBe expectedDay }
+    }
+
+    "getNextRepeatTask returns task with subtasks not completed" {
+        val dueDate = Clock.System.now().toLocalDateTime(
+            TimeZone.currentSystemDefault()
+        ).date.minus(1, DateTimeUnit.DAY)
+        val subtasks = TestFactory.createTasks(3)
+            .map { task ->
+                task.copy(completed = true)
+            }
+        val originalTask = TestFactory.createTask()
+            .copy(
+                dataviewFields = mapOf(
+                    DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)
+                            to DataviewValue("monthly: 1")
+                ).toDataviewMap(),
+                dueOn = DueOn(dueDate),
+                subtasks = subtasks
+            )
+        val maybeRepeatTask = getNextRepeatingTask(originalTask)
+        val task = maybeRepeatTask.shouldBeRight()
+        task.subtasks.forEach { subtask ->
+            subtask.completed shouldBe false
+        }
     }
 })
