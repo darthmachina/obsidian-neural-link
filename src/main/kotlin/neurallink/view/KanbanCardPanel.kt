@@ -104,8 +104,9 @@ class KanbanCardPanel(
         add(createFooterPanel(leaf, status))
     }
 
-    private fun createNotePanel(text: String, leaf: WorkspaceLeaf) : HPanel {
-        return hPanel {
+    private fun createNotePanel(text: String, leaf: WorkspaceLeaf) : Span {
+        return span {
+            rich = true
             parseMarkdownLinks(text).forEach {
                 if (it.startsWith("!")) {
                     val link = it.drop(1)
@@ -113,7 +114,7 @@ class KanbanCardPanel(
                         openSourceFile(link, leaf)
                     }
                 } else {
-                    +it
+                    +markdownToStyle(it)
                 }
             }
         }
@@ -123,12 +124,11 @@ class KanbanCardPanel(
         return hPanel {
             checkBox(
                 task.completed,
+                label = markdownToStyle(task.description.value),
+                rich = true
             ) {
                 inline = true
             }.onClick(handler = handler)
-            span {
-                +markdownToStyle(task.description.value)
-            }
         }
     }
 
