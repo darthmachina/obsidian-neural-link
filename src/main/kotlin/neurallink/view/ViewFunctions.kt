@@ -10,7 +10,7 @@ import neurallink.core.service.WIKILINK_REGEX
  * Creates a new string converting Italics and Bold to HTML
  */
 fun markdownToStyle(text: String) : String {
-    return markdownItalicToStyle(markdownBoldToStyle(text))
+    return markdownItalicToStyle(markdownBoldToStyle(markdownLinkToStyle(text)))
 }
 
 fun markdownBoldToStyle(text: String) : String {
@@ -19,6 +19,10 @@ fun markdownBoldToStyle(text: String) : String {
 
 fun markdownItalicToStyle(text: String) : String {
     return text.replace(ITALIC_REGEX, "<span class=\"nl-italic\">\$1</span>")
+}
+
+fun markdownLinkToStyle(text: String) : String {
+    return text.replace(WIKILINK_REGEX, "<span class=\"nl-wikilink\">\$1</span>")
 }
 
 /**
