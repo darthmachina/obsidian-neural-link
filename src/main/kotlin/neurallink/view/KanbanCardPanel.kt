@@ -1,19 +1,11 @@
-package neurallink.core.view
+package neurallink.view
 
 import MarkdownView
 import WorkspaceLeaf
 import io.kvision.core.*
+import io.kvision.form.check.CheckBox
 import io.kvision.form.check.checkBox
-import io.kvision.html.ButtonSize
-import io.kvision.html.Table
-import io.kvision.html.button
-import io.kvision.html.div
-import io.kvision.html.li
-import io.kvision.html.span
-import io.kvision.html.table
-import io.kvision.html.td
-import io.kvision.html.tr
-import io.kvision.html.ul
+import io.kvision.html.*
 import io.kvision.panel.HPanel
 import io.kvision.panel.VPanel
 import io.kvision.panel.hPanel
@@ -22,12 +14,14 @@ import io.kvision.utils.px
 import kotlinx.datetime.*
 import mu.KotlinLogging
 import neurallink.core.model.*
+import neurallink.core.model.Tag
 import neurallink.core.store.IncompleteSubtaskChoice
 import neurallink.core.store.MoveToTop
 import neurallink.core.store.SubtaskCompleted
 import neurallink.core.store.TaskCompleted
 import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store
+import org.w3c.dom.events.MouseEvent
 
 private val logger = KotlinLogging.logger("KanbanCardPanel")
 
@@ -51,16 +45,14 @@ class KanbanCardPanel(
 
         div {
             addCssStyle(KanbanStyles.KANBAN_DESCRIPTION)
-            checkBox(task.completed, label = task.description.value) {
-                inline = true
-            }.onClick {
+            add(createCheckbox(task) {
                 if (task.subtasks.any { !it.completed }) {
                     // Incomplete subtasks exist, ask what to do. Dialog completes the task is requested.
                     askAboutIncompleteSubtasks(task)
                 } else {
                     store.dispatch(TaskCompleted(task.id))
                 }
-            }
+            })
         }
 
         // Subtasks
@@ -73,22 +65,22 @@ class KanbanCardPanel(
             ul {
                 addCssStyle(KanbanStyles.KANBAN_NOTES)
                 task.notes.forEach { note ->
-                    li {
-                        +note.note
+                    li(rich = true) {
+                        add(createNotePanel(note.note, leaf))
 
                         if (note.subnotes.isNotEmpty()) {
                             ul {
                                 addCssStyle(KanbanStyles.KANBAN_SUBNOTES)
                                 note.subnotes.forEach { subnote1 ->
-                                    li {
-                                        +subnote1.note
+                                    li(rich = true) {
+                                        add(createNotePanel(subnote1.note, leaf))
 
                                         if (subnote1.subnotes.isNotEmpty()) {
                                             ul {
                                                 addCssStyle(KanbanStyles.KANBAN_SUBNOTES)
                                                 subnote1.subnotes.forEach { subnote2 ->
-                                                    li {
-                                                        +subnote2.note
+                                                    li(rich = true) {
+                                                        add(createNotePanel(subnote2.note, leaf))
                                                     }
                                                 }
                                             }
@@ -110,6 +102,34 @@ class KanbanCardPanel(
 
         // Source & Buttons
         add(createFooterPanel(leaf, status))
+    }
+
+    private fun createNotePanel(text: String, leaf: WorkspaceLeaf) : Span {
+        return span {
+            rich = true
+            parseMarkdownLinks(text).forEach {
+                if (it.startsWith("!")) {
+                    val link = it.drop(1)
+                    link(link).onClick {
+                        openSourceFile(link, leaf)
+                    }
+                } else {
+                    +markdownToStyle(it)
+                }
+            }
+        }
+    }
+
+    private fun createCheckbox(task: Task, handler: CheckBox.(MouseEvent) -> Unit) : HPanel {
+        return hPanel {
+            checkBox(
+                task.completed,
+                label = markdownToStyle(task.description.value),
+                rich = true
+            ) {
+                inline = true
+            }.onClick(handler = handler)
+        }
     }
 
     private fun createTagsAndDuePanel(filteredTags: List<Tag>) : HPanel {
@@ -152,13 +172,9 @@ class KanbanCardPanel(
         return vPanel {
             addCssStyle(KanbanStyles.KANBAN_SUBTASKS)
             task.subtasks.forEach { subtask ->
-                div {
-                    checkBox(subtask.completed, label = subtask.description.value) {
-                        inline = true
-                    }.onClick {
-                        store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))
-                    }
-                }
+                add(createCheckbox(subtask) {
+                    store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))
+                })
             }
         }
     }
@@ -276,6 +292,28 @@ class KanbanCardPanel(
         dialog.show(true)
     }
 
+    // TODO: Refactor both openSourceFile methods to redce duplicate code
+    private fun openSourceFile(path: String, leaf: WorkspaceLeaf) {
+        logger.debug { "openSourceFile()" }
+        val filePath = leaf.view.app.metadataCache.getFirstLinkpathDest(path, "")
+        if (filePath == null) {
+            logger.error { " - ERROR: file path not found: $path" }
+            return
+        }
+
+        val leavesWithFileAlreadyOpen = leaf.view.app.workspace.getLeavesOfType("markdown")
+            .filter { leafOfType ->
+                (leafOfType.view as MarkdownView).file.path == filePath.path
+            }
+        logger.debug { "Open leaf list : $leavesWithFileAlreadyOpen" }
+
+        if (leavesWithFileAlreadyOpen.isNotEmpty()) {
+            leaf.view.app.workspace.setActiveLeaf(leavesWithFileAlreadyOpen[0])
+        } else {
+            leaf.view.app.workspace.splitActiveLeaf().openFile(filePath)
+        }
+    }
+
     private fun openSourceFile(task: Task, leaf: WorkspaceLeaf) {
         logger.debug { "openSourceFile()" }
         val filePath = leaf.view.app.metadataCache.getFirstLinkpathDest(task.file.value, "")
@@ -285,8 +323,8 @@ class KanbanCardPanel(
         }
 
         val leavesWithFileAlreadyOpen = leaf.view.app.workspace.getLeavesOfType("markdown")
-            .filter { leaf ->
-                (leaf.view as MarkdownView).file.path == task.file.value
+            .filter { leafOfType ->
+                (leafOfType.view as MarkdownView).file.path == task.file.value
             }
         logger.debug { "Open leaf list : $leavesWithFileAlreadyOpen" }
 

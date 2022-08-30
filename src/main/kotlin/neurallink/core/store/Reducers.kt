@@ -10,7 +10,7 @@ import neurallink.core.service.kanban.createKanbanMap
 import neurallink.core.service.kanban.findEndPosition
 import neurallink.core.service.kanban.findPosition
 import neurallink.core.service.kanban.getStatusTagFromTask
-import neurallink.core.view.ViewConstants
+import neurallink.view.ViewConstants
 import org.reduxkotlin.Reducer
 
 private val logger = KotlinLogging.logger("Reducers")
