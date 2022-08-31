@@ -299,26 +299,52 @@ fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>)
             }
         )
         .mapValues { it.value[0] } // Will only be one Pair as the key is the line in the file
-        .mapValues { Triple(it.value.first, it.value.second, if (it.value.second == null) null else expandRemovalLines(it.key, indentedCount(it.value.second!!))) }
+        .mapValues { Triple(
+            it.value.first,
+            it.value.second,
+            if (it.value.second == null)
+                null
+            else
+                expandRemovalLines(it.key, indentedCount(it.value.second!!))
+        )}
 }
 
 /**
  * Recursive method to get the number of indented items.
  */
 fun indentedCount(task: Task) : Int {
-    return if (task.subtasks.isEmpty() && task.notes.isEmpty()) {
+    return if (task.original == null || (task.original.subtasks.isEmpty() && task.original.notes.isEmpty())) {
         0
     } else {
-        task.subtasks.size +
-            task.notes.size +
-            task.subtasks.fold(0) { accumulator, subtask ->
-                accumulator + indentedCount(subtask)
+        task.original.subtasks.size +
+            task.original.notes.size +
+            task.original.subtasks.fold(0) { accumulator, subtask ->
+                accumulator + indentedSubtaskCount(subtask)
             } +
-            task.notes.fold(0) { accumulator, note ->
+            task.original.notes.fold(0) { accumulator, note ->
                 accumulator + indentedNoteCount(note)
             }
     }
 }
+
+/**
+ * Recursive method to get the number of indented subtasks.
+ */
+fun indentedSubtaskCount(task: Task) : Int {
+    return if (task.subtasks.isEmpty() && task.notes.isEmpty()) {
+        0
+    } else {
+        task.subtasks.size +
+                task.notes.size +
+                task.subtasks.fold(0) { accumulator, subtask ->
+                    accumulator + indentedCount(subtask)
+                } +
+                task.notes.fold(0) { accumulator, note ->
+                    accumulator + indentedNoteCount(note)
+                }
+    }
+}
+
 
 /**
  * Recursive method to get the number of indented Notes.

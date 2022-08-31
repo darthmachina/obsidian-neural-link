@@ -20,6 +20,7 @@ fun Task.deepCopy(): Task {
 }
 
 fun subtasksForCompletedTask(subtasks: List<Task>, subtaskChoice: IncompleteSubtaskChoice) : List<Task> {
+    logger.info { "subtasksForCompletedTask(), choice: ${subtaskChoice.name}" }
     return when (subtaskChoice) {
         IncompleteSubtaskChoice.DELETE -> {
             subtasks.filter { it.completed }

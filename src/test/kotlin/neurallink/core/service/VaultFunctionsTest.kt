@@ -208,8 +208,11 @@ class VaultFunctionsTest : StringSpec ({
     // *** indentedCount() ***
     "indentedCount returns 0 if there are no subtasks or notes" {
         val expectedTask = TestFactory.createTask()
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 0
     }
 
@@ -217,9 +220,11 @@ class VaultFunctionsTest : StringSpec ({
         val expectedTask = TestFactory.createTask().copy(
             subtasks = listOf(TestFactory.createTask())
         )
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 1
     }
 
@@ -228,8 +233,11 @@ class VaultFunctionsTest : StringSpec ({
             subtasks = listOf(TestFactory.createTask()),
             notes = listOf(TestFactory.createNote())
         )
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 2
     }
 
@@ -246,8 +254,11 @@ class VaultFunctionsTest : StringSpec ({
                 )
             )
         )
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 4
     }
 
@@ -307,8 +318,11 @@ class VaultFunctionsTest : StringSpec ({
             subtasks = listOf(TestFactory.createTask(2)),
             notes = listOf(TestFactory.createNote(3))
         )
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-        val actualJoinedMap = joinFileContentsWithTasks(existingContents, listOf(expectedTask))
+        val actualJoinedMap = joinFileContentsWithTasks(existingContents, listOf(updatedTask))
         actualJoinedMap.shouldHaveSize(5)
         actualJoinedMap[0]!!.first shouldBe "- Note 1"
         actualJoinedMap[0]!!.second shouldBe null
