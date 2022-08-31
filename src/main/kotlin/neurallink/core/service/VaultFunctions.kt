@@ -204,6 +204,12 @@ fun cacheItemParent(item: ListItemCache) : Int {
 
 // ************* FILE WRITING *************
 
+data class FileContentsWithTasks(
+    val lineText: String,
+    val task: Task?,
+    val linesToRemove: List<Int>
+)
+
 suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
     logger.debug { "writeModifiedTasks()" }
     withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
@@ -234,10 +240,10 @@ fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: T
 fun createFileContents(existingContents: String, tasks: List<Task>) : Either<TaskWritingWarning,String> {
     return joinFileContentsWithTasks(existingContents.split('\n'), tasks)
         .mapValues {
-            if (it.value.second != null) {
-                Triple(toMarkdown(it.value.second!!), it.value.third, true)
+            if (it.value.task != null) {
+                Triple(toMarkdown(it.value.task!!), it.value.linesToRemove, true)
             } else {
-                Triple(it.value.first, null, false)
+                Triple(it.value.lineText, null, false)
             }
         }
         .markRemoveLines()
@@ -284,7 +290,7 @@ fun Map<Int,Triple<String,List<Int>?,Boolean>>.markRemoveLines() : Either<TaskWr
  *
  * @return A map of line number to a Triple containing: current file contents, task for line if it exists, list of lines to remove if a task exists on this line
  */
-fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>) : Map<Int,Triple<String,Task?,List<Int>?>> {
+fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>) : Map<Int,FileContentsWithTasks> {
     return existingContents
         .mapIndexed { index, line -> Pair(index, line) }
         .groupBy(
@@ -299,11 +305,11 @@ fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>)
             }
         )
         .mapValues { it.value[0] } // Will only be one Pair as the key is the line in the file
-        .mapValues { Triple(
+        .mapValues { FileContentsWithTasks(
             it.value.first,
             it.value.second,
             if (it.value.second == null)
-                null
+                emptyList()
             else
                 expandRemovalLines(it.key, indentedCount(it.value.second!!))
         )}

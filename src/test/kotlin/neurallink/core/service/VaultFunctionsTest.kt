@@ -324,21 +324,21 @@ class VaultFunctionsTest : StringSpec ({
 
         val actualJoinedMap = joinFileContentsWithTasks(existingContents, listOf(updatedTask))
         actualJoinedMap.shouldHaveSize(5)
-        actualJoinedMap[0]!!.first shouldBe "- Note 1"
-        actualJoinedMap[0]!!.second shouldBe null
-        actualJoinedMap[0]!!.third shouldBe null
-        actualJoinedMap[1]!!.first shouldBe "- [ ] Task 1"
-        actualJoinedMap[1]!!.second shouldBe expectedTask
-        actualJoinedMap[1]!!.third shouldBe listOf(2, 3)
-        actualJoinedMap[2]!!.first shouldBe "  - [ ] Subtask 1"
-        actualJoinedMap[2]!!.second shouldBe null
-        actualJoinedMap[2]!!.third shouldBe null
-        actualJoinedMap[3]!!.first shouldBe "  - Subnote 1"
-        actualJoinedMap[3]!!.second shouldBe null
-        actualJoinedMap[3]!!.third shouldBe null
-        actualJoinedMap[4]!!.first shouldBe "- [ ] Task 2"
-        actualJoinedMap[4]!!.second shouldBe null
-        actualJoinedMap[4]!!.third shouldBe null
+        actualJoinedMap[0]!!.lineText shouldBe "- Note 1"
+        actualJoinedMap[0]!!.task shouldBe null
+        actualJoinedMap[0]!!.linesToRemove shouldHaveSize 0
+        actualJoinedMap[1]!!.lineText shouldBe "- [ ] Task 1"
+        actualJoinedMap[1]!!.task shouldBe expectedTask
+        actualJoinedMap[1]!!.linesToRemove shouldBe listOf(2, 3)
+        actualJoinedMap[2]!!.lineText shouldBe "  - [ ] Subtask 1"
+        actualJoinedMap[2]!!.task shouldBe null
+        actualJoinedMap[2]!!.linesToRemove shouldHaveSize 0
+        actualJoinedMap[3]!!.lineText shouldBe "  - Subnote 1"
+        actualJoinedMap[3]!!.task shouldBe null
+        actualJoinedMap[3]!!.linesToRemove shouldHaveSize 0
+        actualJoinedMap[4]!!.lineText shouldBe "- [ ] Task 2"
+        actualJoinedMap[4]!!.task shouldBe null
+        actualJoinedMap[4]!!.linesToRemove shouldHaveSize 0
     }
 
     // *** markRemoveLines() ***
