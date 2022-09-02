@@ -73,7 +73,7 @@ class KanbanStyles {
 
         val KANBAN_TAGS_DUE_PANEL = Style(".nl-kanban-tags-due-panel") {
             position = Position.RELATIVE
-            paddingLeft = 5.px
+            paddingLeft = 3.px
         }
 
         val KANBAN_TAG_LIST = Style(".nl-kanban-tag-list") {
@@ -81,7 +81,6 @@ class KanbanStyles {
         }
 
         val KANBAN_TAG = Style(".nl-kanban-tag") {
-            height = 25.px
             border = Border(1.px, BorderStyle.SOLID, Color.name(Col.GRAY))
             borderRadius = 8.px
             paddingTop = (-4).px
@@ -143,10 +142,6 @@ class KanbanStyles {
             position = Position.ABSOLUTE
             right = (-3).px
             bottom = (-5).px
-//            padding = 1.px
-//            paddingBottom = 0.px
-//            marginBottom = 6.px
-//            marginRight = (-2).px
         }
 
         val KANBAN_BUTTONS = Style(".nl-kanban-buttons") {
