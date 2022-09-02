@@ -142,7 +142,6 @@ class RepeatingTaskFunctionsTest : StringSpec({
         val localDate = maybeLocalDate.shouldBeRight()
         withClue("Year is wrong") { localDate.year shouldBe expectedYear }
         withClue("Month is wrong") { localDate.monthNumber shouldBe expectedMonth }
-
         withClue("Day is wrong") { localDate.dayOfMonth shouldBe expectedDay }
     }
 
