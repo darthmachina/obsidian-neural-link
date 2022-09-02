@@ -301,7 +301,7 @@ class Reducers {
      * Filters the task list according to the given tag; a null tag means there should be no filter.
      */
     fun filterByTag(store: NeuralLinkModel, tag: String?) : Either<NeuralLinkError,NeuralLinkModel> {
-        val filterValue = TagFilterValue(Tag(tag ?: ""))
+        val filterValue = if (tag != null) TagFilterValue(Tag(tag)) else NoneFilterValue()
         return store.copy(
             kanbanColumns = createKanbanMap(
                 filterTasks(store.tasks, filterValue),
@@ -312,7 +312,8 @@ class Reducers {
     }
 
     fun filterByFile(store: NeuralLinkModel, file: String?) : Either<NeuralLinkError,NeuralLinkModel> {
-        val filterValue = FileFilterValue(TaskFile(file ?: ""))
+        logger.debug { "filterByFile(): $file" }
+        val filterValue = if (file != null) FileFilterValue(TaskFile(file)) else NoneFilterValue()
         return store.copy(
             kanbanColumns = createKanbanMap(
                 filterTasks(store.tasks, filterValue),
@@ -323,8 +324,13 @@ class Reducers {
     }
 
     fun filterByDataviewValue(store: NeuralLinkModel, value: String?) : Either<NeuralLinkError,NeuralLinkModel> {
-        val dataview = value?.split("::") ?: throw IllegalStateException("Filter value is not a valid dataview field '$value'")
-        val filterValue = DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
+        val filterValue = if (value != null) {
+            val dataview =
+                value?.split("::")
+            DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
+        } else {
+            NoneFilterValue()
+        }
         return store.copy(
             kanbanColumns = createKanbanMap(
                 filterTasks(store.tasks, filterValue),
