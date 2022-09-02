@@ -17,27 +17,33 @@ class TestFactory {
 
         fun createTask(
             position: Int = -1,
-            file: String = randomString(10) + ".md"
+            file: String = randomString(10) + ".md",
+            description: String = randomString(20),
+            subtasks: List<Task> = emptyList(),
+            notes: List<Note> = emptyList()
         ) : Task {
             return Task(
                 TaskFile(file),
                 FilePosition(if (position == -1) Random.nextInt(0, 100) else position),
-                Description(randomString(20)),
+                Description(description),
                 null,
                 null,
                 emptySet(),
                 emptyMap<DataviewField,DataviewValue<out Comparable<*>>>().toDataviewMap(),
                 false,
-                emptyList(),
-                emptyList(),
+                subtasks,
+                notes,
                 null,
                 null
             )
         }
 
-        fun createNote(position: Int = -1) : Note {
+        fun createNote(
+            position: Int = -1,
+            note: String = randomString(20)
+        ) : Note {
             return Note(
-                randomString(20),
+                note,
                 FilePosition(if (position == -1) Random.nextInt(0, 100) else position)
             )
         }

@@ -320,10 +320,10 @@ fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>)
  */
 fun indentedCount(task: Task) : Int {
     return if (task.original == null || (task.original.subtasks.isEmpty() && task.original.notes.isEmpty())) {
-        logger.debug { "indentedCount: Nothing to do, returning 0" }
+        logger.warn { "indentedCount: Nothing to do, returning 0" }
         0
     } else {
-        logger.debug { "indentedCount: ${task.original.subtasks.size}, ${task.original.notes.size}" }
+        logger.warn { "indentedCount: ${task.original.subtasks.size}, ${task.original.notes.size}" }
         task.original.subtasks.size +
             task.original.notes.size +
             task.original.subtasks.fold(0) { accumulator, subtask ->
@@ -340,10 +340,10 @@ fun indentedCount(task: Task) : Int {
  */
 fun indentedSubtaskCount(task: Task) : Int {
     return if (task.subtasks.isEmpty() && task.notes.isEmpty()) {
-        logger.debug { "indentedSubtaskCount: Nothing to do, returning 0" }
+        logger.warn { "indentedSubtaskCount: Nothing to do, returning 0" }
         0
     } else {
-        logger.debug { "indentedSubtaskCount: ${task.subtasks.size}, ${task.notes.size}" }
+        logger.warn { "indentedSubtaskCount: ${task.subtasks.size}, ${task.notes.size}" }
         task.subtasks.size +
                 task.notes.size +
                 task.subtasks.fold(0) { accumulator, subtask ->
@@ -360,10 +360,10 @@ fun indentedSubtaskCount(task: Task) : Int {
  */
 fun indentedNoteCount(note: Note) : Int {
     return if (note.subnotes.isEmpty()) {
-        logger.debug { "indentedNoteCount: Nothing to do, returning 0" }
+        logger.warn { "indentedNoteCount: Nothing to do, returning 0" }
         0
     } else {
-        logger.debug { "indentedNoteCount: ${note.subnotes.size}" }
+        logger.warn { "indentedNoteCount: ${note.subnotes.size}" }
         note.subnotes.size +
             note.subnotes.fold(0) { accu, note ->
                 accu + indentedNoteCount(note)
@@ -375,7 +375,7 @@ fun indentedNoteCount(note: Note) : Int {
  * Given a line number and an indented count, returns a list of lines to remove
  */
 fun expandRemovalLines(line: Int, indentedCount: Int) : List<Int> {
-    logger.debug { "expandRemovalLines($line, $indentedCount)" }
+    logger.warn { "expandRemovalLines($line, $indentedCount)" }
     return ((line + 1)until(line + 1 + indentedCount)).map {
         it
     }
