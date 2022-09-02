@@ -11,6 +11,8 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import neurallink.core.model.Description
+import neurallink.core.model.FilePosition
+import neurallink.core.model.Task
 import neurallink.test.TestFactory
 import neurallink.test.TestListItemCache
 import neurallink.test.TestLoc
@@ -208,8 +210,11 @@ class VaultFunctionsTest : StringSpec ({
     // *** indentedCount() ***
     "indentedCount returns 0 if there are no subtasks or notes" {
         val expectedTask = TestFactory.createTask()
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 0
     }
 
@@ -217,9 +222,11 @@ class VaultFunctionsTest : StringSpec ({
         val expectedTask = TestFactory.createTask().copy(
             subtasks = listOf(TestFactory.createTask())
         )
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 1
     }
 
@@ -228,8 +235,11 @@ class VaultFunctionsTest : StringSpec ({
             subtasks = listOf(TestFactory.createTask()),
             notes = listOf(TestFactory.createNote())
         )
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 2
     }
 
@@ -246,8 +256,11 @@ class VaultFunctionsTest : StringSpec ({
                 )
             )
         )
+        val updatedTask = TestFactory.createTask().copy(
+            original = expectedTask
+        )
 
-        val actualIndentedCount = indentedCount(expectedTask)
+        val actualIndentedCount = indentedCount(updatedTask)
         actualIndentedCount shouldBe 4
     }
 
@@ -303,28 +316,43 @@ class VaultFunctionsTest : StringSpec ({
             "  - Subnote 1",
             "- [ ] Task 2"
         )
-        val expectedTask = TestFactory.createTask(1).copy(
+        val existingSubtask = TestFactory.createTask(
+            position = 2,
+            description = "Subtask 1"
+        )
+        val existingNote = TestFactory.createNote(
+            position = 3,
+            note = "Subnote 1"
+        )
+        val existingTask = TestFactory.createTask(
+            position = 1,
+            description = "Task 1",
+            subtasks = listOf(existingSubtask),
+            notes = listOf(existingNote)
+        )
+        val updatedTask = TestFactory.createTask(1).copy(
             subtasks = listOf(TestFactory.createTask(2)),
-            notes = listOf(TestFactory.createNote(3))
+            notes = listOf(TestFactory.createNote(3)),
+            original = existingTask
         )
 
-        val actualJoinedMap = joinFileContentsWithTasks(existingContents, listOf(expectedTask))
+        val actualJoinedMap = joinFileContentsWithTasks(existingContents, listOf(updatedTask))
         actualJoinedMap.shouldHaveSize(5)
-        actualJoinedMap[0]!!.first shouldBe "- Note 1"
-        actualJoinedMap[0]!!.second shouldBe null
-        actualJoinedMap[0]!!.third shouldBe null
-        actualJoinedMap[1]!!.first shouldBe "- [ ] Task 1"
-        actualJoinedMap[1]!!.second shouldBe expectedTask
-        actualJoinedMap[1]!!.third shouldBe listOf(2, 3)
-        actualJoinedMap[2]!!.first shouldBe "  - [ ] Subtask 1"
-        actualJoinedMap[2]!!.second shouldBe null
-        actualJoinedMap[2]!!.third shouldBe null
-        actualJoinedMap[3]!!.first shouldBe "  - Subnote 1"
-        actualJoinedMap[3]!!.second shouldBe null
-        actualJoinedMap[3]!!.third shouldBe null
-        actualJoinedMap[4]!!.first shouldBe "- [ ] Task 2"
-        actualJoinedMap[4]!!.second shouldBe null
-        actualJoinedMap[4]!!.third shouldBe null
+        actualJoinedMap[0]!!.lineText shouldBe "- Note 1"
+        actualJoinedMap[0]!!.task shouldBe null
+        actualJoinedMap[0]!!.linesToRemove shouldHaveSize 0
+        actualJoinedMap[1]!!.lineText shouldBe "- [ ] Task 1"
+        actualJoinedMap[1]!!.task shouldBe updatedTask
+        actualJoinedMap[1]!!.linesToRemove shouldBe listOf(2, 3)
+        actualJoinedMap[2]!!.lineText shouldBe "  - [ ] Subtask 1"
+        actualJoinedMap[2]!!.task shouldBe null
+        actualJoinedMap[2]!!.linesToRemove shouldHaveSize 0
+        actualJoinedMap[3]!!.lineText shouldBe "  - Subnote 1"
+        actualJoinedMap[3]!!.task shouldBe null
+        actualJoinedMap[3]!!.linesToRemove shouldHaveSize 0
+        actualJoinedMap[4]!!.lineText shouldBe "- [ ] Task 2"
+        actualJoinedMap[4]!!.task shouldBe null
+        actualJoinedMap[4]!!.linesToRemove shouldHaveSize 0
     }
 
     // *** markRemoveLines() ***
@@ -375,16 +403,30 @@ class VaultFunctionsTest : StringSpec ({
         //  the Task details will be randomized by the TestFactory
         val existingContents =
             "- Note 1\n- [ ] Task 1\n  - [ ] Subtask 1\n  - Subnote 1\n- [ ] Task 2"
-        val expectedSubtask = TestFactory.createTask(2)
-        val expectedNote = TestFactory.createNote(3)
-        val expectedTask = TestFactory.createTask(1).copy(
-            subtasks = listOf(expectedSubtask),
-            notes = listOf(expectedNote)
+        val existingSubtask = TestFactory.createTask(
+            position = 2,
+            description = "Subtask 1"
         )
-        val expectedString =
-            "- Note 1\n- [ ] ${expectedTask.description.value} \n\t- [ ] ${expectedSubtask.description.value} \n\t- ${expectedNote.note}\n- [ ] Task 2"
+        val existingNote = TestFactory.createNote(
+            position = 3,
+            note = "Subnote 1"
+        )
+        val existingTask = TestFactory.createTask(
+            position = 1,
+            description = "Task 1",
+            subtasks = listOf(existingSubtask),
+            notes = listOf(existingNote)
+        )
+        val updatedTask = TestFactory.createTask(1).copy(
+            subtasks = listOf(TestFactory.createTask(2)),
+            notes = listOf(TestFactory.createNote(3)),
+            original = existingTask
+        )
 
-        val actualString = createFileContents(existingContents, listOf(expectedTask))
+        val expectedString =
+            "- Note 1\n- [ ] ${updatedTask.description.value} \n\t- [ ] ${updatedTask.subtasks[0].description.value} \n\t- ${updatedTask.notes[0].note}\n- [ ] Task 2"
+
+        val actualString = createFileContents(existingContents, listOf(updatedTask))
         actualString.orNull() shouldBe expectedString
     }
 })

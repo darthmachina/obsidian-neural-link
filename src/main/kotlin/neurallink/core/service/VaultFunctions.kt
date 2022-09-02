@@ -204,6 +204,12 @@ fun cacheItemParent(item: ListItemCache) : Int {
 
 // ************* FILE WRITING *************
 
+data class FileContentsWithTasks(
+    val lineText: String,
+    val task: Task?,
+    val linesToRemove: List<Int>
+)
+
 suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
     logger.debug { "writeModifiedTasks()" }
     withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
@@ -234,10 +240,10 @@ fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: T
 fun createFileContents(existingContents: String, tasks: List<Task>) : Either<TaskWritingWarning,String> {
     return joinFileContentsWithTasks(existingContents.split('\n'), tasks)
         .mapValues {
-            if (it.value.second != null) {
-                Triple(toMarkdown(it.value.second!!), it.value.third, true)
+            if (it.value.task != null) {
+                Triple(toMarkdown(it.value.task!!), it.value.linesToRemove, true)
             } else {
-                Triple(it.value.first, null, false)
+                Triple(it.value.lineText, null, false)
             }
         }
         .markRemoveLines()
@@ -284,7 +290,7 @@ fun Map<Int,Triple<String,List<Int>?,Boolean>>.markRemoveLines() : Either<TaskWr
  *
  * @return A map of line number to a Triple containing: current file contents, task for line if it exists, list of lines to remove if a task exists on this line
  */
-fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>) : Map<Int,Triple<String,Task?,List<Int>?>> {
+fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>) : Map<Int,FileContentsWithTasks> {
     return existingContents
         .mapIndexed { index, line -> Pair(index, line) }
         .groupBy(
@@ -299,24 +305,49 @@ fun joinFileContentsWithTasks(existingContents: List<String>, tasks: List<Task>)
             }
         )
         .mapValues { it.value[0] } // Will only be one Pair as the key is the line in the file
-        .mapValues { Triple(it.value.first, it.value.second, if (it.value.second == null) null else expandRemovalLines(it.key, indentedCount(it.value.second!!))) }
+        .mapValues { FileContentsWithTasks(
+            it.value.first,
+            it.value.second,
+            if (it.value.second == null)
+                emptyList()
+            else
+                expandRemovalLines(it.key, indentedCount(it.value.second!!))
+        )}
 }
 
 /**
  * Recursive method to get the number of indented items.
  */
 fun indentedCount(task: Task) : Int {
+    return if (task.original == null || (task.original.subtasks.isEmpty() && task.original.notes.isEmpty())) {
+        0
+    } else {
+        task.original.subtasks.size +
+            task.original.notes.size +
+            task.original.subtasks.fold(0) { accumulator, subtask ->
+                accumulator + indentedSubtaskCount(subtask)
+            } +
+            task.original.notes.fold(0) { accumulator, note ->
+                accumulator + indentedNoteCount(note)
+            }
+    }
+}
+
+/**
+ * Recursive method to get the number of indented subtasks.
+ */
+fun indentedSubtaskCount(task: Task) : Int {
     return if (task.subtasks.isEmpty() && task.notes.isEmpty()) {
         0
     } else {
         task.subtasks.size +
-            task.notes.size +
-            task.subtasks.fold(0) { accumulator, subtask ->
-                accumulator + indentedCount(subtask)
-            } +
-            task.notes.fold(0) { accumulator, note ->
-                accumulator + indentedNoteCount(note)
-            }
+                task.notes.size +
+                task.subtasks.fold(0) { accumulator, subtask ->
+                    accumulator + indentedCount(subtask)
+                } +
+                task.notes.fold(0) { accumulator, note ->
+                    accumulator + indentedNoteCount(note)
+                }
     }
 }
 
