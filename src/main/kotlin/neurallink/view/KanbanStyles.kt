@@ -30,6 +30,8 @@ class KanbanStyles {
             height = 25.px
             marginRight = 0.px
             marginLeft = auto
+            marginTop = 4.px
+            marginBottom = 8.px
         }
 
         val SELECT_INPUT = Style(".nl-select-input") {
@@ -43,19 +45,24 @@ class KanbanStyles {
             width = 100.perc
             overflowX = Overflow.AUTO
             overflowY = Overflow.HIDDEN
+            background = Background(color = Color.hex(0x343434))
         }
 
         val KANBAN_COLUMN = Style(".nl-kanban-column") {
             width = 272.px
             minWidth = 272.px
-            margin = 15.px
+            margin = 10.px
             maxHeight = 95.perc
-            maxHeight = 95.perc
+            background = Background(color = Color.hex(0x1e1e1e))
+        }
+
+        val KANBAN_COLUMN_NAME = Style(".nl-kanban-column-name") {
+            marginBottom = 3.px
         }
 
         val KANBAN_CARD_LIST = Style(".nl-kanban-card-list") {
-            width = 272.px
-            minWidth = 272.px
+            width = 266.px
+            minWidth = 266.px
             height = 100.perc
             overflowX = Overflow.HIDDEN
             overflowY = Overflow.AUTO
@@ -68,12 +75,19 @@ class KanbanStyles {
             paddingBottom = 15.px
             paddingLeft = 5.px
             paddingRight = 5.px
-            border = Border(1.px, BorderStyle.SOLID, Color.name(Col.WHITE))
+            border = Border(1.px, BorderStyle.SOLID, Color.hex(0x5a5a5a))
         }
 
         val KANBAN_TAGS_DUE_PANEL = Style(".nl-kanban-tags-due-panel") {
             position = Position.RELATIVE
-            paddingLeft = 3.px
+            marginLeft = (-5).px
+            paddingLeft = 5.px
+            marginRight = (-5).px
+            paddingRight = 5.px
+            paddingBottom = 5.px
+            marginTop = (-5).px
+            paddingTop = 5.px
+            background = Background(color = Color.hex(0x181818))
         }
 
         val KANBAN_TAG_LIST = Style(".nl-kanban-tag-list") {
@@ -92,6 +106,14 @@ class KanbanStyles {
         }
 
         val KANBAN_DESCRIPTION = Style(".nl-kanban-description") {
+            background = Background(color = Color.hex(0x181818))
+            paddingTop = 7.px
+            marginTop = (-5).px
+            marginLeft = (-5).px
+            paddingLeft = 5.px
+            marginRight = (-5).px
+            paddingRight = 5.px
+            borderBottom = Border(1.px, BorderStyle.SOLID, Color.hex(0x5a5a5a))
         }
 
         val KANBAN_SUBTASKS = Style(".nl-kanban-subtask-list") {
@@ -133,8 +155,8 @@ class KanbanStyles {
             paddingRight = 5.px
             fontSize = 11.px
             position = Position.ABSOLUTE
-            top = (-5).px
-            right = (-5).px
+            top = (-1).px
+            right = (-1).px
         }
 
         val KANBAN_SOURCE = Style(".nl-kanban-source") {

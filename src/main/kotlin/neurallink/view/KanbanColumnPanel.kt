@@ -12,6 +12,7 @@ class KanbanColumnPanel(val status: StatusTag, cards: List<KanbanCardPanel>): VP
     init {
         addCssStyle(KanbanStyles.KANBAN_COLUMN)
         div {
+            addCssStyle(KanbanStyles.KANBAN_COLUMN_NAME)
             +status.displayName
         }
         cardPanel = vPanel(spacing = 10, alignItems = AlignItems.CENTER) {
