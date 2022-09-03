@@ -92,6 +92,7 @@ class KanbanStyles {
             paddingLeft = 5.px
             paddingRight = 5.px
             border = Border(1.px, BorderStyle.SOLID, Color.hex(0x5a5a5a))
+            borderLeft = Border(5.px, BorderStyle.SOLID, Color.hex(0x5a5a5a))
         }
 
         val KANBAN_TAGS_DUE_PANEL = Style(".nl-kanban-tags-due-panel") {

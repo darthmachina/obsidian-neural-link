@@ -2,9 +2,32 @@ package neurallink.view
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kvision.core.Color
+import neurallink.core.model.Tag
+import neurallink.test.TestFactory
 
 @Suppress("unused")
 class ViewFunctionsTest : StringSpec({
+    "findTagColor finds the right color for a tag" {
+        val tags = setOf(Tag("test"))
+        val tagColors = mapOf(Pair(Tag("test"), "ffffff"))
+
+        val expectedColor = Color("#${tagColors[Tag("test")]}")
+        val actualColor = findTagColor(tags, tagColors)
+
+        actualColor.color shouldBe expectedColor.color
+    }
+
+    "findTagColor returns the default Color if not tag exists" {
+        val tags = setOf(Tag("foo"))
+        val tagColors = mapOf(Pair(Tag("test"), "ffffff"))
+
+        val expectedColor = Color("#5a5a5a")
+        val actualColor = findTagColor(tags, tagColors)
+
+        actualColor.color shouldBe expectedColor.color
+    }
+
     // markdownBoldToStyle()
     "markdownBoldToStyle works on regular text" {
         val testText = "Test **bold** text"
