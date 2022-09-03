@@ -32,6 +32,22 @@ class KanbanStyles {
             marginLeft = auto
             marginTop = 4.px
             marginBottom = 8.px
+
+            style("div") {
+                style("div") {
+                    style("label") {
+                        position = Position.RELATIVE
+                        top = (-2).px
+                    }
+                }
+                style(".form-check") {
+                    marginTop = 6.px
+                }
+            }
+        }
+
+        val KANBAN_HEADER_LABEL = Style(".nl-kanban-header-label") {
+            marginTop = 5.px
         }
 
         val SELECT_INPUT = Style(".nl-select-input") {
