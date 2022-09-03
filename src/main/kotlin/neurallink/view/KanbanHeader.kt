@@ -74,7 +74,7 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
         div {
             checkBox(label = "!Future") {
                 inline = true
-                minWidth = 71.px
+                minWidth = 72.px
             }.onClick {
                 store.dispatch(FilterFutureDate(this.value))
             }
