@@ -104,6 +104,7 @@ class Reducers {
         logger.debug { "copyAndPopulateKanban()" }
         return store.copy(
             tasks = tasks,
+            sourceFiles = getAllSourceFiles(store),
             kanbanColumns = createKanbanMap(
                 filterTasks(tasks, store.filterValue),
                 store.settings.columnTags
@@ -116,6 +117,7 @@ class Reducers {
         val allTasks = store.tasks.plus(tasks)
         return store.copy(
             tasks = allTasks,
+            sourceFiles = getAllSourceFiles(store),
             kanbanColumns = createKanbanMap(
                 filterTasks(allTasks, store.filterValue),
                 store.settings.columnTags
@@ -129,6 +131,7 @@ class Reducers {
             .map { tasks ->
                 store.copy(
                     tasks = tasks,
+                    sourceFiles = getAllSourceFiles(store), // TODO Try to just remove file that was deleted
                     kanbanColumns = createKanbanMap(
                         filterTasks(tasks, store.filterValue),
                         store.settings.columnTags
@@ -290,6 +293,7 @@ class Reducers {
 
         return store.copy(
             tasks = clonedTaskList,
+            sourceFiles = if (store.sourceFiles.contains(file.value.dropLast(3))) store.sourceFiles else getAllSourceFiles(store),
             kanbanColumns = createKanbanMap(
                 filterTasks(clonedTaskList, store.filterValue),
                 store.settings.columnTags

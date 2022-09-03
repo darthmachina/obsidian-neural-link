@@ -44,7 +44,8 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             NeuralLinkPluginSettings6.default(),
             listOf(),
             mapOf(),
-            NoneFilterValue()
+            NoneFilterValue(),
+            listOf()
         ),
         applyMiddleware(loggerMiddleware)
     ).apply {
