@@ -83,7 +83,7 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
             addCssStyle(KanbanStyles.KANBAN_HEADER_LABEL)
             +"Page: "
         }
-        fileSelect = simpleSelectInput(getAllFiles(), emptyOption = true) {
+        fileSelect = simpleSelectInput(createSourcefileSelectList(store.state.sourceFiles), emptyOption = true) {
             addCssStyle(KanbanStyles.SELECT_INPUT)
             style("select > option") {
                 background = Background(color = Color.name(Col.BLACK))
@@ -98,6 +98,9 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
                     filterByFile(it)
                 }
             }
+        }
+        store.subscribe {
+            fileSelect.options = createSourcefileSelectList(store.state.sourceFiles)
         }
     }
 
@@ -155,19 +158,6 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
     }
 
     /**
-     * Gets all source files on all tasks.
-     */
-    private fun getAllFiles() : List<StringPair> {
-        return store.state.tasks
-            .map { task ->
-                task.file.value
-            }
-            .distinct()
-            .sorted()
-            .map { it to it.dropLast(3) }
-    }
-
-    /**
      * Returns a simplistic list of all dataview field/value pairs; ignoring the TASK_ORDER_PROPERTY.
      */
     private fun getAllDataviewFields() : List<StringPair> {
@@ -184,5 +174,11 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
             .sorted()
             .map { it to it }
             .toList()
+    }
+
+    private fun createSourcefileSelectList(files: List<String>) : List<StringPair> {
+        return files.map { file ->
+            "$file.md" to file
+        }
     }
 }

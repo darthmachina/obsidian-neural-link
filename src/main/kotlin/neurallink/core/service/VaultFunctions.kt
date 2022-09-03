@@ -334,6 +334,19 @@ fun indentedCount(task: Task) : Int {
 }
 
 /**
+ * Gets all source files on all tasks.
+ */
+fun getAllSourceFiles(tasks: List<Task>) : List<String> {
+    return tasks
+        .map { task ->
+            task.file.value
+        }
+        .distinct()
+        .sorted()
+        .map { it.dropLast(3) }
+}
+
+/**
  * Recursive method to get the number of indented subtasks.
  */
 fun indentedSubtaskCount(task: Task) : Int {

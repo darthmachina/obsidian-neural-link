@@ -12,5 +12,6 @@ data class NeuralLinkModel(
     val settings: NeuralLinkPluginSettings6,
     val tasks: List<Task>,
     val kanbanColumns: Map<StatusTag,List<Task>>,
-    val filterValue: FilterValue<out Any>
+    val filterValue: FilterValue<out Any>,
+    val sourceFiles: List<String>
 )
