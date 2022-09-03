@@ -1,11 +1,23 @@
 package neurallink.view
 
-import io.kvision.html.Span
+import io.kvision.core.Color
+import neurallink.core.model.Tag
 import neurallink.core.service.BOLD_REGEX
 import neurallink.core.service.ITALIC_REGEX
 import neurallink.core.service.WIKILINK_REGEX
 
+val DEFAULT_AREA_COLOR = Color.hex(0x5a5a5a)
 
+fun findTagColor(cardTags: Set<Tag>, tagColors: Map<Tag, String>) : Color {
+    cardTags.forEach { tag ->
+        if (tag in tagColors.keys) {
+            return Color("#" + tagColors[tag]!!)
+        }
+    }
+    return DEFAULT_AREA_COLOR
+}
+
+// ********* Markdown Functions *********
 /**
  * Creates a new string converting Italics and Bold to HTML
  */

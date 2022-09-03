@@ -33,10 +33,14 @@ class KanbanCardPanel(
 ): VPanel(spacing = 5) {
     init {
         addCssStyle(KanbanStyles.KANBAN_CARD)
+        borderLeft = Border(5.px, BorderStyle.SOLID, findTagColor(task.tags, store.state.settings.tagColors))
         // Description
         // Tags & Due
         val filteredTags = task.tags
-            .filter { tag -> tag != status.tag }
+            .filter { tag ->
+                tag != status.tag
+                        && tag !in store.state.settings.tagColors.keys
+            }
             .plus(task.subtasks.flatMap { subtask -> subtask.tags })
             .distinct()
         if (filteredTags.isNotEmpty() || task.dueOn != null) {
