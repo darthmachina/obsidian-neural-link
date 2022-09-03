@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Build and Test
 on: [ push, pull_request ]
 jobs:
     build:
@@ -17,5 +17,5 @@ jobs:
               uses: actions/checkout@v2
 
             # Build application
-            - name: Test and Build
+            - name: Build and Test
               run: ./gradlew build
