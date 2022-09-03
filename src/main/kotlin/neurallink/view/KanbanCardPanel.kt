@@ -171,6 +171,7 @@ class KanbanCardPanel(
     private fun createSubtaskPanel() : VPanel {
         return vPanel {
             addCssStyle(KanbanStyles.KANBAN_SUBTASKS)
+            marginBottom = 0.px
             task.subtasks.forEach { subtask ->
                 add(createCheckbox(subtask) {
                     store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))

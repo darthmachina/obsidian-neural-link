@@ -114,17 +114,39 @@ class KanbanStyles {
             marginRight = (-5).px
             paddingRight = 5.px
             borderBottom = Border(1.px, BorderStyle.SOLID, Color.hex(0x5a5a5a))
+
+            style("div") {
+                style("div") {
+                    style("label") {
+                        position = Position.RELATIVE
+                        top = (-2).px
+                    }
+                }
+            }
         }
 
         val KANBAN_SUBTASKS = Style(".nl-kanban-subtask-list") {
             paddingLeft = 20.px
             fontSize = 75.perc
+
+            style("div") {
+                style("div") {
+                    style("label") {
+                        position = Position.RELATIVE
+                        top = (-2).px
+                    }
+                }
+            }
         }
 
         val KANBAN_NOTES = Style(".nl-kanban-notes-list") {
-            marginLeft = 8.px
+            marginLeft = 4.px
             marginTop = 0.px
             fontSize = 75.perc
+
+            style("li") {
+                marginBottom = 5.px
+            }
         }
 
         val KANBAN_SUBNOTES = Style(".nl-kanban-subnotes-list") {
