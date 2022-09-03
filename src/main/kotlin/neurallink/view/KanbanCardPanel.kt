@@ -171,6 +171,7 @@ class KanbanCardPanel(
     private fun createSubtaskPanel() : VPanel {
         return vPanel {
             addCssStyle(KanbanStyles.KANBAN_SUBTASKS)
+            marginBottom = 0.px
             task.subtasks.forEach { subtask ->
                 add(createCheckbox(subtask) {
                     store.dispatch(SubtaskCompleted(task.id, subtask.id, this.value))
@@ -221,11 +222,8 @@ class KanbanCardPanel(
             div {
                 addCssStyle(KanbanStyles.KANBAN_SOURCE)
                 button(text = task.file.value.dropLast(3).split("/").last()) {
+                    addCssStyle(KanbanStyles.KANBAN_BUTTON)
                     size = ButtonSize.SMALL
-                    padding = 1.px
-                    paddingBottom = 0.px
-                    marginBottom = 4.px
-                    marginRight = (-3).px
                     cursor = Cursor.POINTER
                 }.onClick {
                     logger.debug { "going to source file" }

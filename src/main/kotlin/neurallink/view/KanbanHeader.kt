@@ -27,16 +27,34 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
 
     init {
         addCssStyle(KanbanStyles.KANBAN_HEADER)
-        div { +"Filters" }
         div {
-            checkBox(label = "!Future") {
-                inline = true
-                minWidth = 60.px
-            }.onClick {
-                store.dispatch(FilterFutureDate(this.value))
+            addCssStyle(KanbanStyles.KANBAN_HEADER_LABEL)
+            +"Filters"
+        }
+        div {
+            addCssStyle(KanbanStyles.KANBAN_HEADER_LABEL)
+            +"Dataview: "
+        }
+        dataviewSelect = simpleSelectInput(getAllDataviewFields(), emptyOption = true) {
+            addCssStyle(KanbanStyles.SELECT_INPUT)
+            style("select > option") {
+                background = Background(color = Color.name(Col.BLACK))
+            }
+
+            var init = true
+            subscribe {
+                logger.debug { "fileSelect.subscribe(): $it" }
+                if (init) {
+                    init = false
+                } else {
+                    filterByDataviewValue(it)
+                }
             }
         }
-        div { +"Tag: " }
+        div {
+            addCssStyle(KanbanStyles.KANBAN_HEADER_LABEL)
+            +"Tag: "
+        }
         tagSelect = simpleSelectInput(getAllTags(), emptyOption = true) {
             addCssStyle(KanbanStyles.SELECT_INPUT)
             style("select > option") {
@@ -53,7 +71,18 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
                 }
             }
         }
-        div { +"Page: " }
+        div {
+            checkBox(label = "!Future") {
+                inline = true
+                minWidth = 71.px
+            }.onClick {
+                store.dispatch(FilterFutureDate(this.value))
+            }
+        }
+        div {
+            addCssStyle(KanbanStyles.KANBAN_HEADER_LABEL)
+            +"Page: "
+        }
         fileSelect = simpleSelectInput(getAllFiles(), emptyOption = true) {
             addCssStyle(KanbanStyles.SELECT_INPUT)
             style("select > option") {
@@ -67,23 +96,6 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
                     init = false
                 } else {
                     filterByFile(it)
-                }
-            }
-        }
-        div { +"Dataview: " }
-        dataviewSelect = simpleSelectInput(getAllDataviewFields(), emptyOption = true) {
-            addCssStyle(KanbanStyles.SELECT_INPUT)
-            style("select > option") {
-                background = Background(color = Color.name(Col.BLACK))
-            }
-
-            var init = true
-            subscribe {
-                logger.debug { "fileSelect.subscribe(): $it" }
-                if (init) {
-                    init = false
-                } else {
-                    filterByDataviewValue(it)
                 }
             }
         }
