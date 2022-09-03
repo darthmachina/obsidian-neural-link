@@ -336,8 +336,8 @@ fun indentedCount(task: Task) : Int {
 /**
  * Gets all source files on all tasks.
  */
-fun getAllSourceFiles(store: NeuralLinkModel) : List<String> {
-    return store.tasks
+fun getAllSourceFiles(tasks: List<Task>) : List<String> {
+    return tasks
         .map { task ->
             task.file.value
         }
