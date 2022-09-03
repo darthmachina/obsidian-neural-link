@@ -30,9 +30,13 @@ class KanbanView(
         return "Neural Link"
     }
 
+    override fun getIcon(): String {
+        return "checkbox-glyph"
+    }
+
     override fun onOpen(): Promise<Unit> {
         logger.debug { "KanbanView.onOpen()" }
-
+        icon = "checkbox-glyph"
         startApplication(
             ::KanbanApp,
             null,
