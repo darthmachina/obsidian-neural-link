@@ -43,7 +43,7 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
 
             var init = true
             subscribe {
-                logger.debug { "fileSelect.subscribe(): $it" }
+                logger.debug { "dataviewSelect.subscribe(): $it" }
                 if (init) {
                     init = false
                 } else {

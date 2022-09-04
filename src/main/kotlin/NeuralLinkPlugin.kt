@@ -40,6 +40,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     private val store = createStore(
         reducer,
         NeuralLinkModel(
+            false,
             this,
             NeuralLinkPluginSettings6.default(),
             listOf(),
@@ -60,32 +61,35 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     override fun onload() {
         KotlinLoggingConfiguration.LOG_LEVEL = KotlinLoggingLevel.DEBUG
         // TODO Need to wrap this around something so it's delayed on app startup
-        loadSettingAndTaskModel()
+        app.workspace.onLayoutReady {
+            logger.info { "Layout ready, loading settings and model"}
+            loadSettingAndTaskModel()
 
-        this.registerEvent(this.app.metadataCache.on("changed") { file ->
-            fileModifiedEvent.processEvent(file)
-        })
-        this.registerEvent(this.app.metadataCache.on("deleted") { file ->
-            fileDeletedEvent.processEvent(file)
-        })
-        this.registerEvent(this.app.metadataCache.on("created") { file ->
-            fileCreatedEvent.processEvent(file)
-        })
+            registerEvent(app.metadataCache.on("changed") { file ->
+                fileModifiedEvent.processEvent(file)
+            })
+            registerEvent(app.metadataCache.on("deleted") { file ->
+                fileDeletedEvent.processEvent(file)
+            })
+            registerEvent(app.metadataCache.on("created") { file ->
+                fileCreatedEvent.processEvent(file)
+            })
 
-        // Add Settings tab
-        addSettingTab(NeuralLinkPluginSettingsTab(app, this, store))
+            // Add Settings tab
+            addSettingTab(NeuralLinkPluginSettingsTab(app, this, store))
 
-        // Kanban View
-        this.registerView(KanbanView.VIEW_TYPE) { leaf ->
-            KanbanView(leaf, store)
+            // Kanban View
+            registerView(KanbanView.VIEW_TYPE) { leaf ->
+                KanbanView(leaf, store)
+            }
+            addCommand(NeuralLinkCommand(
+                "neural-link-kanban",
+                "Open Neural Link Kanban") {
+                activateView()
+            })
+
+            logger.debug { "NeuralLinkPlugin onload() finished" }
         }
-        this.addCommand(NeuralLinkCommand(
-            "neural-link-kanban",
-            "Open Neural Link Kanban") {
-            activateView()
-        })
-
-        logger.debug { "NeuralLinkPlugin onload()" }
     }
 
     override fun onunload() {

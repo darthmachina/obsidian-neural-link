@@ -8,6 +8,7 @@ import neurallink.core.store.FilterValue
  * Global data store. Immutable and meant to be used with Redux.
  */
 data class NeuralLinkModel(
+    val modelLoaded: Boolean,
     val plugin: NeuralLinkPlugin,
     val settings: NeuralLinkPluginSettings6,
     val tasks: List<Task>,

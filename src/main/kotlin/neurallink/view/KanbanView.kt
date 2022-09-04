@@ -7,6 +7,7 @@ import io.kvision.panel.root
 import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import org.reduxkotlin.Store
+import org.reduxkotlin.StoreSubscription
 import kotlin.js.Promise
 
 private val logger = KotlinLogging.logger("KanbanView")
@@ -48,7 +49,24 @@ class KanbanView(
     }
 
     inner class KanbanApp: Application() {
+        var unsubscribe: StoreSubscription? = null
+
         override fun start() {
+            if (!store.state.modelLoaded) {
+                logger.debug { "Model not loaded, setting up listener" }
+                unsubscribe = store.subscribe {
+                    if (store.state.modelLoaded) {
+                        logger.debug { "Model loaded, adding view content" }
+                        addContent()
+                        unsubscribe?.let { it() }
+                    }
+                }
+            } else {
+                addContent()
+            }
+        }
+
+        private fun addContent() {
             root(contentEl) {
                 addCssStyle(KanbanStyles.ROOT)
                 add(KanbanBoard(leaf, store))
