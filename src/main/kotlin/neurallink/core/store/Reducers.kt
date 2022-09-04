@@ -108,7 +108,8 @@ class Reducers {
             kanbanColumns = createKanbanMap(
                 filterTasks(tasks, store.filterValue),
                 store.settings.columnTags
-            )
+            ),
+            modelLoaded = true
         ).right()
     }
 

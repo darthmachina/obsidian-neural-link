@@ -58,11 +58,14 @@ class KanbanBoard(
         logger.debug { "updateCacheColumns(): $columns" }
         boardCache.columns = columns
         boardCache.tasks.clear()
-        boardCache.tasks.putAll(store.state.kanbanColumns)
 
-        columnsPanel.removeAll()
-        boardCache.columns.forEach { statusTag ->
-            columnsPanel.addColumn(statusTag, createColumn(statusTag, boardCache.tasks[statusTag]!!, leaf))
+        if (store.state.kanbanColumns.isNotEmpty()) {
+            boardCache.tasks.putAll(store.state.kanbanColumns)
+
+            columnsPanel.removeAll()
+            boardCache.columns.forEach { statusTag ->
+                columnsPanel.addColumn(statusTag, createColumn(statusTag, boardCache.tasks[statusTag]!!, leaf))
+            }
         }
     }
 
