@@ -5,6 +5,7 @@ import mu.KotlinLoggingConfiguration
 import mu.KotlinLoggingLevel
 import neurallink.core.event.FileCreatedEvent
 import neurallink.core.event.FileDeletedEvent
+import neurallink.core.model.FilterOptions
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
@@ -45,7 +46,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             NeuralLinkPluginSettings6.default(),
             listOf(),
             mapOf(),
-            NoneFilterValue(),
+            FilterOptions(),
             listOf()
         ),
         applyMiddleware(loggerMiddleware)
