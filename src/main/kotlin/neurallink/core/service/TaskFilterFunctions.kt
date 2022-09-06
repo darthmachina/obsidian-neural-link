@@ -1,10 +1,12 @@
 package neurallink.core.service
 
+import arrow.core.Some
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import mu.KotlinLogging
+import neurallink.core.model.FilterOptions
 import neurallink.core.model.Task
 import neurallink.core.store.*
 
@@ -22,32 +24,22 @@ fun pathInPathList(path: String, paths: List<String>) : Boolean {
         }
 }
 
-fun filterTasks(tasks: List<Task>, filterValue: FilterValue<out Any>) : List<Task> {
-    return when (filterValue) {
-        is NoneFilterValue -> tasks
-        is TagFilterValue -> tasks.filter { task -> task.tags.contains(filterValue.filterValue) }
-        is FileFilterValue -> tasks.filter { task -> task.file == filterValue.filterValue }
-        is DataviewFilterValue -> tasks.filter { task ->
-            task.dataviewFields.containsKey(filterValue.filterValue.value.first)
-            // TODO This is only filtering on the key being present, not using the value at all
-        }
-        is FutureDateFilterValue -> {
-            // TODO Is TimeZone here going to affect anything?
+fun filterTasks(tasks: List<Task>, filters: FilterOptions) : List<Task> {
+    return tasks.filter { task ->
+        filters.tags.fold({true}, { tagFilter -> task.tags.contains(tagFilter.filterValue) })
+                && filters.page.fold({true}, {pageFilter -> task.file == pageFilter.filterValue})
+                && filters.dataview.fold({true}, {dataviewFilter -> task.dataviewFields.containsKey(dataviewFilter.filterValue.value.first)})
+                && Some(filters.hideFuture).fold({false}, {futureFilter ->
             Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                 .let { LocalDate(it.year, it.month, it.dayOfMonth) }
-                .let {
-                    logger.debug { "Filtering using $it" }
-                    it
-                }
                 .let { date ->
-                    tasks.filter {
-                        if (filterValue.filterValue) {
-                            if (it.dueOn == null) true else it.dueOn <= date
-                        } else {
-                            true
-                        }
+                    if (futureFilter) {
+                        if (task.dueOn == null) true else task.dueOn <= date
+                    } else {
+                        true
                     }
                 }
-        }
+
+        })
     }
 }

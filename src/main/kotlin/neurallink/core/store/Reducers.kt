@@ -73,7 +73,7 @@ class Reducers {
                 settings = newSettings,
                 tasks = clonedTaskList,
                 kanbanColumns = createKanbanMap(
-                    filterTasks(clonedTaskList, store.filterValue),
+                    filterTasks(clonedTaskList, store.filterOptions),
                     newSettings.columnTags
                 )
             ).right()
@@ -83,7 +83,7 @@ class Reducers {
                 settings = newSettings,
                 tasks = clonedTaskList,
                 kanbanColumns = createKanbanMap(
-                    filterTasks(clonedTaskList, store.filterValue),
+                    filterTasks(clonedTaskList, store.filterOptions),
                     newSettings.columnTags
                 )
             ).right()
@@ -106,7 +106,7 @@ class Reducers {
             tasks = tasks,
             sourceFiles = getAllSourceFiles(tasks),
             kanbanColumns = createKanbanMap(
-                filterTasks(tasks, store.filterValue),
+                filterTasks(tasks, store.filterOptions),
                 store.settings.columnTags
             ),
             modelLoaded = true
@@ -120,7 +120,7 @@ class Reducers {
             tasks = allTasks,
             sourceFiles = getAllSourceFiles(allTasks),
             kanbanColumns = createKanbanMap(
-                filterTasks(allTasks, store.filterValue),
+                filterTasks(allTasks, store.filterOptions),
                 store.settings.columnTags
             )
         ).right()
@@ -134,7 +134,7 @@ class Reducers {
                     tasks = tasks,
                     sourceFiles = getAllSourceFiles(tasks), // TODO Try to just remove file that was deleted
                     kanbanColumns = createKanbanMap(
-                        filterTasks(tasks, store.filterValue),
+                        filterTasks(tasks, store.filterOptions),
                         store.settings.columnTags
                     )
                 )
@@ -187,7 +187,7 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterValue),
+                filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
             )
         ).right()
@@ -225,7 +225,7 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterValue),
+                filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
             )
         ).right()
@@ -248,7 +248,7 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterValue),
+                filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
             )
         ).right()
@@ -279,7 +279,7 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterValue),
+                filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
             )
         ).right()
@@ -296,7 +296,7 @@ class Reducers {
             tasks = clonedTaskList,
             sourceFiles = if (store.sourceFiles.contains(file.value.dropLast(3))) store.sourceFiles else getAllSourceFiles(store.tasks),
             kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterValue),
+                filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
             )
         ).right()
@@ -306,54 +306,66 @@ class Reducers {
      * Filters the task list according to the given tag; a null tag means there should be no filter.
      */
     fun filterByTag(store: NeuralLinkModel, tag: String?) : Either<NeuralLinkError,NeuralLinkModel> {
-        val filterValue = if (tag != null) TagFilterValue(Tag(tag)) else NoneFilterValue()
-        return store.copy(
-            kanbanColumns = createKanbanMap(
-                filterTasks(store.tasks, filterValue),
-                store.settings.columnTags
-            ),
-            filterValue = filterValue
-        ).right()
+        logger.debug { "filterByTag(): $tag" }
+        return store.filterOptions
+            .copy(tags = if (tag != null) TagFilterValue(Tag(tag)).some() else None)
+            .let { filterOptions ->
+                store.copy(
+                    kanbanColumns = createKanbanMap(
+                        filterTasks(store.tasks, filterOptions),
+                        store.settings.columnTags
+                    ),
+                    filterOptions = filterOptions
+                ).right()
+            }
     }
 
     fun filterByFile(store: NeuralLinkModel, file: String?) : Either<NeuralLinkError,NeuralLinkModel> {
         logger.debug { "filterByFile(): $file" }
-        val filterValue = if (file != null) FileFilterValue(TaskFile(file)) else NoneFilterValue()
-        return store.copy(
-            kanbanColumns = createKanbanMap(
-                filterTasks(store.tasks, filterValue),
-                store.settings.columnTags
-            ),
-            filterValue = filterValue
-        ).right()
+        return store.filterOptions
+            .copy(page = if (file != null) FileFilterValue(TaskFile(file)).some() else None)
+            .let { filterOptions ->
+                store.copy(
+                    kanbanColumns = createKanbanMap(
+                        filterTasks(store.tasks, filterOptions),
+                        store.settings.columnTags
+                    ),
+                    filterOptions = filterOptions
+                ).right()
+            }
     }
 
     fun filterByDataviewValue(store: NeuralLinkModel, value: String?) : Either<NeuralLinkError,NeuralLinkModel> {
-        val filterValue = if (value != null) {
-            val dataview =
-                value?.split("::")
-            DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1])))
-        } else {
-            NoneFilterValue()
-        }
-        return store.copy(
-            kanbanColumns = createKanbanMap(
-                filterTasks(store.tasks, filterValue),
-                store.settings.columnTags
-            ),
-            filterValue = filterValue
-        ).right()
+        logger.debug { "filterByDataviewValue(): $value" }
+        return store.filterOptions
+            .copy(dataview = value?.split("::")?.let { dataview ->
+                DataviewFilterValue(DataviewPair(DataviewField(dataview[0]) to DataviewValue(dataview[1]))).some()
+            }
+                ?: None)
+            .let { filterOptions ->
+                store.copy(
+                    kanbanColumns = createKanbanMap(
+                        filterTasks(store.tasks, filterOptions),
+                        store.settings.columnTags
+                    ),
+                    filterOptions = filterOptions
+                ).right()
+            }
     }
 
     fun filterFutureDate(store: NeuralLinkModel, filter: Boolean) : Either<NeuralLinkError,NeuralLinkModel> {
-        val filterValue = FutureDateFilterValue(filter)
-        return store.copy(
-            kanbanColumns = createKanbanMap(
-                filterTasks(store.tasks, filterValue),
-                store.settings.columnTags
-            ),
-            filterValue = filterValue
-        ).right()
+        logger.debug { "filterByFutureDate(): $filter" }
+        return store.filterOptions
+            .copy(hideFuture = filter)
+            .let { filterOptions ->
+                store.copy(
+                    kanbanColumns = createKanbanMap(
+                        filterTasks(store.tasks, filterOptions),
+                        store.settings.columnTags
+                    ),
+                    filterOptions = filterOptions
+                ).right()
+            }
     }
 }
 
