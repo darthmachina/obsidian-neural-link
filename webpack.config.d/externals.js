@@ -1,11 +1,11 @@
- if (config.loggers !== undefined || false) {
+ // if (config.loggers !== undefined || false) {
     config.resolve = {
         alias: {
             obsidian: '../../../../../test-resources/obsidian.js',
         }
     };
- } else {
-     config.externals = {
-         obsidian: "obsidian"
-     }
- }
+ // } else {
+ //     config.externals = {
+ //         obsidian: "obsidian"
+ //     }
+ // }
