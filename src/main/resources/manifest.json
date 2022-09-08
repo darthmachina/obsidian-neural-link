@@ -1,7 +1,7 @@
 {
   "id": "obsidian-neural-link",
   "name": "Neural Link",
-  "version": "0.7.7-SNAPSHOT",
+  "version": "1.0.0-SNAPSHOT",
   "minAppVersion": "0.12.17",
   "description": "Collections of tools to automate Obsidian workflows",
   "author": "darthmachina",

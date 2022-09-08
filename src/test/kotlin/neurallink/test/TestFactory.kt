@@ -20,16 +20,19 @@ class TestFactory {
             file: String = randomString(10) + ".md",
             description: String = randomString(20),
             subtasks: List<Task> = emptyList(),
-            notes: List<Note> = emptyList()
+            notes: List<Note> = emptyList(),
+            tags: Set<Tag> = emptySet(),
+            dueOn: DueOn? = null,
+            dataviewFields: Map<DataviewField,DataviewValue<out Comparable<*>>> = emptyMap()
         ) : Task {
             return Task(
                 TaskFile(file),
                 FilePosition(if (position == -1) Random.nextInt(0, 100) else position),
                 Description(description),
+                dueOn,
                 null,
-                null,
-                emptySet(),
-                emptyMap<DataviewField,DataviewValue<out Comparable<*>>>().toDataviewMap(),
+                tags,
+                dataviewFields.toDataviewMap(),
                 false,
                 subtasks,
                 notes,
