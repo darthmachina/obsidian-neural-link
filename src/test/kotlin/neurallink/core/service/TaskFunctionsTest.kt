@@ -1,5 +1,6 @@
 package neurallink.core.service
 
+import io.kotest.assertions.arrow.core.shouldBeSome
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -20,7 +21,9 @@ class TaskFunctionsTest : StringSpec({
         fileTasks[0] = fileTasks[0].copy(description = Description("Changed"))
 
         val actualTasks = changedTasks("testfile.md", fileTasks, vaultTasks)
-        actualTasks shouldHaveSize 1
-        actualTasks[0].description.value shouldBe "Changed"
+        val modifiedTasks = actualTasks.shouldBeSome()
+        modifiedTasks.modified shouldHaveSize 1
+        modifiedTasks.modified[0].description.value shouldBe "Changed"
+        modifiedTasks.removed shouldBe false
     }
 })
