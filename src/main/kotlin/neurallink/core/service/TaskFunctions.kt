@@ -93,5 +93,11 @@ fun changedTasks(file: String, fileTasks: List<Task>, storeTasks: List<Task>) : 
 
     logger.debug { "ReducerUtils.changedTasks(): $fileTasks, $storeFileTasks" }
     // TODO Detecting differences here is problematic, just do a minus() and for removed we know if fileTasks size is less (but that's not exhaustive
-    return ModifiedTasks(fileTasks.minus(storeFileTasks.toSet()), fileTasks.size < storeTasks.size).some()
+    val changedTasks = fileTasks.minus(storeFileTasks.toSet())
+    val removed = fileTasks.size < storeTasks.size
+    return if (changedTasks.isNotEmpty() || removed) {
+        ModifiedTasks(changedTasks, removed).some()
+    } else {
+        None
+    }
 }
