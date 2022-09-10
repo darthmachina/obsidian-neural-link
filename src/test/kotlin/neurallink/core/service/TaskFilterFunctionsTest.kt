@@ -9,7 +9,6 @@ import kotlinx.datetime.LocalDate
 import neurallink.core.model.DataviewField
 import neurallink.core.model.DataviewPair
 import neurallink.core.model.DataviewValue
-import neurallink.core.model.Description
 import neurallink.core.model.DueOn
 import neurallink.core.model.FilterOptions
 import neurallink.core.model.Tag

@@ -1,13 +1,17 @@
 package neurallink.core.service
 
 import arrow.core.Either
+import arrow.core.None
+import arrow.core.Option
+import arrow.core.some
 import mu.KotlinLogging
-import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.*
 import neurallink.core.service.kanban.filterOutStatusTags
 import neurallink.core.store.IncompleteSubtaskChoice
 
 private val logger = KotlinLogging.logger("TaskFunctions")
+
+data class ModifiedTasks(val modified: List<Task>, val removed: Boolean)
 
 fun Task.deepCopy(): Task {
     logger.debug { "deepCopy()" }
@@ -81,11 +85,23 @@ fun completeTask(
 /**
  * Returns a list of Tasks from a file that have changed from within the store
  */
-fun changedTasks(file: String, fileTasks: List<Task>, store: NeuralLinkModel) : List<Task> {
+fun changedTasks(file: String, fileTasks: List<Task>, storeTasks: List<Task>) : Option<ModifiedTasks> {
     // Take the fileTasks list and subtrack any that are equal to what is already in the store
-    val storeFileTasks = store.tasks.filter { it.file.value == file }
-    if (storeFileTasks.isEmpty()) return emptyList()
+    val storeFileTasks = storeTasks.filter { it.file.value == file }
+    if (storeFileTasks.isEmpty()) return None
 
     logger.debug { "ReducerUtils.changedTasks(): $fileTasks, $storeFileTasks" }
-    return fileTasks.minus(storeFileTasks.toSet())
+    // TODO Detecting differences here is problematic, just do a minus() and for removed we know if fileTasks size is less (but that's not exhaustive
+    val changedTasks = fileTasks.minus(storeFileTasks.toSet())
+    val removed = fileTasks.size < storeFileTasks.size
+    return if (changedTasks.isNotEmpty() || removed) {
+        logger.debug { "Tasks are modified, removed: $removed" }
+        changedTasks.forEach { task ->
+            logger.debug { " - task: ${task.description.value}" }
+        }
+        ModifiedTasks(changedTasks, removed).some()
+    } else {
+        logger.debug { "No modified tasks, returning None" }
+        None
+    }
 }

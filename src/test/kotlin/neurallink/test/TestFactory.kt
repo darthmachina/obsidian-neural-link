@@ -1,5 +1,6 @@
 package neurallink.test
 
+import kotlinx.datetime.LocalDate
 import neurallink.core.model.*
 import kotlin.random.Random
 
@@ -13,6 +14,20 @@ class TestFactory {
 
         fun createTasks(number: Int) : List<Task> {
             return List(number) { createTask() }
+        }
+
+        /**
+         * Create a fully populated Task.
+         *
+         * If more than one will be created future filePositions should account for the 3 rows of this Task.
+         */
+        fun createFullTask(filePosition: Int) : Task {
+            return createTask(
+                subtasks = listOf(createTask(position = filePosition + 1)),
+                notes = listOf(Note(randomString(10), FilePosition(filePosition + 2))),
+                tags = setOf(Tag(randomString(4))),
+                dueOn = DueOn(LocalDate(2021, 1, 1))
+            )
         }
 
         fun createTask(
