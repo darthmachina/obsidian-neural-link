@@ -1,6 +1,5 @@
 package neurallink.core.model
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.uuid.UUID
 
 @Suppress("NON_EXPORTABLE_TYPE", "EXPERIMENTAL_IS_NOT_ENABLED") // List is flagged for this but is valid
@@ -28,7 +27,6 @@ data class Task(
      */
     override fun equals(other: Any?) : Boolean {
         return other is Task &&
-                id == other.id &&
                 file == other.file &&
                 description == other.description &&
                 dueOn == other.dueOn &&
@@ -40,8 +38,7 @@ data class Task(
     }
 
     override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + file.hashCode()
+        var result = file.hashCode()
         result = 31 * result + description.hashCode()
         result = 31 * result + (dueOn?.hashCode() ?: 0)
         result = 31 * result + tags.hashCode()

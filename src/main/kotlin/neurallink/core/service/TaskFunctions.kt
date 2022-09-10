@@ -5,7 +5,6 @@ import arrow.core.None
 import arrow.core.Option
 import arrow.core.some
 import mu.KotlinLogging
-import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.*
 import neurallink.core.service.kanban.filterOutStatusTags
 import neurallink.core.store.IncompleteSubtaskChoice
@@ -94,10 +93,15 @@ fun changedTasks(file: String, fileTasks: List<Task>, storeTasks: List<Task>) : 
     logger.debug { "ReducerUtils.changedTasks(): $fileTasks, $storeFileTasks" }
     // TODO Detecting differences here is problematic, just do a minus() and for removed we know if fileTasks size is less (but that's not exhaustive
     val changedTasks = fileTasks.minus(storeFileTasks.toSet())
-    val removed = fileTasks.size < storeTasks.size
+    val removed = fileTasks.size < storeFileTasks.size
     return if (changedTasks.isNotEmpty() || removed) {
+        logger.debug { "Tasks are modified, removed: $removed" }
+        changedTasks.forEach { task ->
+            logger.debug { " - task: ${task.description.value}" }
+        }
         ModifiedTasks(changedTasks, removed).some()
     } else {
+        logger.debug { "No modified tasks, returning None" }
         None
     }
 }

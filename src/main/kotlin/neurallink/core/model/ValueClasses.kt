@@ -18,9 +18,7 @@ sealed class ValueClass<T : Comparable<T>>(@Transient open val value: T? = null)
 }
 
 data class TaskFile(override val value: String) : ValueClass<String>(value)
-
 data class FilePosition(override val value: Int) : ValueClass<Int>(value)
-
 data class Description(override val value: String) : ValueClass<String>(value)
 
 @Serializable(with = TagSerializer::class)
