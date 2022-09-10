@@ -81,9 +81,9 @@ fun completeTask(
 /**
  * Returns a list of Tasks from a file that have changed from within the store
  */
-fun changedTasks(file: String, fileTasks: List<Task>, store: NeuralLinkModel) : List<Task> {
+fun changedTasks(file: String, fileTasks: List<Task>, storeTasks: List<Task>) : List<Task> {
     // Take the fileTasks list and subtrack any that are equal to what is already in the store
-    val storeFileTasks = store.tasks.filter { it.file.value == file }
+    val storeFileTasks = storeTasks.filter { it.file.value == file }
     if (storeFileTasks.isEmpty()) return emptyList()
 
     logger.debug { "ReducerUtils.changedTasks(): $fileTasks, $storeFileTasks" }
