@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskFile
+import neurallink.core.service.changedTasks
 import neurallink.core.service.pathInPathList
 import neurallink.core.service.readFile
 import neurallink.core.store.FileCreated
@@ -42,11 +43,15 @@ suspend fun processFileEvents(
         when (fileEvent) {
             is FileEventModified -> {
                 val tasks = readFile(store, fileEvent.file, app.vault, app.metadataCache)
-                store.dispatch(ModifyFileTasks(TaskFile(fileEvent.file.path), tasks))
+                if (changedTasks(fileEvent.file.path, tasks, store.state.tasks).isDefined()) {
+                    store.dispatch(ModifyFileTasks(TaskFile(fileEvent.file.path), tasks))
+                }
             }
             is FileEventCreated -> {
                 val tasks = readFile(store, fileEvent.file, app.vault, app.metadataCache)
-                store.dispatch(FileCreated(TaskFile(fileEvent.file.path), tasks))
+                if (changedTasks(fileEvent.file.path, tasks, store.state.tasks).isDefined()) {
+                    store.dispatch(FileCreated(TaskFile(fileEvent.file.path), tasks))
+                }
             }
             is FileEventDeleted -> {
                 store.dispatch(FileDeleted(TaskFile(fileEvent.file.path)))
