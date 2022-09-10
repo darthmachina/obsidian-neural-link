@@ -1,10 +1,8 @@
-import neurallink.core.event.FileModifiedEvent
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import mu.KotlinLoggingConfiguration
 import mu.KotlinLoggingLevel
-import neurallink.core.event.FileCreatedEvent
-import neurallink.core.event.FileDeletedEvent
+import neurallink.core.event.*
 import neurallink.core.model.FilterOptions
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.service.loadFromJson
@@ -12,7 +10,6 @@ import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks
 import neurallink.core.settings.NeuralLinkPluginSettings6
 import neurallink.core.settings.NeuralLinkPluginSettingsTab
-import neurallink.core.store.NoneFilterValue
 import neurallink.core.store.UpdateSettings
 import org.reduxkotlin.applyMiddleware
 import org.reduxkotlin.createStore
@@ -54,11 +51,6 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
         subscribe(::taskModifiedListener)
     }
 
-    // EVENTS
-    private val fileModifiedEvent = FileModifiedEvent(this, store)
-    private val fileDeletedEvent = FileDeletedEvent(this, store)
-    private val fileCreatedEvent = FileCreatedEvent(this, store)
-
     override fun onload() {
         KotlinLoggingConfiguration.LOG_LEVEL = KotlinLoggingLevel.DEBUG
         // TODO Need to wrap this around something so it's delayed on app startup
@@ -66,14 +58,14 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             logger.info { "Layout ready, loading settings and model"}
             loadSettingAndTaskModel()
 
-            registerEvent(app.metadataCache.on("changed") { file ->
-                fileModifiedEvent.processEvent(file)
+            registerEvent(app.metadataCache.on(FileEventType.EVENT_MODIFIED.eventName) { file ->
+                sendFileModifiedEvent(FileEventType.EVENT_MODIFIED, file)
             })
-            registerEvent(app.metadataCache.on("deleted") { file ->
-                fileDeletedEvent.processEvent(file)
+            registerEvent(app.metadataCache.on(FileEventType.EVENT_DELETED.eventName) { file ->
+                sendFileModifiedEvent(FileEventType.EVENT_DELETED, file)
             })
-            registerEvent(app.metadataCache.on("created") { file ->
-                fileCreatedEvent.processEvent(file)
+            registerEvent(app.metadataCache.on(FileEventType.EVENT_CREATED.eventName) { file ->
+                sendFileModifiedEvent(FileEventType.EVENT_CREATED, file)
             })
 
             // Add Settings tab
@@ -89,13 +81,34 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
                 activateView()
             })
 
+            CoroutineScope(Dispatchers.Default).launch {
+                processFileEvents(app, store)
+            }
+
             logger.debug { "NeuralLinkPlugin onload() finished" }
         }
     }
 
     override fun onunload() {
         logger.debug { "NeuralLinkPlugin.onunload()" }
+        fileEventChannel.close()
         this.app.workspace.detachLeavesOfType(KanbanView.VIEW_TYPE)
+    }
+
+    private fun sendFileModifiedEvent(type: FileEventType, file: TFile) {
+        CoroutineScope(Dispatchers.Default).launch {
+            when (type) {
+                FileEventType.EVENT_MODIFIED -> {
+                    fileEventChannel.send(FileEventModified(file))
+                }
+                FileEventType.EVENT_CREATED -> {
+                    fileEventChannel.send(FileEventCreated(file))
+                }
+                FileEventType.EVENT_DELETED -> {
+                    fileEventChannel.send(FileEventDeleted(file))
+                }
+            }
+        }
     }
 
     private fun taskModifiedListener() {
