@@ -9,6 +9,7 @@ import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.TaskId
+import neurallink.core.service.taskListEqualityWithTaskId
 import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store
 
@@ -74,7 +75,7 @@ class KanbanBoard(
         store.state.settings.columnTags.forEach { status ->
             val cacheTasks = boardCache.tasks[status]!!
             val storeTasks = store.state.kanbanColumns[status]!!
-            if (cacheTasks != storeTasks) {
+            if (!taskListEqualityWithTaskId(cacheTasks, storeTasks)) {
                 boardCache.tasks[status] = storeTasks
                 columnsPanel.replaceCards(
                     status,

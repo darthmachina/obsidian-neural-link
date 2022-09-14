@@ -93,7 +93,8 @@ suspend fun readFile(store: Store<NeuralLinkModel>, file: TFile, vault: Vault, m
                 }
         )
     }.await()
-    return taskList}
+    return taskList
+}
 
 fun processFile(
     filename: String,
@@ -104,6 +105,7 @@ fun processFile(
     // Need to use recursion here to build up the Task list
     return listItems
         .map { cacheListItem ->
+            logger.trace { " - checking $cacheListItem" }
             if (cacheListItem.task == null) {
                 NoteInProcess(
                     noteFromLine(fileContents, cacheListItem),

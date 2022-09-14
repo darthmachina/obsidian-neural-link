@@ -236,7 +236,7 @@ class Reducers {
         taskId: TaskId,
         subtaskChoice: IncompleteSubtaskChoice
     ): Either<NeuralLinkError,NeuralLinkModel> {
-        logger.debug { "taskCompleted()" }
+        logger.debug { "taskCompleted(), taskId: $taskId" }
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
                 completeTask(task, subtaskChoice, store.settings.columnTags)
@@ -379,7 +379,7 @@ class ReducerUtils {
             // remove the status tag and check for any tasks that need repeating. Do nothing with subtasks as we are outside
             // the app.
             var newTasks = tasks
-                .mapNotNull { task ->
+                .map { task ->
                     if (task.completed &&
                                 (getStatusTagFromTask(task, store.settings.columnTags).isRight()
                                 || task.dataviewFields.keys.contains(DataviewField(TaskConstants.TASK_REPEAT_PROPERTY)))) {
