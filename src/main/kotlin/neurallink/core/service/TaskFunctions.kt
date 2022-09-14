@@ -88,20 +88,37 @@ fun completeTask(
 fun changedTasks(file: String, fileTasks: List<Task>, storeTasks: List<Task>) : Option<ModifiedTasks> {
     // Take the fileTasks list and subtrack any that are equal to what is already in the store
     val storeFileTasks = storeTasks.filter { it.file.value == file }
-    if (storeFileTasks.isEmpty()) return None
+    if (storeFileTasks.isEmpty()) {
+        return ModifiedTasks(fileTasks, false).some()
+    }
 
-    logger.debug { "ReducerUtils.changedTasks(): $fileTasks, $storeFileTasks" }
+    logger.debug { "ReducerUtils.changedTasks(): ${fileTasks.size}, ${storeFileTasks.size}" }
     // TODO Detecting differences here is problematic, just do a minus() and for removed we know if fileTasks size is less (but that's not exhaustive
     val changedTasks = fileTasks.minus(storeFileTasks.toSet())
     val removed = fileTasks.size < storeFileTasks.size
     return if (changedTasks.isNotEmpty() || removed) {
-        logger.debug { "Tasks are modified, removed: $removed" }
-        changedTasks.forEach { task ->
-            logger.debug { " - task: ${task.description.value}" }
-        }
+        logger.debug { "Tasks are modified; any removed?: $removed, changed tasks:" }
         ModifiedTasks(changedTasks, removed).some()
     } else {
         logger.debug { "No modified tasks, returning None" }
         None
     }
+}
+
+/**
+ * Checks for Task list equality including TaskId
+ */
+fun taskListEqualityWithTaskId(tasklist1: List<Task>, tasklist2: List<Task>) : Boolean {
+    // First checks for a size difference then falls back on index-level comparisons if sizes are equal
+    return tasklist1.size == tasklist2.size &&
+        tasklist1.map { task1 ->
+            taskEqualityWithTaskId(task1, tasklist2[0])
+        }.all { it }
+}
+
+/**
+ * Checks for Task equality including TaskId
+ */
+fun taskEqualityWithTaskId(task1: Task, task2: Task) : Boolean {
+    return task1 == task2 && task1.id.value == task2.id.value
 }

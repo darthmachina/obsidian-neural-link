@@ -239,7 +239,6 @@ class Reducers {
         logger.debug { "taskCompleted(), taskId: $taskId" }
         val clonedTaskList = store.tasks.map { task ->
             if (task.id == taskId) {
-                logger.debug { "Found task, completing it" }
                 completeTask(task, subtaskChoice, store.settings.columnTags)
             } else {
                 task
