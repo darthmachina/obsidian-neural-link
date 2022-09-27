@@ -10,6 +10,7 @@ import neurallink.core.service.kanban.createKanbanMap
 import neurallink.core.service.kanban.findEndPosition
 import neurallink.core.service.kanban.findPosition
 import neurallink.core.service.kanban.getStatusTagFromTask
+import neurallink.core.service.kanban.upsertTasksAddingOrder
 import neurallink.view.ViewConstants
 import org.reduxkotlin.Reducer
 
@@ -75,7 +76,8 @@ class Reducers {
                 kanbanColumns = createKanbanMap(
                     filterTasks(clonedTaskList, store.filterOptions),
                     newSettings.columnTags
-                )
+                ),
+                latestAction = StoreActions.UPDATE_COLUMNS
             ).right()
         } else if (updateSettings.ignorePaths != null) {
             val clonedTaskList = store.tasks.filter { task -> !pathInPathList(task.file.value, updateSettings.ignorePaths) }
@@ -85,14 +87,16 @@ class Reducers {
                 kanbanColumns = createKanbanMap(
                     filterTasks(clonedTaskList, store.filterOptions),
                     newSettings.columnTags
-                )
+                ),
+                latestAction = StoreActions.UPDATE_FILTER
             ).right()
         } else {
             if (updateSettings.logLevel != null) {
                 KotlinLoggingConfiguration.LOG_LEVEL = updateSettings.logLevel
             }
             store.copy(
-                settings = newSettings
+                settings = newSettings,
+                latestAction = StoreActions.UPDATE_SETTINGS
             ).right()
         }
     }
@@ -102,28 +106,35 @@ class Reducers {
      */
     fun copyAndPopulateKanban(store: NeuralLinkModel, tasks: List<Task>): Either<NeuralLinkError,NeuralLinkModel> {
         logger.debug { "copyAndPopulateKanban()" }
-        return store.copy(
-            tasks = tasks,
-            sourceFiles = getAllSourceFiles(tasks),
-            kanbanColumns = createKanbanMap(
-                filterTasks(tasks, store.filterOptions),
-                store.settings.columnTags
-            ),
-            modelLoaded = true
-        ).right()
+        return upsertTasksAddingOrder(tasks, store.settings.columnTags)
+            .let { updatedTasks ->
+                store.copy(
+                    tasks = updatedTasks,
+                    sourceFiles = getAllSourceFiles(updatedTasks),
+                    kanbanColumns = createKanbanMap(
+                        filterTasks(updatedTasks, store.filterOptions),
+                        store.settings.columnTags
+                    ),
+                    modelLoaded = true,
+                    latestAction = StoreActions.UPDATE_TASKS
+                ).right()
+            }
     }
 
     fun fileCreated(store: NeuralLinkModel, tasks: List<Task>): Either<NeuralLinkError, NeuralLinkModel> {
         logger.debug { "fileCreated()" }
-        val allTasks = store.tasks.plus(tasks)
-        return store.copy(
-            tasks = allTasks,
-            sourceFiles = getAllSourceFiles(allTasks),
-            kanbanColumns = createKanbanMap(
-                filterTasks(allTasks, store.filterOptions),
-                store.settings.columnTags
-            )
-        ).right()
+        return upsertTasksAddingOrder(store.tasks.plus(tasks), store.settings.columnTags)
+            .let { updatedTasks ->
+                store.copy(
+                    tasks = updatedTasks,
+                    sourceFiles = getAllSourceFiles(updatedTasks),
+                    kanbanColumns = createKanbanMap(
+                        filterTasks(updatedTasks, store.filterOptions),
+                        store.settings.columnTags
+                    ),
+                    latestAction = StoreActions.UPDATE_TASKS
+                ).right()
+            }
     }
 
     fun removeTasksForFile(store: NeuralLinkModel, file: TaskFile): Either<NeuralLinkError, NeuralLinkModel> {
@@ -136,7 +147,8 @@ class Reducers {
                     kanbanColumns = createKanbanMap(
                         filterTasks(tasks, store.filterOptions),
                         store.settings.columnTags
-                    )
+                    ),
+                    latestAction = StoreActions.UPDATE_TASKS
                 )
             }
     }
@@ -189,7 +201,8 @@ class Reducers {
             kanbanColumns = createKanbanMap(
                 filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
-            )
+            ),
+            latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
 
@@ -227,7 +240,8 @@ class Reducers {
             kanbanColumns = createKanbanMap(
                 filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
-            )
+            ),
+            latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
 
@@ -250,7 +264,8 @@ class Reducers {
             kanbanColumns = createKanbanMap(
                 filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
-            )
+            ),
+            latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
 
@@ -281,7 +296,8 @@ class Reducers {
             kanbanColumns = createKanbanMap(
                 filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
-            )
+            ),
+            latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
 
@@ -298,7 +314,8 @@ class Reducers {
             kanbanColumns = createKanbanMap(
                 filterTasks(clonedTaskList, store.filterOptions),
                 store.settings.columnTags
-            )
+            ),
+            latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
 
@@ -315,7 +332,8 @@ class Reducers {
                         filterTasks(store.tasks, filterOptions),
                         store.settings.columnTags
                     ),
-                    filterOptions = filterOptions
+                    filterOptions = filterOptions,
+                    latestAction = StoreActions.UPDATE_FILTER
                 ).right()
             }
     }
@@ -330,7 +348,8 @@ class Reducers {
                         filterTasks(store.tasks, filterOptions),
                         store.settings.columnTags
                     ),
-                    filterOptions = filterOptions
+                    filterOptions = filterOptions,
+                    latestAction = StoreActions.UPDATE_FILTER
                 ).right()
             }
     }
@@ -348,7 +367,8 @@ class Reducers {
                         filterTasks(store.tasks, filterOptions),
                         store.settings.columnTags
                     ),
-                    filterOptions = filterOptions
+                    filterOptions = filterOptions,
+                    latestAction = StoreActions.UPDATE_FILTER
                 ).right()
             }
     }
@@ -363,7 +383,8 @@ class Reducers {
                         filterTasks(store.tasks, filterOptions),
                         store.settings.columnTags
                     ),
-                    filterOptions = filterOptions
+                    filterOptions = filterOptions,
+                    latestAction = StoreActions.UPDATE_FILTER
                 ).right()
             }
     }

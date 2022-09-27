@@ -23,6 +23,16 @@ fun Task.deepCopy(): Task {
     )
 }
 
+fun taskContainsAnyStatusTag(task: Task, statusTags: List<StatusTag>) : Boolean {
+    return task.tags.any { tag ->
+        tag in statusTags.map { it.tag }
+    }
+}
+
+fun taskContainsDataviewField(task: Task, field: DataviewField ) : Boolean {
+    return task.dataviewFields.containsKey(field)
+}
+
 fun subtasksForCompletedTask(subtasks: List<Task>, subtaskChoice: IncompleteSubtaskChoice) : List<Task> {
     logger.info { "subtasksForCompletedTask(), choice: ${subtaskChoice.name}" }
     return when (subtaskChoice) {

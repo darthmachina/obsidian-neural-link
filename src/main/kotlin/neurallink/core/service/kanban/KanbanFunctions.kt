@@ -5,6 +5,7 @@ import mu.KotlinLogging
 import neurallink.core.model.*
 import neurallink.core.service.NoStatusTagOnTaskWarning
 import neurallink.core.service.taskComparator
+import neurallink.core.service.taskContainsAnyStatusTag
 import neurallink.core.service.taskDateComparator
 
 private val logger = KotlinLogging.logger("KanbanFunctions")
@@ -16,9 +17,7 @@ fun createKanbanMap(tasks: List<Task>, statusTags: List<StatusTag>) : Map<Status
     logger.debug { "createKanbanMap()" }
     return tasks
         .filter { task ->
-            task.tags.any { tag ->
-                tag in statusTags.map { it.tag }
-            }
+            taskContainsAnyStatusTag(task, statusTags)
         }
         .mapNotNull { task ->
             getStatusTagFromTask(task, statusTags)
@@ -41,13 +40,6 @@ fun createKanbanMap(tasks: List<Task>, statusTags: List<StatusTag>) : Map<Status
                     else
                         taskComparator
                 )
-        }
-        .mapValues { entry ->
-            if (!entry.key.dateSort) {
-                addOrderToListItemsIfNeeded(entry.value)
-            } else {
-                entry.value
-            }
         }
 }
 

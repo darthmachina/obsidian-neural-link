@@ -3,6 +3,7 @@ package neurallink.core.service.kanban
 import arrow.core.Either
 import arrow.core.None
 import arrow.core.Some
+import arrow.core.flatMap
 import arrow.core.getOrElse
 import arrow.core.toOption
 import mu.KotlinLogging
@@ -16,12 +17,14 @@ import neurallink.core.model.toDataviewMap
 import neurallink.core.service.BeforeTaskDoesNotExist
 import neurallink.core.service.deepCopy
 import neurallink.core.service.taskComparator
+import neurallink.core.service.taskContainsAnyStatusTag
+import neurallink.core.service.taskContainsDataviewField
 import neurallink.core.store.ReducerUtils
 
 private val logger = KotlinLogging.logger("TaskOrderFunctions")
 
 /**
- * Finds the max `pos` value in the given list. This list would usually already be sorted to
+ * Finds the max `pos` value in the given list. This list would usually already be filtered to
  * only include tasks for a single StatusTag.
  *
  * @return The max position value in the task list, using 0.0 when one doesn't exist.
@@ -106,9 +109,44 @@ fun findPosition(tasks: List<Task>, status: StatusTag, beforeTaskId: TaskId? = n
  */
 fun findEndPosition(tasks: List<Task>, status: StatusTag) : Double {
     return findMaxPositionInStatusTasks(
-        tasks
-            .filter { task -> task.tags.contains(status.tag) }
+        tasks.filter { task -> task.tags.contains(status.tag) }
     ) + 1.0
+}
+
+/**
+ * Finds any task that has a StatusTag but no `pos` field and adds the `pos` field.
+ */
+fun upsertTasksAddingOrder(tasks: List<Task>, statusTags: List<StatusTag>) : List<Task> {
+    val maxPositions = findMaxPositionForAllStatusTags(tasks, statusTags).toMutableMap()
+    return tasks.map { task ->
+        if (taskContainsDataviewField(task, DataviewField("pos"))) {
+            task
+        } else if (taskContainsAnyStatusTag(task, statusTags)) {
+            getStatusTagFromTask(task, statusTags)
+                .map {
+                    val position = maxPositions[it]!!
+                    maxPositions[it] = position + 1
+                    updateTaskOrder(task, position)
+                }
+                .getOrElse {
+                    task
+                }
+        } else {
+            task
+        }
+    }
+}
+
+/**
+ * Finds the max position for all StatusTags.
+ *
+ * @param tasks The full task list
+ * @param statusTags Set of all status tags
+ */
+fun findMaxPositionForAllStatusTags(tasks: List<Task>, statusTags: List<StatusTag>) : Map<StatusTag,Double> {
+    return statusTags.associateWith {
+        findEndPosition(tasks, it)
+    }
 }
 
 /**

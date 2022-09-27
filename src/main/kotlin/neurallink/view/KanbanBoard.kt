@@ -8,6 +8,7 @@ import mu.KotlinLogging
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Task
 import neurallink.core.model.NeuralLinkModel
+import neurallink.core.model.StoreActions
 import neurallink.core.model.TaskId
 import neurallink.core.service.taskListEqualityWithTaskId
 import neurallink.core.store.TaskMoved
@@ -23,48 +24,38 @@ class KanbanBoard(
         const val CARD_MIME_TYPE = "text/x-card"
     }
 
-    data class BoardCache(var columns: List<StatusTag>, var tasks: MutableMap<StatusTag,List<Task>>)
+    data class BoardCache(var tasks: MutableMap<StatusTag,List<Task>>)
 
     private var dragoverCardId: String? = null
-    private val boardCache = BoardCache(mutableListOf(), mutableMapOf())
+    private val boardCache = BoardCache(mutableMapOf())
     private val columnsPanel = KanbanColumnsPanel()
 
     init {
         addCssStyle(KanbanStyles.ROOT)
         add(KanbanHeader(store))
         add(columnsPanel)
-        // If the columns are different update the board
-        if (boardCache.columns != store.state.settings.columnTags) {
-            updateCacheColumns(store.state.settings.columnTags, leaf)
-        }
+        updateCacheColumns(store.state.settings.columnTags, leaf)
         store.subscribe(::storeChanged)
     }
 
     private fun storeChanged() {
         logger.debug { "storeChanged()" }
-        if (boardCache.columns != store.state.settings.columnTags) {
-            // Columns have been updated, redraw the whole board
+        if (store.state.latestAction == StoreActions.UPDATE_COLUMNS) {
             updateCacheColumns(store.state.settings.columnTags, leaf)
-        } else {
-            // If columns match, just check task list
-            // Check each column for whether the cache matches the store
-            // First, check if any columns were removed
-//            removeOldColumns()
-            // Second, check if the task list is the same for each column
+        } else if (store.state.latestAction in listOf(StoreActions.UPDATE_TASKS, StoreActions.UPDATE_FILTER)){
             checkAndUpdateTasks()
         }
     }
 
     private fun updateCacheColumns(columns: List<StatusTag>, leaf: WorkspaceLeaf) {
         logger.debug { "updateCacheColumns(): $columns" }
-        boardCache.columns = columns
         boardCache.tasks.clear()
 
         if (store.state.kanbanColumns.isNotEmpty()) {
             boardCache.tasks.putAll(store.state.kanbanColumns)
 
             columnsPanel.removeAll()
-            boardCache.columns.forEach { statusTag ->
+            columns.forEach { statusTag ->
                 columnsPanel.addColumn(statusTag, createColumn(statusTag, boardCache.tasks[statusTag]!!, leaf))
             }
         }
