@@ -59,15 +59,15 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             logger.info { "Layout ready, loading settings and model"}
             loadSettingAndTaskModel()
 
-            registerEvent(app.metadataCache.on(FileEventType.EVENT_MODIFIED.eventName) { file ->
-                sendFileModifiedEvent(FileEventType.EVENT_MODIFIED, file)
-            })
-            registerEvent(app.metadataCache.on(FileEventType.EVENT_DELETED.eventName) { file ->
-                sendFileModifiedEvent(FileEventType.EVENT_DELETED, file)
-            })
-            registerEvent(app.metadataCache.on(FileEventType.EVENT_CREATED.eventName) { file ->
-                sendFileModifiedEvent(FileEventType.EVENT_CREATED, file)
-            })
+//            registerEvent(app.metadataCache.on(FileEventType.EVENT_MODIFIED.eventName) { file ->
+//                sendFileModifiedEvent(FileEventType.EVENT_MODIFIED, file)
+//            })
+//            registerEvent(app.metadataCache.on(FileEventType.EVENT_DELETED.eventName) { file ->
+//                sendFileModifiedEvent(FileEventType.EVENT_DELETED, file)
+//            })
+//            registerEvent(app.metadataCache.on(FileEventType.EVENT_CREATED.eventName) { file ->
+//                sendFileModifiedEvent(FileEventType.EVENT_CREATED, file)
+//            })
 
             // Add Settings tab
             addSettingTab(NeuralLinkPluginSettingsTab(app, this, store))
@@ -113,7 +113,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun taskModifiedListener() {
-        logger.debug { "NeuralLinkPlugin.taskModifiedListener()" }
+        logger.debug { "taskModifiedListener()" }
         CoroutineScope(Dispatchers.Main).launch {
             writeModifiedTasks(
                 store.state.tasks,
@@ -123,7 +123,7 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
     }
 
     private fun loadSettingAndTaskModel() {
-        logger.debug { "NeuralLinkPlugin.loadSettingAndTaskModel()" }
+        logger.debug { "loadSettingAndTaskModel()" }
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.Default) { loadSettings() } // Load settings first and wait
             loadTasKModelIntoStore(

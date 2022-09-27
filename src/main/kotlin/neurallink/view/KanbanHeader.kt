@@ -1,9 +1,12 @@
 package neurallink.view
 
+import App
 import io.kvision.core.*
 import io.kvision.form.check.checkBox
 import io.kvision.form.select.SimpleSelectInput
 import io.kvision.form.select.simpleSelectInput
+import io.kvision.html.ButtonSize
+import io.kvision.html.button
 import io.kvision.html.div
 import io.kvision.panel.HPanel
 import io.kvision.utils.px
@@ -11,15 +14,17 @@ import mu.KotlinLogging
 import neurallink.core.model.TaskConstants
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.DataviewField
+import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.store.FilterByDataviewValue
 import neurallink.core.store.FilterByFile
 import neurallink.core.store.FilterByTag
 import neurallink.core.store.FilterFutureDate
+import neurallink.core.store.MoveToTop
 import org.reduxkotlin.Store
 
 private val logger = KotlinLogging.logger("NeuralLinkPlugin")
 
-class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, justify = JustifyContent.END) {
+class KanbanHeader(val store: Store<NeuralLinkModel>, val app: App) : HPanel(spacing = 10, justify = JustifyContent.END) {
     private var filtering = false
     private val tagSelect: SimpleSelectInput
     private val fileSelect: SimpleSelectInput
@@ -97,6 +102,19 @@ class KanbanHeader(val store: Store<NeuralLinkModel>) : HPanel(spacing = 10, jus
                 } else {
                     filterByFile(it)
                 }
+            }
+        }
+        div {
+            button("", icon = "fas fa-arrows-rotate") {
+                addCssStyle(KanbanStyles.KANBAN_BUTTON)
+                size = ButtonSize.SMALL
+                cursor = Cursor.POINTER
+            }.onClick {
+                loadTasKModelIntoStore(
+                    app.vault,
+                    app.metadataCache,
+                    store
+                )
             }
         }
         store.subscribe {
