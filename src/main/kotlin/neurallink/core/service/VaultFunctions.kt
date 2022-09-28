@@ -217,6 +217,7 @@ suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
     withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
         tasks
             .filter { it.original != null }
+            .map { it }
             .groupBy { it.file }
             .forEach { entry ->
                 launch {
@@ -236,7 +237,6 @@ fun writeFile(vault: Vault, existingContents: String, tasks: List<Task>, file: T
         .mapLeft {
             logger.debug { "File was not modified, not writing to disk" }
         }
-
 }
 
 fun createFileContents(existingContents: String, tasks: List<Task>) : Either<TaskWritingWarning,String> {
