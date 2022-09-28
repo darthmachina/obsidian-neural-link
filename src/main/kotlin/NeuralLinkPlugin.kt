@@ -43,7 +43,6 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             this,
             NeuralLinkPluginSettings6.default(),
             listOf(),
-            mapOf(),
             FilterOptions(),
             listOf(),
             StoreActions.NOOP

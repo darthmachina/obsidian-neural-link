@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveKeys
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import neurallink.core.model.FilterOptions
 import neurallink.core.model.StatusTag
 import neurallink.core.model.Tag
 import neurallink.test.TestFactory
@@ -99,7 +100,7 @@ class KanbanFunctionsTest : StringSpec({
             StatusTag(Tag("tag2"), "Tag 2")
         )
 
-        val actualKanban = createKanbanMap(listOf(task1, task2), statusTags)
+        val actualKanban = createKanbanMap(listOf(task1, task2), statusTags, FilterOptions())
         actualKanban.shouldHaveKeys(statusTags[0], statusTags[1])
 
         val tag1Values = actualKanban[statusTags[0]]

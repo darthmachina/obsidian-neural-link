@@ -10,6 +10,7 @@ import neurallink.core.model.Task
 import neurallink.core.model.NeuralLinkModel
 import neurallink.core.model.StoreActions
 import neurallink.core.model.TaskId
+import neurallink.core.service.kanban.createKanbanMap
 import neurallink.core.service.taskListEqualityWithTaskId
 import neurallink.core.store.TaskMoved
 import org.reduxkotlin.Store
@@ -51,8 +52,9 @@ class KanbanBoard(
         logger.debug { "updateCacheColumns(): $columns" }
         boardCache.tasks.clear()
 
-        if (store.state.kanbanColumns.isNotEmpty()) {
-            boardCache.tasks.putAll(store.state.kanbanColumns)
+        val kanbanMap = createKanbanMap(store.state.tasks, columns, store.state.filterOptions)
+        if (kanbanMap.isNotEmpty()) {
+            boardCache.tasks.putAll(kanbanMap)
 
             columnsPanel.removeAll()
             columns.forEach { statusTag ->
@@ -63,9 +65,10 @@ class KanbanBoard(
 
     private fun checkAndUpdateTasks() {
         logger.debug { "checkAndUpdateTasks()" }
+        val kanbanMap = createKanbanMap(store.state.tasks, store.state.settings.columnTags, store.state.filterOptions)
         store.state.settings.columnTags.forEach { status ->
             val cacheTasks = boardCache.tasks[status]!!
-            val storeTasks = store.state.kanbanColumns[status]!!
+            val storeTasks = kanbanMap[status]!!
             if (!taskListEqualityWithTaskId(cacheTasks, storeTasks)) {
                 boardCache.tasks[status] = storeTasks
                 columnsPanel.replaceCards(

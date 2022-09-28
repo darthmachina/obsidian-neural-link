@@ -73,10 +73,6 @@ class Reducers {
             store.copy(
                 settings = newSettings,
                 tasks = clonedTaskList,
-                kanbanColumns = createKanbanMap(
-                    filterTasks(clonedTaskList, store.filterOptions),
-                    newSettings.columnTags
-                ),
                 latestAction = StoreActions.UPDATE_COLUMNS
             ).right()
         } else if (updateSettings.ignorePaths != null) {
@@ -84,10 +80,6 @@ class Reducers {
             store.copy(
                 settings = newSettings,
                 tasks = clonedTaskList,
-                kanbanColumns = createKanbanMap(
-                    filterTasks(clonedTaskList, store.filterOptions),
-                    newSettings.columnTags
-                ),
                 latestAction = StoreActions.UPDATE_FILTER
             ).right()
         } else {
@@ -111,10 +103,6 @@ class Reducers {
                 store.copy(
                     tasks = updatedTasks,
                     sourceFiles = getAllSourceFiles(updatedTasks),
-                    kanbanColumns = createKanbanMap(
-                        filterTasks(updatedTasks, store.filterOptions),
-                        store.settings.columnTags
-                    ),
                     modelLoaded = true,
                     latestAction = StoreActions.UPDATE_TASKS
                 ).right()
@@ -128,10 +116,6 @@ class Reducers {
                 store.copy(
                     tasks = updatedTasks,
                     sourceFiles = getAllSourceFiles(updatedTasks),
-                    kanbanColumns = createKanbanMap(
-                        filterTasks(updatedTasks, store.filterOptions),
-                        store.settings.columnTags
-                    ),
                     latestAction = StoreActions.UPDATE_TASKS
                 ).right()
             }
@@ -144,10 +128,6 @@ class Reducers {
                 store.copy(
                     tasks = tasks,
                     sourceFiles = getAllSourceFiles(tasks), // TODO Try to just remove file that was deleted
-                    kanbanColumns = createKanbanMap(
-                        filterTasks(tasks, store.filterOptions),
-                        store.settings.columnTags
-                    ),
                     latestAction = StoreActions.UPDATE_TASKS
                 )
             }
@@ -198,10 +178,6 @@ class Reducers {
         }
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterOptions),
-                store.settings.columnTags
-            ),
             latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
@@ -237,10 +213,6 @@ class Reducers {
         }
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterOptions),
-                store.settings.columnTags
-            ),
             latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
@@ -261,10 +233,6 @@ class Reducers {
 
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterOptions),
-                store.settings.columnTags
-            ),
             latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
@@ -293,10 +261,6 @@ class Reducers {
         }
         return store.copy(
             tasks = clonedTaskList,
-            kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterOptions),
-                store.settings.columnTags
-            ),
             latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
@@ -311,10 +275,6 @@ class Reducers {
         return store.copy(
             tasks = clonedTaskList,
             sourceFiles = if (store.sourceFiles.contains(file.value.dropLast(3))) store.sourceFiles else getAllSourceFiles(store.tasks),
-            kanbanColumns = createKanbanMap(
-                filterTasks(clonedTaskList, store.filterOptions),
-                store.settings.columnTags
-            ),
             latestAction = StoreActions.UPDATE_TASKS
         ).right()
     }
@@ -328,10 +288,6 @@ class Reducers {
             .copy(tags = if (tag != null) TagFilterValue(Tag(tag)).some() else None)
             .let { filterOptions ->
                 store.copy(
-                    kanbanColumns = createKanbanMap(
-                        filterTasks(store.tasks, filterOptions),
-                        store.settings.columnTags
-                    ),
                     filterOptions = filterOptions,
                     latestAction = StoreActions.UPDATE_FILTER
                 ).right()
@@ -344,10 +300,6 @@ class Reducers {
             .copy(page = if (file != null) FileFilterValue(TaskFile(file)).some() else None)
             .let { filterOptions ->
                 store.copy(
-                    kanbanColumns = createKanbanMap(
-                        filterTasks(store.tasks, filterOptions),
-                        store.settings.columnTags
-                    ),
                     filterOptions = filterOptions,
                     latestAction = StoreActions.UPDATE_FILTER
                 ).right()
@@ -363,10 +315,6 @@ class Reducers {
                 ?: None)
             .let { filterOptions ->
                 store.copy(
-                    kanbanColumns = createKanbanMap(
-                        filterTasks(store.tasks, filterOptions),
-                        store.settings.columnTags
-                    ),
                     filterOptions = filterOptions,
                     latestAction = StoreActions.UPDATE_FILTER
                 ).right()
@@ -379,10 +327,6 @@ class Reducers {
             .copy(hideFuture = filter)
             .let { filterOptions ->
                 store.copy(
-                    kanbanColumns = createKanbanMap(
-                        filterTasks(store.tasks, filterOptions),
-                        store.settings.columnTags
-                    ),
                     filterOptions = filterOptions,
                     latestAction = StoreActions.UPDATE_FILTER
                 ).right()
