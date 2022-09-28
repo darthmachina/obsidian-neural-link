@@ -5,6 +5,7 @@ import mu.KotlinLoggingLevel
 import neurallink.core.event.*
 import neurallink.core.model.FilterOptions
 import neurallink.core.model.NeuralLinkModel
+import neurallink.core.model.StoreActions
 import neurallink.core.service.loadFromJson
 import neurallink.core.service.loadTasKModelIntoStore
 import neurallink.core.service.writeModifiedTasks
@@ -42,9 +43,9 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             this,
             NeuralLinkPluginSettings6.default(),
             listOf(),
-            mapOf(),
             FilterOptions(),
-            listOf()
+            listOf(),
+            StoreActions.NOOP
         ),
         applyMiddleware(loggerMiddleware)
     ).apply {

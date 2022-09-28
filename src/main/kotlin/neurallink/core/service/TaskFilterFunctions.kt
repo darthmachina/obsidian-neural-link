@@ -24,8 +24,8 @@ fun pathInPathList(path: String, paths: List<String>) : Boolean {
         }
 }
 
-fun filterTasks(tasks: List<Task>, filters: FilterOptions) : List<Task> {
-    return tasks.filter { task ->
+fun List<Task>.applyTaskFilter(filters: FilterOptions) : List<Task> {
+    return this.filter { task ->
         filters.tags.fold({true}, { tagFilter -> task.tags.contains(tagFilter.filterValue) })
                 && filters.page.fold({true}, {pageFilter -> task.file == pageFilter.filterValue})
                 && filters.dataview.fold({true}, {dataviewFilter -> task.dataviewFields.containsKey(dataviewFilter.filterValue.value.first)})

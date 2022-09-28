@@ -61,7 +61,7 @@ class TaskFilterFunctionsTest : StringSpec({
         val expectedTask = TestFactory.createTask(file = "testfile.md")
         val taskList = listOf(*TestFactory.createTasks(4).toTypedArray(), expectedTask)
 
-        val actualTaskList = filterTasks(taskList, FilterOptions(page = FileFilterValue(TaskFile("testfile.md")).some()))
+        val actualTaskList = taskList.applyTaskFilter(FilterOptions(page = FileFilterValue(TaskFile("testfile.md")).some()))
         actualTaskList shouldHaveSize 1
         actualTaskList[0].file shouldBe TaskFile("testfile.md")
     }
@@ -70,7 +70,7 @@ class TaskFilterFunctionsTest : StringSpec({
         val expectedTask = TestFactory.createTask(tags = setOf(Tag("testtag")))
         val taskList = listOf(*TestFactory.createTasks(4).toTypedArray(), expectedTask)
 
-        val actualTaskList = filterTasks(taskList, FilterOptions(tags = TagFilterValue(Tag("testtag")).some()))
+        val actualTaskList = taskList.applyTaskFilter(FilterOptions(tags = TagFilterValue(Tag("testtag")).some()))
         actualTaskList shouldHaveSize 1
         actualTaskList[0].tags shouldContain Tag("testtag")
     }
@@ -82,7 +82,7 @@ class TaskFilterFunctionsTest : StringSpec({
         )
         val taskList = listOf(*TestFactory.createTasks(4).toTypedArray(), expectedTask)
 
-        val actualTaskList = filterTasks(taskList, FilterOptions(
+        val actualTaskList = taskList.applyTaskFilter(FilterOptions(
             dataview = DataviewFilterValue(DataviewPair(Pair(DataviewField("test"), DataviewValue(1)))).some()))
         actualTaskList shouldHaveSize 1
         actualTaskList[0].description.value shouldBe "Expected"
@@ -99,7 +99,7 @@ class TaskFilterFunctionsTest : StringSpec({
         )
         val taskList = listOf(hiddenTask, expectedTask)
 
-        val actualTaskList = filterTasks(taskList, FilterOptions(hideFuture = true))
+        val actualTaskList = taskList.applyTaskFilter(FilterOptions(hideFuture = true))
         actualTaskList shouldHaveSize 1
         actualTaskList[0].description.value shouldBe "Expected"
     }
@@ -122,7 +122,7 @@ class TaskFilterFunctionsTest : StringSpec({
         )
         val taskList = listOf(hiddenTask1, hiddenTask2, expectedTask)
 
-        val actualTaskList = filterTasks(taskList, FilterOptions(
+        val actualTaskList = taskList.applyTaskFilter(FilterOptions(
             hideFuture = true,
             page = FileFilterValue(TaskFile("file1.md")).some())
         )
