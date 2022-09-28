@@ -32,7 +32,6 @@ class KanbanBoard(
     private val columnsPanel = KanbanColumnsPanel()
 
     init {
-        leaf.view.app
         addCssStyle(KanbanStyles.ROOT)
         add(KanbanHeader(store, leaf.view.app))
         add(columnsPanel)

@@ -6,7 +6,6 @@ import mu.KotlinLogging
 import mu.KotlinLoggingConfiguration
 import neurallink.core.model.*
 import neurallink.core.service.*
-import neurallink.core.service.kanban.createKanbanMap
 import neurallink.core.service.kanban.findEndPosition
 import neurallink.core.service.kanban.findPosition
 import neurallink.core.service.kanban.getStatusTagFromTask

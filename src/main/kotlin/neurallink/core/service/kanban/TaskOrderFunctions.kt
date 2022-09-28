@@ -151,7 +151,6 @@ fun findMaxPositionForAllStatusTags(tasks: List<Task>, statusTags: List<StatusTa
 
 /**
  * Adds TaskConstants.TASK_ORDER_PROPERTY to each task in the list if it's not already set.
- * TODO: Change so that the incoming list is the full store list and organize here by status tags
  */
 fun addOrderToListItemsIfNeeded(tasks: List<Task>) : List<Task> {
     logger.debug { "addOrderToListItems()" }

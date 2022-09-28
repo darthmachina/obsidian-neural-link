@@ -216,14 +216,8 @@ suspend fun writeModifiedTasks(tasks: List<Task>, vault: Vault) {
     logger.debug { "writeModifiedTasks()" }
     withContext(CoroutineScope(Dispatchers.Main).coroutineContext) {
         tasks
-            .filter {
-                logger.debug { " - checking task: $it" }
-                it.original != null
-            }
-            .map {
-                logger.debug { "Saving task: $it" }
-                it
-            }
+            .filter { it.original != null }
+            .map { it }
             .groupBy { it.file }
             .forEach { entry ->
                 launch {
