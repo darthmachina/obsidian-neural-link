@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.darthmachina"
-version = "1.0.4-SNAPSHOT"
+version = "1.0.4"
 
 repositories {
     mavenCentral()

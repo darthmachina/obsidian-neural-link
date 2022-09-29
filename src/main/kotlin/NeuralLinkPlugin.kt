@@ -59,15 +59,15 @@ class NeuralLinkPlugin(override var app: App, override var manifest: PluginManif
             logger.info { "Layout ready, loading settings and model"}
             loadSettingAndTaskModel()
 
-            registerEvent(app.metadataCache.on(FileEventType.EVENT_MODIFIED.eventName) { file ->
-                sendFileModifiedEvent(FileEventType.EVENT_MODIFIED, file)
-            })
-            registerEvent(app.metadataCache.on(FileEventType.EVENT_DELETED.eventName) { file ->
-                sendFileModifiedEvent(FileEventType.EVENT_DELETED, file)
-            })
-            registerEvent(app.metadataCache.on(FileEventType.EVENT_CREATED.eventName) { file ->
-                sendFileModifiedEvent(FileEventType.EVENT_CREATED, file)
-            })
+//            registerEvent(app.metadataCache.on(FileEventType.EVENT_MODIFIED.eventName) { file ->
+//                sendFileModifiedEvent(FileEventType.EVENT_MODIFIED, file)
+//            })
+//            registerEvent(app.metadataCache.on(FileEventType.EVENT_DELETED.eventName) { file ->
+//                sendFileModifiedEvent(FileEventType.EVENT_DELETED, file)
+//            })
+//            registerEvent(app.metadataCache.on(FileEventType.EVENT_CREATED.eventName) { file ->
+//                sendFileModifiedEvent(FileEventType.EVENT_CREATED, file)
+//            })
 
             // Add Settings tab
             addSettingTab(NeuralLinkPluginSettingsTab(app, this, store))
